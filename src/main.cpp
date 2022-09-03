@@ -4,10 +4,11 @@
 
 #include <iostream>
 
-extern void window();
+extern void windowSDL();
+extern void windowGLFW();
 
 int main()
 {
-    window();
+    windowGLFW();
     return 0;
 }

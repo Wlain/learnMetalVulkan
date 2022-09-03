@@ -6,16 +6,16 @@
 #include <QuartzCore/QuartzCore.hpp>
 #include <SDL.h>
 
-void window()
+void windowSDL()
 {
     SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
     SDL_InitSubSystem(SDL_INIT_VIDEO);
     SDL_Window* window = SDL_CreateWindow("SDL Metal window", -1, -1, 640, 480, SDL_WINDOW_ALLOW_HIGHDPI);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
     auto swapChain = (CA::MetalLayer*)SDL_RenderGetMetalLayer(renderer);
-    MTL::Device* gpu = swapChain->device();
-    MTL::CommandQueue* queue = gpu->newCommandQueue();
-    MTL::ClearColor color = MTL::ClearColor(0, 0, 0, 1);
+    auto* gpu = swapChain->device();
+    auto* queue = gpu->newCommandQueue();
+    MTL::ClearColor color {0, 0, 0, 1};
     bool quit = false;
     SDL_Event e;
     while (!quit)
@@ -30,7 +30,7 @@ void window()
             }
         }
 
-        CA::MetalDrawable* surface = swapChain->nextDrawable();
+        auto* surface = swapChain->nextDrawable();
         color.red = (color.red > 1.0) ? 0 : color.red + 0.01;
         MTL::RenderPassDescriptor* pass = MTL::RenderPassDescriptor::renderPassDescriptor();
         pass->colorAttachments()->object(0)->setClearColor(color);
@@ -38,8 +38,8 @@ void window()
         pass->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
         pass->colorAttachments()->object(0)->setTexture(surface->texture());
 
-        MTL::CommandBuffer* buffer = queue->commandBuffer();
-        MTL::RenderCommandEncoder* encoder = buffer->renderCommandEncoder(pass);
+        auto* buffer = queue->commandBuffer();
+        auto* encoder = buffer->renderCommandEncoder(pass);
         encoder->endEncoding();
         buffer->presentDrawable(surface);
         buffer->commit();
