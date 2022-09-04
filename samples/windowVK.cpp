@@ -128,6 +128,8 @@ void windowVK()
     {
         glfwTerminate();
     }
+    // render loop
+    // -----------
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -136,12 +138,9 @@ void windowVK()
         // 从交换链中请求下一个image
         // 提交命令缓存
         // 提交“显示image”的请求
-
     }
-
     // 销毁surface对象
     vkDestroySurfaceKHR(instance, surface, nullptr);
-
     // 销毁window
     glfwDestroyWindow(window);
 

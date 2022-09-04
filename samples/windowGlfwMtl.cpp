@@ -26,6 +26,8 @@ void windowGlfwMtl()
         exit(EXIT_FAILURE);
     }
     MTL::ClearColor color{ 0, 0, 0, 1 };
+    // render loop
+    // -----------
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();

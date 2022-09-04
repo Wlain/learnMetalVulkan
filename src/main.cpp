@@ -4,10 +4,11 @@
 extern void windowSdlMtl();
 extern void windowGlfwMtl();
 extern void windowVK();
+extern void windowGL();
 extern void triangleVK();
 
 int main()
 {
-    triangleVK();
+    windowGL();
     return 0;
 }
