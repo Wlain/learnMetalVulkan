@@ -40,8 +40,6 @@ void windowGL()
         red = red > 1.0 ? 0.0f : red + 0.01f;
         glClearColor(red, 0.0f, 0.0f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
-        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
