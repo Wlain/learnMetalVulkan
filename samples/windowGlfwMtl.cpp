@@ -10,7 +10,7 @@
 
 extern void* createLayer(GLFWwindow* window, double width, double height, void* device);
 
-void windowGLFW()
+void windowGlfwMtl()
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);

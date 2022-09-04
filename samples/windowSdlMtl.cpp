@@ -6,7 +6,7 @@
 #include <QuartzCore/QuartzCore.hpp>
 #include <SDL.h>
 
-void windowSDL()
+void windowSdlMtl()
 {
     SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
     SDL_InitSubSystem(SDL_INIT_VIDEO);

@@ -12,7 +12,7 @@ add_subdirectory(3rdparty/glfw)
 
 set(CMAKE_CXX_STANDARD 20)
 
-include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/3rdparty/glfw/deps)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp samples/*.cpp samples/*.mm)
 add_executable(learnMetal ${SOURCES})
 

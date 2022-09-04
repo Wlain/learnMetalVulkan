@@ -1,14 +1,13 @@
 //
 // Created by william on 2022/9/3.
 //
-
-#include <iostream>
-
-extern void windowSDL();
-extern void windowGLFW();
+extern void windowSdlMtl();
+extern void windowGlfwMtl();
+extern void windowVK();
+extern void triangleVK();
 
 int main()
 {
-    windowGLFW();
+    triangleVK();
     return 0;
 }
