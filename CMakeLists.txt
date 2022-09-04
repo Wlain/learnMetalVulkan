@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(learnMetal)
+project(learnMetalVulkan)
 
 # metal-cpp
 add_subdirectory(3rdparty/metal-cpp)
@@ -14,11 +14,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/3rdparty/glfw/deps)
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp samples/*.cpp samples/*.mm)
-add_executable(learnMetal ${SOURCES})
+add_executable(learnMetalVulkan ${SOURCES})
 
-target_link_libraries(learnMetal
-        ${SDL2_LIBRARY}
-        glfw
-        metal-cpp
-        )
+target_link_libraries(learnMetalVulkan ${SDL2_LIBRARY} glfw metal-cpp)
 
