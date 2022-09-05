@@ -25,7 +25,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src
         ${PROJECT_SOURCE_DIR}/3rdparty/glfw/deps
         ${CMAKE_CURRENT_LIST_DIR}/3rdparty/glew/include)
 
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.mm samples/*.cpp)
-add_executable(learnMetalVulkan ${SOURCES} samples/windowGL.cpp)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.mm tests/*.cpp)
+add_executable(learnMetalVulkan ${SOURCES})
 
 target_link_libraries(learnMetalVulkan ${SDL2_LIBRARY} glfw glm glew metal-cpp)

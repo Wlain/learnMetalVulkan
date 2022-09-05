@@ -6,7 +6,6 @@
 #include "engine.h"
 #include "glfwRendererGL.h"
 
-
 class WindowGL : public EffectBase
 {
 public:
