@@ -11,14 +11,21 @@ include_directories(${SDL2_INCLUDE_DIR})
 add_subdirectory(3rdparty/glfw)
 # glew
 add_subdirectory(3rdparty/glew/build/cmake)
+# glm
+add_subdirectory(3rdparty/glm)
 
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(${PROJECT_SOURCE_DIR}/src
+        ${PROJECT_SOURCE_DIR}/src/core/common
+        ${PROJECT_SOURCE_DIR}/src/core/backend/handle
+        ${PROJECT_SOURCE_DIR}/src/core/backend/gl
+        ${PROJECT_SOURCE_DIR}/src/core/backend/vk
+        ${PROJECT_SOURCE_DIR}/src/core/backend/mtl
         ${PROJECT_SOURCE_DIR}/3rdparty/glfw/deps
         ${CMAKE_CURRENT_LIST_DIR}/3rdparty/glew/include)
 
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp samples/*.cpp samples/*.mm)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.mm samples/*.cpp)
 add_executable(learnMetalVulkan ${SOURCES} samples/windowGL.cpp)
 
-target_link_libraries(learnMetalVulkan ${SDL2_LIBRARY} glfw glew metal-cpp)
+target_link_libraries(learnMetalVulkan ${SDL2_LIBRARY} glfw glm glew metal-cpp)
