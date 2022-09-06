@@ -2,8 +2,8 @@
 // Created by william on 2022/9/4.
 //
 
-#include <Metal/Metal.hpp>
-#include <QuartzCore/QuartzCore.hpp>
+#include "Metal/Metal.hpp"
+#include "QuartzCore/QuartzCore.hpp"
 #include <SDL.h>
 
 void windowSdlMtl()

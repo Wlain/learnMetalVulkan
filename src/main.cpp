@@ -7,9 +7,10 @@ extern void windowSdlVK();
 extern void windowGlfwVK();
 extern void triangleVK();
 extern void windowGL();
+extern void testVK();
 
 int main()
 {
-    windowGlfwVK();
+    testVK();
     return 0;
 }
