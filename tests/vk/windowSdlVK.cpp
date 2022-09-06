@@ -28,7 +28,9 @@ void windowSdlVK()
     std::vector<const char*> extensions(extensionCount);
     SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, extensions.data());
     std::vector<const char*> instanceExtensions(extensions.data(), extensions.data() + extensionCount);
+    instanceExtensions.emplace_back("VK_EXT_debug_utils");
     instanceExtensions.emplace_back("VK_KHR_portability_enumeration");
+    instanceExtensions.emplace_back("VK_KHR_get_physical_device_properties2");
     auto layers = std::vector<const char*>{ "VK_LAYER_KHRONOS_validation" };
     auto layerNames = vk::enumerateInstanceLayerProperties();
     for (auto& layer : layerNames)
@@ -89,7 +91,7 @@ void windowSdlVK()
     {
         queueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(queueFamilyIndex), 1, &queuePriority);
     }
-    const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_portability_subset" };
     vk::UniqueDevice device = gpu.createDeviceUnique(
         { vk::DeviceCreateFlags(),
           static_cast<uint32_t>(queueCreateInfos.size()),
@@ -293,7 +295,7 @@ void windowSdlVK()
         auto beginInfo = vk::CommandBufferBeginInfo{};
         commandBuffers[i]->begin(beginInfo);
         vk::ClearValue clearValues{};
-        clearValues.color.setFloat32({1.0f, 0.0f, 0.0f, 1.0f});
+        clearValues.color.setFloat32({ 1.0f, 0.0f, 0.0f, 1.0f });
         auto renderPassBeginInfo = vk::RenderPassBeginInfo{ renderPass.get(), framebuffers[i].get(), vk::Rect2D{ { 0, 0 }, extent }, 1, &clearValues };
         commandBuffers[i]->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
         commandBuffers[i]->bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);

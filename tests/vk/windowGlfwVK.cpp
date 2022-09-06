@@ -9,7 +9,7 @@
 #include <set>
 #include <vector>
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
@@ -33,13 +33,14 @@ void windowGlfwVK()
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     auto window = glfwCreateWindow((int32_t)width, (int32_t)height, "Vulkan GLFW Window", nullptr, nullptr);
-    glfwSetKeyCallback(window, key_callback);
+    glfwSetKeyCallback(window, keyCallback);
     vk::ApplicationInfo appInfo("Hello Triangle", VK_MAKE_VERSION(1, 0, 0), "No Engine", VK_MAKE_VERSION(1, 0, 0), VK_API_VERSION_1_0);
     auto glfwExtensionCount = 0u;
     auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
     std::vector<const char*> glfwExtensionsVector(glfwExtensions, glfwExtensions + glfwExtensionCount);
     glfwExtensionsVector.emplace_back("VK_EXT_debug_utils");
     glfwExtensionsVector.emplace_back("VK_KHR_portability_enumeration");
+    glfwExtensionsVector.emplace_back("VK_KHR_get_physical_device_properties2");
     auto layers = std::vector<const char*>{ "VK_LAYER_KHRONOS_validation" };
     vk::InstanceCreateInfo infos;
     infos.setPApplicationInfo(&appInfo);
@@ -59,10 +60,7 @@ void windowGlfwVK()
         nullptr, dldi);
     (void)messenger;
     VkSurfaceKHR surfaceTmp;
-    if (!glfwCreateWindowSurface(*instance, window, nullptr, &surfaceTmp))
-    {
-        std::cout << "glfwCreateWindowSurface failed!" << std::endl;
-    }
+    glfwCreateWindowSurface(*instance, window, nullptr, &surfaceTmp);
     vk::UniqueSurfaceKHR surface(surfaceTmp, *instance);
 
     auto physicalDevices = instance->enumeratePhysicalDevices();
@@ -90,7 +88,7 @@ void windowGlfwVK()
     {
         queueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(queueFamilyIndex), 1, &queuePriority);
     }
-    const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_portability_subset" };
     vk::UniqueDevice device = physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(vk::DeviceCreateFlags(), static_cast<uint32_t>(queueCreateInfos.size()), queueCreateInfos.data(),
                                                                                      0u, nullptr, static_cast<uint32_t>(deviceExtensions.size()), deviceExtensions.data()));
 

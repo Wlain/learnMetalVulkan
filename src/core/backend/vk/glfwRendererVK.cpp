@@ -5,6 +5,7 @@
 #include "glfwRendererVK.h"
 
 #include <iostream>
+#include <set>
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -52,11 +53,8 @@ void GLFWRendererVK::initDebugger()
 void GLFWRendererVK::initSurface()
 {
     VkSurfaceKHR surfaceTmp;
-    if (!glfwCreateWindowSurface(*m_instance, m_window, nullptr, &surfaceTmp))
-    {
-        std::cout << "glfwCreateWindowSurface failed!" << std::endl;
-    }
-    vk::UniqueSurfaceKHR surface(surfaceTmp, *m_instance);
+    glfwCreateWindowSurface(*m_instance, m_window, nullptr, &surfaceTmp);
+    m_surface = vk::UniqueSurfaceKHR(surfaceTmp, *m_instance);
 }
 
 GLFWRendererVK::~GLFWRendererVK()
@@ -80,11 +78,86 @@ void GLFWRendererVK::swapWindow()
 void GLFWRendererVK::initSwapChain()
 {
     initSurface();
+    initPhysicalDevice();
 }
 
 void GLFWRendererVK::initPhysicalDevice()
 {
     /// 挑选一块显卡
+    // 创建 gpu
+    auto gpus = m_instance->enumeratePhysicalDevices();
+    // 打印显卡名
+    for (auto& gpu : gpus)
+    {
+        std::cout << gpu.getProperties().deviceName << "\n";
+    }
+    m_gpu = gpus.front();
+    // 创建 Device 和 命令队列
+    // 两个命令队列
+    // 一个是绘制命令：queueFamilyProperties
+    // 一个是显示命令: presentQueueFamilyIndex
+    // get the QueueFamilyProperties of the first PhysicalDevice
+    std::vector<vk::QueueFamilyProperties> queueFamilyProperties = m_gpu.getQueueFamilyProperties();
+    // get the first index into queueFamiliyProperties which supports graphics
+    size_t graphicsQueueFamilyIndex = std::distance(queueFamilyProperties.begin(), std::find_if(queueFamilyProperties.begin(), queueFamilyProperties.end(), [](vk::QueueFamilyProperties const& qfp) {
+                                                        return qfp.queueFlags & vk::QueueFlagBits::eGraphics;
+                                                    }));
+    assert(graphicsQueueFamilyIndex < queueFamilyProperties.size());
+    size_t presentQueueFamilyIndex = 0u;
+    for (auto i = 0ul; i < queueFamilyProperties.size(); i++)
+    {
+        if (m_gpu.getSurfaceSupportKHR(static_cast<uint32_t>(i), *m_surface))
+        {
+            presentQueueFamilyIndex = i;
+        }
+    }
+    std::set<uint32_t> uniqueQueueFamilyIndices = { static_cast<uint32_t>(graphicsQueueFamilyIndex),
+                                                    static_cast<uint32_t>(presentQueueFamilyIndex) };
+    std::vector<uint32_t> familyIndices = { uniqueQueueFamilyIndices.begin(), uniqueQueueFamilyIndices.end() };
+    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+    float queuePriority = 0.0f;
+    for (auto& queueFamilyIndex : uniqueQueueFamilyIndices)
+    {
+        queueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(queueFamilyIndex), 1, &queuePriority);
+    }
+    const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_portability_subset" };
+    m_device = m_gpu.createDeviceUnique({ vk::DeviceCreateFlags(), static_cast<uint32_t>(queueCreateInfos.size()), queueCreateInfos.data(), 0u, nullptr, static_cast<uint32_t>(deviceExtensions.size()), deviceExtensions.data() });
+    uint32_t imageCount = 2;
+    SharingModeUtil sharingModeUtil{ (graphicsQueueFamilyIndex != presentQueueFamilyIndex) ?
+                                         SharingModeUtil{ vk::SharingMode::eConcurrent, 2u, familyIndices.data() } :
+                                         SharingModeUtil{ vk::SharingMode::eExclusive, 0u, static_cast<uint32_t*>(nullptr) } };
+    auto format = vk::Format::eB8G8R8A8Unorm;
+    auto extent = vk::Extent2D{ (uint32_t)m_windowWidth, (uint32_t)m_windowHeight };
+    vk::SwapchainCreateInfoKHR swapChainCreateInfo(
+        {},
+        *m_surface,
+        imageCount,
+        format,
+        vk::ColorSpaceKHR::eSrgbNonlinear,
+        extent,
+        1,
+        vk::ImageUsageFlagBits::eColorAttachment,
+        sharingModeUtil.sharingMode,
+        sharingModeUtil.familyIndicesCount,
+        sharingModeUtil.familyIndicesDataPtr,
+        vk::SurfaceTransformFlagBitsKHR::eIdentity,
+        vk::CompositeAlphaFlagBitsKHR::eOpaque,
+        vk::PresentModeKHR::eFifo,
+        true,
+        nullptr);
+
+    m_swapChain = m_device->createSwapchainKHRUnique(swapChainCreateInfo);
+    std::vector<vk::Image> swapChainImages = m_device->getSwapchainImagesKHR(*m_swapChain);
+    m_imageViews.reserve(swapChainImages.size());
+    for (auto image : swapChainImages)
+    {
+        vk::ImageViewCreateInfo imageViewCreateInfo(vk::ImageViewCreateFlags(), image,
+                                                    vk::ImageViewType::e2D, format,
+                                                    vk::ComponentMapping{ vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG,
+                                                                          vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA },
+                                                    vk::ImageSubresourceRange{ vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 });
+        m_imageViews.emplace_back(m_device->createImageViewUnique(imageViewCreateInfo));
+    }
 }
 
 void GLFWRendererVK::initDevice()

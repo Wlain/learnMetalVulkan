@@ -11,6 +11,14 @@
 class GLFWRendererVK : public GLFWRenderer
 {
 public:
+    struct SharingModeUtil
+    {
+        vk::SharingMode sharingMode;
+        uint32_t familyIndicesCount;
+        uint32_t* familyIndicesDataPtr;
+    };
+
+public:
     using GLFWRenderer::GLFWRenderer;
     ~GLFWRendererVK() override;
 
@@ -34,6 +42,7 @@ private:
     vk::UniqueSurfaceKHR m_surface;
     vk::UniqueDevice m_device;
     vk::UniqueSwapchainKHR m_swapChain;
+    std::vector<vk::UniqueImageView> m_imageViews;
 };
 
 #endif // LEARNMETALVULKAN_GLFWRENDERERVK_H
