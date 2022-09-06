@@ -32,7 +32,7 @@ void windowGlfwVK()
     uint32_t height = 480;
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    auto window = glfwCreateWindow(width, height, "Vulkan GLFW Window", nullptr, nullptr);
+    auto window = glfwCreateWindow((int32_t)width, (int32_t)height, "Vulkan GLFW Window", nullptr, nullptr);
     glfwSetKeyCallback(window, key_callback);
     vk::ApplicationInfo appInfo("Hello Triangle", VK_MAKE_VERSION(1, 0, 0), "No Engine", VK_MAKE_VERSION(1, 0, 0), VK_API_VERSION_1_0);
     auto glfwExtensionCount = 0u;
@@ -57,6 +57,7 @@ void windowGlfwVK()
                                                   vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
                                               debugCallback },
         nullptr, dldi);
+    (void)messenger;
     VkSurfaceKHR surfaceTmp;
     if (!glfwCreateWindowSurface(*instance, window, nullptr, &surfaceTmp))
     {
@@ -149,9 +150,9 @@ void windowGlfwVK()
     {
         auto beginInfo = vk::CommandBufferBeginInfo{};
         commandBuffers[i]->begin(beginInfo);
-        vk::ClearColorValue backgroundColor(std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f });
         vk::ClearValue clearValues{};
-        clearValues.color = backgroundColor;
+        static float red = 1.0f;
+        clearValues.color.setFloat32({ red, 0.0f, 0.0f, 1.0f });
         auto renderPassBeginInfo = vk::RenderPassBeginInfo{ renderPass.get(), framebuffers[i].get(), vk::Rect2D{ { 0, 0 }, extent }, 1, &clearValues };
         commandBuffers[i]->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
         commandBuffers[i]->endRenderPass();
@@ -166,6 +167,7 @@ void windowGlfwVK()
         deviceQueue.submit(submitInfo, {});
         auto presentInfo = vk::PresentInfoKHR{ 1, &renderFinishedSemaphore.get(), 1, &swapChain.get(), &imageIndex.value };
         auto result = presentQueue.presentKHR(presentInfo);
+        (void)result;
         device->waitIdle();
     }
 }
