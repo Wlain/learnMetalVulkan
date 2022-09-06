@@ -292,9 +292,8 @@ void windowSdlVK()
     {
         auto beginInfo = vk::CommandBufferBeginInfo{};
         commandBuffers[i]->begin(beginInfo);
-        vk::ClearColorValue backgroundColor(std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f });
         vk::ClearValue clearValues{};
-        clearValues.color = backgroundColor;
+        clearValues.color.setFloat32({1.0f, 0.0f, 0.0f, 1.0f});
         auto renderPassBeginInfo = vk::RenderPassBeginInfo{ renderPass.get(), framebuffers[i].get(), vk::Rect2D{ { 0, 0 }, extent }, 1, &clearValues };
         commandBuffers[i]->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
         commandBuffers[i]->bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
