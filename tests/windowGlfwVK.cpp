@@ -2,151 +2,170 @@
 // Created by william on 2022/9/4.
 //
 
-#include <glad/vulkan.h>
+#include <vulkan/vulkan.hpp>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <iostream>
+#include <set>
 #include <vector>
+
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+}
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                    VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                    void* pUserData)
+{
+    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+    return VK_FALSE;
+}
 
 void windowGlfwVK()
 {
-    // 声明常规实例和设备层和扩展
-    std::vector<const char*> instanceExtensions;
-    std::vector<const char*> deviceExtensions;
-    std::vector<const char*> instanceLayers;
-    // 如果使用debugging，打开回调试层和扩展
-    instanceExtensions.emplace_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-    // 如果想要显示任何东西，swapChain是必须的
-    deviceExtensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    // 初始化glfw
+    uint32_t width = 640;
+    uint32_t height = 480;
     glfwInit();
-    // 检查 vulkan support
-    if (GLFW_FALSE == glfwVulkanSupported())
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    auto window = glfwCreateWindow(width, height, "Vulkan GLFW Window", nullptr, nullptr);
+    glfwSetKeyCallback(window, key_callback);
+    vk::ApplicationInfo appInfo("Hello Triangle", VK_MAKE_VERSION(1, 0, 0), "No Engine", VK_MAKE_VERSION(1, 0, 0), VK_API_VERSION_1_0);
+    auto glfwExtensionCount = 0u;
+    auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    std::vector<const char*> glfwExtensionsVector(glfwExtensions, glfwExtensions + glfwExtensionCount);
+    glfwExtensionsVector.emplace_back("VK_EXT_debug_utils");
+    glfwExtensionsVector.emplace_back("VK_KHR_portability_enumeration");
+    auto layers = std::vector<const char*>{ "VK_LAYER_KHRONOS_validation" };
+    vk::InstanceCreateInfo infos;
+    infos.setPApplicationInfo(&appInfo);
+    infos.setPEnabledExtensionNames(glfwExtensionsVector);
+    infos.setPEnabledLayerNames(layers);
+    infos.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
+    auto instance = vk::createInstanceUnique(infos);
+    // vk::DispatchLoaderDynamic dldi(*instance);
+    auto dldi = vk::DispatchLoaderDynamic(*instance, vkGetInstanceProcAddr);
+    auto messenger = instance->createDebugUtilsMessengerEXTUnique(
+        vk::DebugUtilsMessengerCreateInfoEXT{ {},
+                                              vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+                                                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
+                                              vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+                                                  vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
+                                              debugCallback },
+        nullptr, dldi);
+    VkSurfaceKHR surfaceTmp;
+    if (!glfwCreateWindowSurface(*instance, window, nullptr, &surfaceTmp))
     {
-        glfwTerminate();
+        std::cout << "glfwCreateWindowSurface failed!" << std::endl;
     }
-    gladLoadVulkanUserPtr(nullptr, (GLADuserptrloadfunc)glfwGetInstanceProcAddress, nullptr);
-    // 获取创建窗口所需的实例扩展名
-    uint32_t instanceExtensionCount = 0;
-    const char** instanceExtensionsBuffer = glfwGetRequiredInstanceExtensions(&instanceExtensionCount);
-    for (uint32_t i = 0; i < instanceExtensionCount; ++i)
+    vk::UniqueSurfaceKHR surface(surfaceTmp, *instance);
+
+    auto physicalDevices = instance->enumeratePhysicalDevices();
+    auto physicalDevice = physicalDevices.front();
+    auto queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
+    size_t graphicsQueueFamilyIndex = std::distance(queueFamilyProperties.begin(), std::find_if(queueFamilyProperties.begin(), queueFamilyProperties.end(), [](vk::QueueFamilyProperties const& qfp) {
+                                                        return qfp.queueFlags & vk::QueueFlagBits::eGraphics;
+                                                    }));
+    size_t presentQueueFamilyIndex = 0u;
+    for (auto i = 0ul; i < queueFamilyProperties.size(); i++)
     {
-        instanceExtensions.emplace_back(instanceExtensionsBuffer[i]);
-    }
-    vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionCount, nullptr);
-    if (instanceExtensionCount > 0)
-    {
-        auto* extensions = static_cast<VkExtensionProperties*>(malloc(sizeof(VkExtensionProperties) * instanceExtensionCount));
-        vkEnumerateInstanceExtensionProperties(nullptr, &instanceExtensionCount, extensions);
-        for (int i = 0; i < instanceExtensionCount; i++)
+        if (physicalDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface.get()))
         {
-            if (!strcmp(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME, extensions[i].extensionName))
-            {
-                instanceExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-            }
-        }
-        free(extensions);
-    }
-    // 创建 instance
-    VkApplicationInfo applicationInfo;
-    applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    applicationInfo.apiVersion = VK_API_VERSION_1_0;
-    applicationInfo.applicationVersion = VK_MAKE_VERSION(0, 0, 1);
-    applicationInfo.engineVersion = VK_MAKE_VERSION(0, 0, 1);
-    applicationInfo.pApplicationName = "GLFW with Vulkan";
-    applicationInfo.pEngineName = "GLFW with Vulkan";
-
-    VkInstanceCreateInfo instanceCreateInfo{};
-    instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instanceCreateInfo.pNext = nullptr;
-    instanceCreateInfo.pApplicationInfo = &applicationInfo;
-    instanceCreateInfo.enabledLayerCount = instanceLayers.size();
-    instanceCreateInfo.ppEnabledLayerNames = instanceLayers.data();
-    instanceCreateInfo.enabledExtensionCount = instanceExtensions.size();
-    instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
-    instanceCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-    VkInstance instance;
-    vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
-
-    //  获取gpus
-    uint32_t gpuCount;
-    vkEnumeratePhysicalDevices(instance, &gpuCount, nullptr);
-    std::vector<VkPhysicalDevice> gpus(gpuCount);
-    vkEnumeratePhysicalDevices(instance, &gpuCount, gpus.data());
-
-    // 选择graphics queue family
-    uint32_t queueFamilyCount;
-    vkGetPhysicalDeviceQueueFamilyProperties(gpus[0], &queueFamilyCount, nullptr);
-    std::vector<VkQueueFamilyProperties> familyProperties(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(gpus[0], &queueFamilyCount, familyProperties.data());
-
-    uint32_t graphicsQueueFamily = UINT32_MAX;
-    for (uint32_t i = 0; i < graphicsQueueFamily; ++i)
-    {
-        if (familyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-        {
-            graphicsQueueFamily = i;
+            presentQueueFamilyIndex = i;
         }
     }
-
-    if (graphicsQueueFamily == UINT32_MAX)
+    std::set<uint32_t> uniqueQueueFamilyIndices = { static_cast<uint32_t>(graphicsQueueFamilyIndex),
+                                                    static_cast<uint32_t>(presentQueueFamilyIndex) };
+    std::vector<uint32_t> FamilyIndices = { uniqueQueueFamilyIndices.begin(),
+                                            uniqueQueueFamilyIndices.end() };
+    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+    float queuePriority = 0.0f;
+    queueCreateInfos.reserve(uniqueQueueFamilyIndices.size());
+    for (auto& queueFamilyIndex : uniqueQueueFamilyIndices)
     {
-        glfwTerminate();
+        queueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(queueFamilyIndex), 1, &queuePriority);
     }
+    const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    vk::UniqueDevice device = physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(vk::DeviceCreateFlags(), static_cast<uint32_t>(queueCreateInfos.size()), queueCreateInfos.data(),
+                                                                                     0u, nullptr, static_cast<uint32_t>(deviceExtensions.size()), deviceExtensions.data()));
 
-    // GraphicsQueueFamily 现在包含支持图形的队列族ID
-    // 创建 Vulkan device
-    const float priorities[]{ 1.0f };
-    VkDeviceQueueCreateInfo queueCreateInfo{};
-    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueCount = 1;
-    queueCreateInfo.queueFamilyIndex = graphicsQueueFamily;
-    queueCreateInfo.pQueuePriorities = priorities;
-
-    VkDeviceCreateInfo deviceCreateInfo{};
-    deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceCreateInfo.queueCreateInfoCount = 1;
-    deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
-    deviceCreateInfo.enabledLayerCount = deviceExtensions.size();
-    deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
-
-    VkDevice device = VK_NULL_HANDLE;
-    vkCreateDevice(gpus[0], &deviceCreateInfo, nullptr, &device);
-
-    // 创建 window
-    int width = 800;
-    int height = 600;
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // This tells GLFW to not create an OpenGL context with the window
-    auto window = glfwCreateWindow(width, height, applicationInfo.pApplicationName, nullptr, nullptr);
-
-    // make sure we indeed get the surface size we want.
-    glfwGetFramebufferSize(window, &width, &height);
-
-    // 创建窗口表面,这是针对所有操作系统的一种功能解决方案
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
-    VkResult ret = glfwCreateWindowSurface(instance, window, nullptr, &surface);
-    if (VK_SUCCESS != ret)
+    uint32_t imageCount = 2;
+    struct SM
     {
-        glfwTerminate();
+        vk::SharingMode sharingMode;
+        uint32_t familyIndicesCount;
+        uint32_t* familyIndicesDataPtr;
+    } sharingModeUtil{ (graphicsQueueFamilyIndex != presentQueueFamilyIndex) ?
+                           SM{ vk::SharingMode::eConcurrent, 2u, FamilyIndices.data() } :
+                           SM{ vk::SharingMode::eExclusive, 0u, static_cast<uint32_t*>(nullptr) } };
+    // needed for validation warnings
+    auto format = vk::Format::eB8G8R8A8Unorm;
+    auto extent = vk::Extent2D{ width, height };
+    vk::SwapchainCreateInfoKHR swapChainCreateInfo({}, surface.get(), imageCount, format,
+                                                   vk::ColorSpaceKHR::eSrgbNonlinear, extent, 1, vk::ImageUsageFlagBits::eColorAttachment,
+                                                   sharingModeUtil.sharingMode, sharingModeUtil.familyIndicesCount,
+                                                   sharingModeUtil.familyIndicesDataPtr, vk::SurfaceTransformFlagBitsKHR::eIdentity,
+                                                   vk::CompositeAlphaFlagBitsKHR::eOpaque, vk::PresentModeKHR::eFifo, true, nullptr);
+    auto swapChain = device->createSwapchainKHRUnique(swapChainCreateInfo);
+    std::vector<vk::Image> swapChainImages = device->getSwapchainImagesKHR(swapChain.get());
+    std::vector<vk::UniqueImageView> imageViews;
+    imageViews.reserve(swapChainImages.size());
+    for (auto image : swapChainImages)
+    {
+        vk::ImageViewCreateInfo imageViewCreateInfo(vk::ImageViewCreateFlags(), image,
+                                                    vk::ImageViewType::e2D, format,
+                                                    vk::ComponentMapping{ vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG,
+                                                                          vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA },
+                                                    vk::ImageSubresourceRange{ vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 });
+        imageViews.push_back(device->createImageViewUnique(imageViewCreateInfo));
     }
-    // render loop
-    // -----------
+    auto colorAttachment = vk::AttachmentDescription{ {}, format, vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, {}, {}, {}, vk::ImageLayout::ePresentSrcKHR };
+    auto colourAttachmentRef = vk::AttachmentReference{ 0, vk::ImageLayout::eColorAttachmentOptimal };
+    auto subpass = vk::SubpassDescription{ {}, vk::PipelineBindPoint::eGraphics,
+                                           /*inAttachmentCount*/ 0,
+                                           nullptr,
+                                           1,
+                                           &colourAttachmentRef };
+    auto semaphoreCreateInfo = vk::SemaphoreCreateInfo{};
+    auto imageAvailableSemaphore = device->createSemaphoreUnique(semaphoreCreateInfo);
+    auto renderFinishedSemaphore = device->createSemaphoreUnique(semaphoreCreateInfo);
+    auto subpassDependency = vk::SubpassDependency{ VK_SUBPASS_EXTERNAL, 0, vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eColorAttachmentOutput, {}, vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite };
+    auto renderPass = device->createRenderPassUnique(vk::RenderPassCreateInfo{ {}, 1, &colorAttachment, 1, &subpass, 1, &subpassDependency });
+    auto framebuffers = std::vector<vk::UniqueFramebuffer>(imageCount);
+    for (size_t i = 0; i < imageViews.size(); i++)
+    {
+        framebuffers[i] = device->createFramebufferUnique(vk::FramebufferCreateInfo{
+            {}, *renderPass, 1, &(*imageViews[i]), extent.width, extent.height, 1 });
+    }
+    auto commandPoolUnique = device->createCommandPoolUnique({ {}, static_cast<uint32_t>(graphicsQueueFamilyIndex) });
+    auto commandBuffers = device->allocateCommandBuffersUnique(vk::CommandBufferAllocateInfo(commandPoolUnique.get(), vk::CommandBufferLevel::ePrimary, static_cast<uint32_t>(framebuffers.size())));
+    auto deviceQueue = device->getQueue(static_cast<uint32_t>(graphicsQueueFamilyIndex), 0);
+    auto presentQueue = device->getQueue(static_cast<uint32_t>(presentQueueFamilyIndex), 0);
+    for (size_t i = 0; i < commandBuffers.size(); i++)
+    {
+        auto beginInfo = vk::CommandBufferBeginInfo{};
+        commandBuffers[i]->begin(beginInfo);
+        vk::ClearColorValue backgroundColor(std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f });
+        vk::ClearValue clearValues{};
+        clearValues.color = backgroundColor;
+        auto renderPassBeginInfo = vk::RenderPassBeginInfo{ renderPass.get(), framebuffers[i].get(), vk::Rect2D{ { 0, 0 }, extent }, 1, &clearValues };
+        commandBuffers[i]->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+        commandBuffers[i]->endRenderPass();
+        commandBuffers[i]->end();
+    }
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        // render
-        // 清屏需要的操作：
-        // 从交换链中请求下一个image
-        // 提交命令缓存
-        // 提交“显示image”的请求
+        auto imageIndex = device->acquireNextImageKHR(swapChain.get(), std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore.get(), {});
+        vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        auto submitInfo = vk::SubmitInfo{ 1, &imageAvailableSemaphore.get(), &waitStageMask, 1, &commandBuffers[imageIndex.value].get(), 1, &renderFinishedSemaphore.get() };
+        deviceQueue.submit(submitInfo, {});
+        auto presentInfo = vk::PresentInfoKHR{ 1, &renderFinishedSemaphore.get(), 1, &swapChain.get(), &imageIndex.value };
+        auto result = presentQueue.presentKHR(presentInfo);
+        device->waitIdle();
     }
-    // 销毁surface对象
-    vkDestroySurfaceKHR(instance, surface, nullptr);
-    // 销毁window
-    glfwDestroyWindow(window);
-
-    // 销毁device 和 instance
-    vkDestroyDevice(device, nullptr);
-    vkDestroyInstance(instance, nullptr);
-    // 退出glfwTerminate
-    glfwTerminate();
 }

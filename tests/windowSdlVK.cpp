@@ -89,7 +89,7 @@ void windowSdlVK()
     {
         queueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(queueFamilyIndex), 1, &queuePriority);
     }
-    const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     vk::UniqueDevice device = gpu.createDeviceUnique(
         { vk::DeviceCreateFlags(),
           static_cast<uint32_t>(queueCreateInfos.size()),
@@ -292,9 +292,10 @@ void windowSdlVK()
     {
         auto beginInfo = vk::CommandBufferBeginInfo{};
         commandBuffers[i]->begin(beginInfo);
+        vk::ClearColorValue backgroundColor(std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f });
         vk::ClearValue clearValues{};
-        auto renderPassBeginInfo = vk::RenderPassBeginInfo{ renderPass.get(), framebuffers[i].get(),
-                                                            vk::Rect2D{ { 0, 0 }, extent }, 1, &clearValues };
+        clearValues.color = backgroundColor;
+        auto renderPassBeginInfo = vk::RenderPassBeginInfo{ renderPass.get(), framebuffers[i].get(), vk::Rect2D{ { 0, 0 }, extent }, 1, &clearValues };
         commandBuffers[i]->beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
         commandBuffers[i]->bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline);
         commandBuffers[i]->draw(3, 1, 0, 0);
