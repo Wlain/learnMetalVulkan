@@ -1,15 +1,15 @@
 //
 // Created by william on 2022/9/3.
 //
-extern void windowSdlVK();
+
 extern void windowGlfwMtl();
-extern void windowVK();
-extern void windowGL();
-extern void triangleVK();
+extern void windowSdlVK();
 extern void windowGlfwVK();
+extern void triangleVK();
+extern void windowGL();
 
 int main()
 {
-    windowSdlVK();
+    windowGlfwVK();
     return 0;
 }
