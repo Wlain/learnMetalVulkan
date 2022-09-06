@@ -9,6 +9,6 @@ extern void triangleVK();
 
 int main()
 {
-    windowGL();
+    windowVK();
     return 0;
 }
