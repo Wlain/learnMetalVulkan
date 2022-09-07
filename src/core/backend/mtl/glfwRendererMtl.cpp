@@ -14,7 +14,6 @@ void GLFWRendererMtl::initGlfw()
 
 void GLFWRendererMtl::swapWindow()
 {
-
 }
 
 void GLFWRendererMtl::initSwapChain()

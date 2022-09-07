@@ -5,7 +5,6 @@
 #include "glfwRendererVK.h"
 
 #include <iostream>
-#include <set>
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -28,10 +27,12 @@ void GLFWRendererVK::initInstance()
     glfwExtensionsVector.emplace_back("VK_KHR_portability_enumeration");
     auto layers = std::vector<const char*>{ "VK_LAYER_KHRONOS_validation" };
     vk::InstanceCreateInfo instanceCreateInfo;
-    instanceCreateInfo.setPApplicationInfo(&appInfo);
-    instanceCreateInfo.setPEnabledExtensionNames(glfwExtensionsVector);
-    instanceCreateInfo.setPEnabledLayerNames(layers);
-    instanceCreateInfo.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
+    instanceCreateInfo.setPApplicationInfo(&appInfo)
+        .setPEnabledExtensionNames(glfwExtensionsVector)
+#if defined(TARGET_OS_MAC)
+        .setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR)
+#endif
+        .setPEnabledLayerNames(layers);
     m_instance = vk::createInstanceUnique(instanceCreateInfo);
 }
 
@@ -79,6 +80,9 @@ void GLFWRendererVK::initSwapChain()
 {
     initSurface();
     initPhysicalDevice();
+    initDevice();
+    createSwapChain();
+    initPipeline();
 }
 
 void GLFWRendererVK::initPhysicalDevice()
@@ -92,6 +96,10 @@ void GLFWRendererVK::initPhysicalDevice()
         std::cout << gpu.getProperties().deviceName << "\n";
     }
     m_gpu = gpus.front();
+}
+
+void GLFWRendererVK::initDevice()
+{
     // 创建 Device 和 命令队列
     // 两个命令队列
     // 一个是绘制命令：queueFamilyProperties
@@ -111,20 +119,23 @@ void GLFWRendererVK::initPhysicalDevice()
             presentQueueFamilyIndex = i;
         }
     }
-    std::set<uint32_t> uniqueQueueFamilyIndices = { static_cast<uint32_t>(graphicsQueueFamilyIndex),
-                                                    static_cast<uint32_t>(presentQueueFamilyIndex) };
-    std::vector<uint32_t> familyIndices = { uniqueQueueFamilyIndices.begin(), uniqueQueueFamilyIndices.end() };
+    m_uniqueQueueFamilyIndices = { static_cast<uint32_t>(graphicsQueueFamilyIndex),
+                                   static_cast<uint32_t>(presentQueueFamilyIndex) };
     std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
     float queuePriority = 0.0f;
-    for (auto& queueFamilyIndex : uniqueQueueFamilyIndices)
+    for (auto& queueFamilyIndex : m_uniqueQueueFamilyIndices)
     {
         queueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(queueFamilyIndex), 1, &queuePriority);
     }
     const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_portability_subset" };
     m_device = m_gpu.createDeviceUnique({ vk::DeviceCreateFlags(), static_cast<uint32_t>(queueCreateInfos.size()), queueCreateInfos.data(), 0u, nullptr, static_cast<uint32_t>(deviceExtensions.size()), deviceExtensions.data() });
+}
+
+void GLFWRendererVK::createSwapChain()
+{
     uint32_t imageCount = 2;
-    SharingModeUtil sharingModeUtil{ (graphicsQueueFamilyIndex != presentQueueFamilyIndex) ?
-                                         SharingModeUtil{ vk::SharingMode::eConcurrent, 2u, familyIndices.data() } :
+    SharingModeUtil sharingModeUtil{ (m_uniqueQueueFamilyIndices.begin() != m_uniqueQueueFamilyIndices.end()) ?
+                                         SharingModeUtil{ vk::SharingMode::eConcurrent, 2u, m_uniqueQueueFamilyIndices.data() } :
                                          SharingModeUtil{ vk::SharingMode::eExclusive, 0u, static_cast<uint32_t*>(nullptr) } };
     auto format = vk::Format::eB8G8R8A8Unorm;
     auto extent = vk::Extent2D{ (uint32_t)m_windowWidth, (uint32_t)m_windowHeight };
@@ -147,7 +158,7 @@ void GLFWRendererVK::initPhysicalDevice()
         nullptr);
 
     m_swapChain = m_device->createSwapchainKHRUnique(swapChainCreateInfo);
-    std::vector<vk::Image> swapChainImages = m_device->getSwapchainImagesKHR(*m_swapChain);
+    auto swapChainImages = m_device->getSwapchainImagesKHR(*m_swapChain);
     m_imageViews.reserve(swapChainImages.size());
     for (auto image : swapChainImages)
     {
@@ -160,6 +171,17 @@ void GLFWRendererVK::initPhysicalDevice()
     }
 }
 
-void GLFWRendererVK::initDevice()
+void GLFWRendererVK::initPipeline()
 {
+    vk::GraphicsPipelineCreateInfo info;
+    // set shader config
+    // vertex input
+    // set Assembly
+    // layout
+    // viewport and Scissor
+    // set rasterization
+    // multiSample
+    // depthStencil
+    // color blend
+    // renderPass
 }

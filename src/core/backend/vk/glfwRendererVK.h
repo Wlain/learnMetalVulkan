@@ -31,6 +31,10 @@ public:
     void initPhysicalDevice();
     void initDevice();
     void initSwapChain() override;
+    void initPipeline();
+
+private:
+    void createSwapChain();
 
 private:
     inline static std::string s_appName = "GLFW Vulkan Renderer";
@@ -43,6 +47,8 @@ private:
     vk::UniqueDevice m_device;
     vk::UniqueSwapchainKHR m_swapChain;
     std::vector<vk::UniqueImageView> m_imageViews;
+    std::vector<uint32_t> m_uniqueQueueFamilyIndices;
+    vk::Pipeline m_pipeline;
 };
 
 #endif // LEARNMETALVULKAN_GLFWRENDERERVK_H

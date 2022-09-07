@@ -38,11 +38,12 @@ void windowSdlVK()
         std::cout << layer.layerName << std::endl;
     }
     vk::InstanceCreateInfo infos;
-    infos.setPEnabledExtensionNames(instanceExtensions);
-    infos.setPEnabledLayerNames(layers);
+    infos.setPEnabledExtensionNames(instanceExtensions)
 #if defined(TARGET_OS_MAC)
-    infos.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
+        .setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR)
 #endif
+        .setPEnabledLayerNames(layers);
+
     auto instance = vk::createInstanceUnique(infos);
 
     /// 创建surface,这是针对所有操作系统的一种功能解决方案

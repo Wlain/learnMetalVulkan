@@ -16,5 +16,4 @@ public:
     void initSwapChain() override;
 };
 
-
 #endif // LEARNMETALVULKAN_GLFWRENDERERGL_H

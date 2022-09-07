@@ -43,10 +43,10 @@ void windowGlfwVK()
     glfwExtensionsVector.emplace_back("VK_KHR_get_physical_device_properties2");
     auto layers = std::vector<const char*>{ "VK_LAYER_KHRONOS_validation" };
     vk::InstanceCreateInfo infos;
-    infos.setPApplicationInfo(&appInfo);
-    infos.setPEnabledExtensionNames(glfwExtensionsVector);
-    infos.setPEnabledLayerNames(layers);
-    infos.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
+    infos.setPApplicationInfo(&appInfo)
+        .setPEnabledExtensionNames(glfwExtensionsVector)
+        .setPEnabledLayerNames(layers)
+        .setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
     auto instance = vk::createInstanceUnique(infos);
     // vk::DispatchLoaderDynamic dldi(*instance);
     auto dldi = vk::DispatchLoaderDynamic(*instance, vkGetInstanceProcAddr);
