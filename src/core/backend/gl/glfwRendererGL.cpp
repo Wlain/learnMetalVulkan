@@ -16,7 +16,7 @@ void GLFWRendererGL::initGlfw()
 #endif
 }
 
-void GLFWRendererGL::swapWindow()
+void GLFWRendererGL::swapBuffers()
 {
     glfwSwapBuffers(m_window);
 }
