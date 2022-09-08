@@ -8,6 +8,10 @@
 #include "resourceLimits.h"
 
 #include <glslang/SPIRV/GlslangToSpv.h>
+#include <spirv_cross/spirv_glsl.hpp>
+#include <spirv_cross/spirv_msl.hpp>
+#include <utility>
+
 Shader::Shader()
 {
     LOG_INFO("SpirvGeneratorVersion:{}", glslang::GetSpirvGeneratorVersion());
@@ -62,12 +66,41 @@ std::pair<std::vector<uint32_t>, std::vector<uint32_t>> Shader::getSpvFromGLSL(s
     return { spvVs, spvFs };
 }
 
-std::pair<const char*, const char*> Shader::getMtlShaderFromSpv(std::vector<uint32_t>, std::vector<uint32_t>)
+std::string Shader::getGlShaderFromSpv(std::vector<uint32_t> shader)
 {
-    return {};
+    using namespace spirv_cross;
+    static CompilerGLSL::Options options;
+    CompilerGLSL glsl(std::move(shader));
+    options.version = 450;
+    options.es = true;
+    glsl.set_common_options(options);
+    return glsl.compile();
 }
 
-std::pair<const char*, const char*> Shader::getGlShaderFromSpv(std::vector<uint32_t>, std::vector<uint32_t>)
+std::string Shader::getMslShaderFromSpv(std::vector<uint32_t> shader)
 {
-    return {};
+    using namespace spirv_cross;
+    CompilerMSL msl(shader);
+    auto option = msl.get_msl_options();
+    option.ios_support_base_vertex_instance = true;
+    msl.set_msl_options(option);
+    ShaderResources resources = msl.get_shader_resources();
+    MSLConstexprSampler sampler;
+    sampler.s_address = MSL_SAMPLER_ADDRESS_CLAMP_TO_EDGE;
+    sampler.t_address = MSL_SAMPLER_ADDRESS_CLAMP_TO_EDGE;
+    sampler.r_address = MSL_SAMPLER_ADDRESS_CLAMP_TO_EDGE;
+    sampler.min_filter = MSL_SAMPLER_FILTER_LINEAR;
+    sampler.mag_filter = MSL_SAMPLER_FILTER_LINEAR;
+    for (auto& resource : resources.sampled_images)
+    {
+        uint32_t set = msl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+        uint32_t binding = msl.get_decoration(resource.id, spv::DecorationBinding);
+        msl.remap_constexpr_sampler_by_binding(set, binding, sampler);
+    }
+    auto entryPoint = msl.get_entry_points_and_stages();
+    for (auto& e : entryPoint)
+    {
+        msl.rename_entry_point(e.name, e.execution_model == spv::ExecutionModelVertex ? "vertexShader" : "fragmentShader", e.execution_model);
+    }
+    return msl.compile();
 }

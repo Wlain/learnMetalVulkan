@@ -5,7 +5,7 @@
 #include "glfwRendererVk.h"
 
 #include "shaderVk.h"
-
+#include "commonMacro.h"
 #include <iostream>
 #include <shaderc/shaderc.hpp>
 

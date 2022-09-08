@@ -4,6 +4,4 @@
 
 #include "shaderGL.h"
 
-ShaderGL::ShaderGL()
-{
-}
+ShaderGL::ShaderGL() = default;
