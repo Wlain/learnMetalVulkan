@@ -20,7 +20,8 @@ add_subdirectory(3rdparty/glm)
 add_subdirectory(3rdparty/spdlog)
 # shaderc
 find_library(SHADERC_LIB shaderc_combined $ENV{VULKAN_SDK}/Lib)
-
+# SPIRV-Cross
+add_subdirectory(3rdparty/spirv-cross)
 
 include_directories(
         ${Vulkan_INCLUDE_DIRS}
@@ -36,5 +37,6 @@ include_directories(
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.mm tests/*.cpp)
 add_executable(learnMetalVulkan ${SOURCES})
+file(COPY tests/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-target_link_libraries(learnMetalVulkan ${SDL2_LIBRARY} ${Vulkan_LIBRARIES} ${SHADERC_LIB} glfw glm glew spdlog metal-cpp)
+target_link_libraries(learnMetalVulkan ${SDL2_LIBRARY} ${Vulkan_LIBRARIES} ${SHADERC_LIB} glfw glm glew spdlog metal-cpp spirv-cross-glsl spirv-cross-msl)
