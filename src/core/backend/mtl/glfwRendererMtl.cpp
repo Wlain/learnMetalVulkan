@@ -3,14 +3,20 @@
 //
 
 #include "glfwRendererMtl.h"
+
+#include "deviceMtl.h"
+
+namespace backend
+{
 extern void* createLayer(GLFWwindow* window, double width, double height, void* device);
 
-GLFWRendererMtl::~GLFWRendererMtl() = default;
-
-void GLFWRendererMtl::initGlfw()
+GLFWRendererMtl::GLFWRendererMtl(Device* handle) :
+    GLFWRenderer(handle)
 {
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    m_handleMtl = dynamic_cast<DeviceMtl*>(handle);
 }
+
+GLFWRendererMtl::~GLFWRendererMtl() = default;
 
 void GLFWRendererMtl::swapBuffers()
 {
@@ -37,3 +43,9 @@ MTL::CommandQueue* GLFWRendererMtl::queue() const
 {
     return m_queue;
 }
+
+void GLFWRendererMtl::setPipeline(const Pipeline& pipeline)
+{
+}
+
+} // namespace backend

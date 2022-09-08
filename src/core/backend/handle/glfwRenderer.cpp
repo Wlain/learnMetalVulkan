@@ -4,10 +4,16 @@
 
 #include "glfwRenderer.h"
 
-GLFWRenderer::GLFWRenderer() :
-    m_frameRender([]() {}),
-    m_frameUpdate([](float) {})
+#include "commonMacro.h"
+namespace backend
 {
+GLFWRenderer::GLFWRenderer(Device* handle) :
+    m_frameRender([]() {}),
+    m_frameUpdate([](float) {}),
+    m_handle{ handle }
+{
+    ASSERT(handle);
+    m_window = handle->window();
 }
 
 GLFWRenderer::~GLFWRenderer()
@@ -19,8 +25,6 @@ void GLFWRenderer::init(std::string_view title)
 {
     if (!m_window)
     {
-        glfwInit();
-        initGlfw();
         // glfw window creation
         m_window = glfwCreateWindow(m_windowWidth, m_windowHeight, title.data(), nullptr, nullptr);
         initSwapChain();
@@ -88,3 +92,4 @@ void GLFWRenderer::frame(float deltaTimeSec)
     swapBuffers();
     glfwPollEvents();
 }
+} // namespace backend

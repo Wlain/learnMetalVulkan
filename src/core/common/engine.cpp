@@ -3,7 +3,8 @@
 //
 
 #include "engine.h"
-
+namespace backend
+{
 Engine::Engine(GLFWRenderer& renderer, std::string_view title) :
     m_renderer(renderer)
 {
@@ -39,3 +40,4 @@ void Engine::run()
     };
     m_renderer.startEventLoop();
 }
+} // namespace backend

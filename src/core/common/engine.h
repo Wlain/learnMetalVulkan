@@ -7,7 +7,8 @@
 
 #include "commonHandle.h"
 #include "glfwRenderer.h"
-
+namespace backend
+{
 class Engine
 {
 public:
@@ -22,5 +23,6 @@ private:
     GLFWRenderer& m_renderer;
     std::shared_ptr<CommonHandle> m_handle;
 };
+} // namespace backend
 
 #endif // LEARNMETALVULKAN_ENGINE_H

@@ -1,5 +1,5 @@
 //
-// Created by william on 2022/9/4.
+// Created by cwb on 2022/9/8.
 //
 
 #include "effectBase.h"
@@ -7,11 +7,14 @@
 #include "glfwRendererGL.h"
 #include "deviceGL.h"
 using namespace backend;
-class WindowGL : public EffectBase
+
+class TriangleGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-
+    void initialize() override
+    {
+    }
     void render() override
     {
         static float red = 1.0f;
@@ -19,16 +22,18 @@ public:
         glClearColor(red, 0.0f, 0.0f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
     }
+
+private:
 };
 
-void windowGl()
+void triangleGl()
 {
-    Device::Info info{ HandleGL::RenderType::OpenGL, 640, 480 };
+    Device::Info info{ Device::RenderType::OpenGL, 640, 480 };
     HandleGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
     Engine engine(rendererGl, "OpenGL Example window");
-    auto effect = std::make_shared<WindowGL>(&rendererGl);
+    auto effect = std::make_shared<TriangleGl>(&rendererGl);
     engine.setEffect(effect);
     engine.run();
 }

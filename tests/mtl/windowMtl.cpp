@@ -3,9 +3,10 @@
 //
 
 #include "commonHandle.h"
+#include "deviceMtl.h"
 #include "engine.h"
 #include "glfwRendererMtl.h"
-
+using namespace backend;
 class WindowMtl : public EffectBase
 {
 public:
@@ -42,7 +43,10 @@ private:
 
 void windowMtl()
 {
-    GLFWRendererMtl rendererMtl;
+    Device::Info info{ Device::RenderType::Metal, 640, 480 };
+    DeviceMtl handle(info);
+    handle.init();
+    GLFWRendererMtl rendererMtl(&handle);
     Engine engine(rendererMtl, "Metal Example window");
     auto effect = std::make_shared<WindowMtl>(&rendererMtl);
     engine.setEffect(effect);

@@ -5,18 +5,21 @@
 #ifndef LEARNMETALVULKAN_GLFWRENDERER_H
 #define LEARNMETALVULKAN_GLFWRENDERER_H
 
-#include <GLFW/glfw3.h>
+#include "device.h"
+
 #include <functional>
 #include <glm/glm.hpp>
+#include <GLFW/glfw3.h>
 #include <string>
 #include <string_view>
-
-
+namespace backend
+{
+class Pipeline;
 // glfw抽象
 class GLFWRenderer
 {
 public:
-    GLFWRenderer();
+    explicit GLFWRenderer(Device* handle);
     virtual ~GLFWRenderer();
     GLFWRenderer(const GLFWRenderer&) = delete;
 
@@ -24,9 +27,9 @@ public:
     void init(std::string_view title);
     void startEventLoop();
     GLFWwindow* glfwWindow();
-    virtual void initGlfw() = 0;
     virtual void swapBuffers() = 0;
     virtual void initSwapChain() = 0;
+    virtual void setPipeline(const Pipeline& shader) = 0;
 
 private:
     void frame(float deltaTimeSec);
@@ -44,10 +47,12 @@ protected:
     GLFWwindow* m_window{ nullptr };
     int m_windowWidth{ 800 };
     int m_windowHeight{ 600 };
+    Device* m_handle{ nullptr };
 
 private:
     float m_timePerFrame{ 1.0f / 60.0f };
     bool m_running{ false };
 };
+} // namespace backend
 
 #endif // LEARNMETALVULKAN_GLFWRENDERER_H

@@ -6,14 +6,17 @@
 #define LEARNMETALVULKAN_GLFWRENDERERGL_H
 
 #include "glfwRenderer.h"
+namespace backend
+{
 class GLFWRendererGL : public GLFWRenderer
 {
 public:
     using GLFWRenderer::GLFWRenderer;
     ~GLFWRendererGL() override;
-    void initGlfw() override;
+    void setPipeline(const Pipeline& pipeline) override;
     void swapBuffers() override;
     void initSwapChain() override;
 };
+} // namespace backend
 
 #endif // LEARNMETALVULKAN_GLFWRENDERERGL_H

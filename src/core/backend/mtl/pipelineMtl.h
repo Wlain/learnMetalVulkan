@@ -4,11 +4,14 @@
 
 #ifndef LEARNMETALVULKAN_SHADERMTL_H
 #define LEARNMETALVULKAN_SHADERMTL_H
-#include "shader.h"
-class ShaderMtl : public Shader
+#include "pipeline.h"
+namespace backend
+{
+class PipelineMtl : public Pipeline
 {
 public:
-    ~ShaderMtl() override = default;
+    ~PipelineMtl() override = default;
 };
+} // namespace backend
 
 #endif // LEARNMETALVULKAN_SHADERMTL_H

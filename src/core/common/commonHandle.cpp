@@ -3,7 +3,8 @@
 //
 
 #include "commonHandle.h"
-
+namespace backend
+{
 CommonHandle* CommonHandle::create()
 {
     return new CommonHandle();
@@ -57,3 +58,4 @@ void CommonHandle::setEffect(const std::shared_ptr<EffectBase>& effect)
 {
     m_effects = effect;
 }
+} // namespace backend

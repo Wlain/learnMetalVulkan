@@ -9,13 +9,16 @@
 #define GLFW_INCLUDE_NONE
 #include <Metal/Metal.hpp>
 #include <QuartzCore/QuartzCore.hpp>
-
+namespace backend
+{
+class DeviceMtl;
 class GLFWRendererMtl : public GLFWRenderer
 {
 public:
+    explicit GLFWRendererMtl(Device* handle);
     ~GLFWRendererMtl() override;
-    void initGlfw() override;
     void swapBuffers() override;
+    void setPipeline(const Pipeline& pipeline) override;
     void initSwapChain() override;
     CA::MetalLayer* swapChain() const;
     MTL::Device* gpu() const;
@@ -25,6 +28,8 @@ private:
     CA::MetalLayer* m_swapChain{ nullptr };
     MTL::Device* m_gpu{ nullptr };
     MTL::CommandQueue* m_queue{ nullptr };
+    DeviceMtl* m_handleMtl;
 };
+}
 
 #endif // LEARNMETALVULKAN_GLFWRENDERERMTL_H

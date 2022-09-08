@@ -5,29 +5,18 @@
 #ifndef LEARNMETALVULKAN_GLFWRENDERERVK_H
 #define LEARNMETALVULKAN_GLFWRENDERERVK_H
 #include <vulkan/vulkan.hpp>
-#define GLFW_INCLUDE_NONE
-#include "glfwRenderer.h"
-
+#include "deviceVk.h"
+namespace backend
+{
 class GLFWRendererVK : public GLFWRenderer
 {
 public:
-    struct SharingModeUtil
-    {
-        vk::SharingMode sharingMode;
-        uint32_t familyIndicesCount;
-        uint32_t* familyIndicesDataPtr;
-    };
-
-public:
-    using GLFWRenderer::GLFWRenderer;
+    explicit GLFWRendererVK(Device* handle);
     ~GLFWRendererVK() override;
 
 public:
-    void initGlfw() override;
     void swapBuffers() override;
-    void initInstance();
-    void initDebugger();
-    void initSurface();
+    void setPipeline(const Pipeline& pipeline) override;
     void initPhysicalDevice();
     void initDevice();
     void initSwapChain() override;
@@ -38,13 +27,11 @@ public:
     void commit();
 
 private:
+    void initInstance();
     void createSwapChain();
 
 private:
-    inline static std::string s_appName = "GLFW Vulkan Renderer";
-    inline static std::string s_engineName = "GLFW Vulkan Renderer";
-
-private:
+    DeviceVK* m_handleVk;
     vk::Instance m_instance;
     vk::PhysicalDevice m_gpu;
     vk::SurfaceKHR m_surface;
@@ -68,5 +55,6 @@ private:
     vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
     vk::Extent2D m_extent;
 };
+} // namespace backend
 
 #endif // LEARNMETALVULKAN_GLFWRENDERERVK_H
