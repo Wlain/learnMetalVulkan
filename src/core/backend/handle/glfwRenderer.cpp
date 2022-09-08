@@ -85,6 +85,6 @@ void GLFWRenderer::frame(float deltaTimeSec)
     m_frameRender();
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
     // -------------------------------------------------------------------------------
-    swapWindow();
+    swapBuffers();
     glfwPollEvents();
 }

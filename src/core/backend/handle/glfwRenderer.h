@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 
+
 // glfw抽象
 class GLFWRenderer
 {
@@ -24,7 +25,7 @@ public:
     void startEventLoop();
     GLFWwindow* glfwWindow();
     virtual void initGlfw() = 0;
-    virtual void swapWindow() = 0;
+    virtual void swapBuffers() = 0;
     virtual void initSwapChain() = 0;
 
 private:

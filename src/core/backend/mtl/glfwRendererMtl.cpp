@@ -12,9 +12,8 @@ void GLFWRendererMtl::initGlfw()
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 }
 
-void GLFWRendererMtl::swapWindow()
+void GLFWRendererMtl::swapBuffers()
 {
-
 }
 
 void GLFWRendererMtl::initSwapChain()

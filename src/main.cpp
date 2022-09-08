@@ -1,15 +1,20 @@
 //
 // Created by william on 2022/9/3.
 //
+extern void demoVk();
+extern void windowSdlVk();
+extern void windowSdlMtl();
 
-extern void windowGlfwMtl();
-extern void windowSdlVK();
-extern void windowGlfwVK();
-extern void triangleVK();
-extern void windowGL();
+extern void windowGl();
+extern void windowVk();
+extern void windowMtl();
+
+extern void triangleGl();
+extern void triangleVk();
+extern void triangleMtl();
 
 int main()
 {
-    windowGlfwVK();
+    triangleVk();
     return 0;
 }

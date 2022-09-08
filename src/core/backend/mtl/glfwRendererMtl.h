@@ -15,7 +15,7 @@ class GLFWRendererMtl : public GLFWRenderer
 public:
     ~GLFWRendererMtl() override;
     void initGlfw() override;
-    void swapWindow() override;
+    void swapBuffers() override;
     void initSwapChain() override;
     CA::MetalLayer* swapChain() const;
     MTL::Device* gpu() const;

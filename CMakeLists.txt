@@ -16,13 +16,16 @@ add_subdirectory(3rdparty/glfw)
 add_subdirectory(3rdparty/glew/build/cmake)
 # glm
 add_subdirectory(3rdparty/glm)
-
+# spdlog
+add_subdirectory(3rdparty/spdlog)
 # shaderc
 find_library(SHADERC_LIB shaderc_combined $ENV{VULKAN_SDK}/Lib)
+
 
 include_directories(
         ${Vulkan_INCLUDE_DIRS}
         ${PROJECT_SOURCE_DIR}/src
+        ${PROJECT_SOURCE_DIR}/src/utils
         ${PROJECT_SOURCE_DIR}/src/core/common
         ${PROJECT_SOURCE_DIR}/src/core/backend/handle
         ${PROJECT_SOURCE_DIR}/src/core/backend/gl
@@ -34,4 +37,4 @@ include_directories(
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.mm tests/*.cpp)
 add_executable(learnMetalVulkan ${SOURCES})
 
-target_link_libraries(learnMetalVulkan ${SDL2_LIBRARY} ${Vulkan_LIBRARIES} ${SHADERC_LIB} glfw glm glew metal-cpp)
+target_link_libraries(learnMetalVulkan ${SDL2_LIBRARY} ${Vulkan_LIBRARIES} ${SHADERC_LIB} glfw glm glew spdlog metal-cpp)

@@ -12,9 +12,8 @@ public:
     using GLFWRenderer::GLFWRenderer;
     ~GLFWRendererGL() override;
     void initGlfw() override;
-    void swapWindow() override;
+    void swapBuffers() override;
     void initSwapChain() override;
 };
-
 
 #endif // LEARNMETALVULKAN_GLFWRENDERERGL_H
