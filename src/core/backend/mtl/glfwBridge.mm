@@ -5,7 +5,8 @@
 
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
-
+namespace backend
+{
 void* createLayer(GLFWwindow* window, double width, double height, void* device)
 {
     CGSize size = {};
@@ -27,4 +28,5 @@ void* nextDrawable(void* layer)
 {
     CAMetalLayer* metalLayer = (__bridge CAMetalLayer*)layer;
     return [metalLayer nextDrawable];
+}
 }

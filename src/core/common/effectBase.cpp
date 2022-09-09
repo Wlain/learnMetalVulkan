@@ -3,7 +3,8 @@
 //
 
 #include "effectBase.h"
-
+namespace backend
+{
 EffectBase::EffectBase(GLFWRenderer* renderer) :
     m_renderer(renderer)
 {
@@ -46,3 +47,4 @@ void EffectBase::mouseButtonEvent(int button, int action, int mods)
 void EffectBase::dropEvent(int count, const char** paths)
 {
 }
+} // namespace backend

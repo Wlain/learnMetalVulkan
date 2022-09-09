@@ -4,24 +4,18 @@
 
 #include "glfwRendererGL.h"
 
-GLFWRendererGL::~GLFWRendererGL() = default;
-
-void GLFWRendererGL::initGlfw()
+#include <GLFW/glfw3.h>
+namespace backend
 {
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-}
+GLFWRendererGL::~GLFWRendererGL() = default;
 
 void GLFWRendererGL::swapBuffers()
 {
     glfwSwapBuffers(m_window);
 }
 
-void GLFWRendererGL::initSwapChain()
+void GLFWRendererGL::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
 {
-    glfwMakeContextCurrent(m_window);
 }
+
+} // namespace backend

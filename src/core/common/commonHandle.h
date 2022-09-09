@@ -7,7 +7,8 @@
 #include "effectBase.h"
 
 #include <memory>
-
+namespace backend
+{
 class CommonHandle
 {
 public:
@@ -28,5 +29,6 @@ public:
 protected:
     std::shared_ptr<EffectBase> m_effects;
 };
+} // namespace backend
 
 #endif // LEARNMETALVULKAN_COMMONHANDLE_H

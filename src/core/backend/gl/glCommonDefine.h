@@ -6,8 +6,6 @@
 #define GRAPHICRENDERENGINE_GLCOMMONDEFINE_H
 #include "commonMacro.h"
 
-//#define GLFW_INCLUDE_GLCOREARB
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <sstream>

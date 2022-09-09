@@ -3,37 +3,25 @@
 //
 
 #include "glfwRendererMtl.h"
-extern void* createLayer(GLFWwindow* window, double width, double height, void* device);
+
+#include "deviceMtl.h"
+
+namespace backend
+{
+GLFWRendererMtl::GLFWRendererMtl(Device* handle) :
+    GLFWRenderer(handle)
+{
+    m_handleMtl = dynamic_cast<DeviceMtl*>(handle);
+}
 
 GLFWRendererMtl::~GLFWRendererMtl() = default;
-
-void GLFWRendererMtl::initGlfw()
-{
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-}
 
 void GLFWRendererMtl::swapBuffers()
 {
 }
 
-void GLFWRendererMtl::initSwapChain()
+void GLFWRendererMtl::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
 {
-    m_gpu = MTL::CreateSystemDefaultDevice();
-    m_swapChain = (CA::MetalLayer*)createLayer(m_window, m_windowWidth, m_windowHeight, m_gpu);
-    m_queue = m_gpu->newCommandQueue();
 }
 
-CA::MetalLayer* GLFWRendererMtl::swapChain() const
-{
-    return m_swapChain;
-}
-
-MTL::Device* GLFWRendererMtl::gpu() const
-{
-    return m_gpu;
-}
-
-MTL::CommandQueue* GLFWRendererMtl::queue() const
-{
-    return m_queue;
-}
+} // namespace backend

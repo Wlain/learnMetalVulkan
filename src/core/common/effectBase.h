@@ -6,7 +6,8 @@
 #define LEARNMETALVULKAN_EFFECT_BASE_H
 
 #include "glfwRenderer.h"
-
+namespace backend
+{
 class EffectBase
 {
 public:
@@ -26,5 +27,6 @@ public:
 protected:
     GLFWRenderer* m_renderer{ nullptr };
 };
+} // namespace backend
 
 #endif // LEARNMETALVULKAN_EFFECT_BASE_H
