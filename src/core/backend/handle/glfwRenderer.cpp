@@ -4,10 +4,18 @@
 
 #include "glfwRenderer.h"
 
-GLFWRenderer::GLFWRenderer() :
-    m_frameRender([]() {}),
-    m_frameUpdate([](float) {})
+#include "commonMacro.h"
+
+#include <GLFW/glfw3.h>
+namespace backend
 {
+GLFWRenderer::GLFWRenderer(Device* device) :
+    m_frameRender([]() {}),
+    m_frameUpdate([](float) {}),
+    m_device{ device }
+{
+    ASSERT(device);
+    m_window = device->window();
 }
 
 GLFWRenderer::~GLFWRenderer()
@@ -15,15 +23,11 @@ GLFWRenderer::~GLFWRenderer()
     glfwTerminate();
 }
 
-void GLFWRenderer::init(std::string_view title)
+void GLFWRenderer::init()
 {
     if (!m_window)
     {
-        glfwInit();
-        initGlfw();
         // glfw window creation
-        m_window = glfwCreateWindow(m_windowWidth, m_windowHeight, title.data(), nullptr, nullptr);
-        initSwapChain();
         glfwSetWindowUserPointer(m_window, this);
         glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
             auto* app = reinterpret_cast<GLFWRenderer*>(glfwGetWindowUserPointer(window));
@@ -88,3 +92,9 @@ void GLFWRenderer::frame(float deltaTimeSec)
     swapBuffers();
     glfwPollEvents();
 }
+
+Device* GLFWRenderer::device() const
+{
+    return m_device;
+}
+} // namespace backend

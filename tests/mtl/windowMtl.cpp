@@ -3,9 +3,10 @@
 //
 
 #include "commonHandle.h"
+#include "deviceMtl.h"
 #include "engine.h"
 #include "glfwRendererMtl.h"
-
+using namespace backend;
 class WindowMtl : public EffectBase
 {
 public:
@@ -14,8 +15,9 @@ public:
     void initialize() override
     {
         auto* renderMtl = dynamic_cast<GLFWRendererMtl*>(m_renderer);
-        m_swapChain = renderMtl->swapChain();
-        m_queue = renderMtl->queue();
+        m_device = dynamic_cast<DeviceMtl*>(m_renderer->device());
+        m_swapChain = m_device->swapChain();
+        m_queue = m_device->queue();
     }
 
     void render() override
@@ -38,12 +40,16 @@ private:
     MTL::ClearColor m_color{ 0, 0, 0, 1 };
     CA::MetalLayer* m_swapChain{ nullptr };
     MTL::CommandQueue* m_queue{ nullptr };
+    DeviceMtl* m_device;
 };
 
 void windowMtl()
 {
-    GLFWRendererMtl rendererMtl;
-    Engine engine(rendererMtl, "Metal Example window");
+    Device::Info info{ Device::RenderType::Metal, 640, 480, "Metal Example window"};
+    DeviceMtl device(info);
+    device.init();
+    GLFWRendererMtl rendererMtl(&device);
+    Engine engine(rendererMtl);
     auto effect = std::make_shared<WindowMtl>(&rendererMtl);
     engine.setEffect(effect);
     engine.run();

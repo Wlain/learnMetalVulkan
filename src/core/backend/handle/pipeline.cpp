@@ -2,22 +2,28 @@
 // Created by cwb on 2022/9/8.
 //
 
-#include "shader.h"
+#include "pipeline.h"
 
 #include "commonMacro.h"
+#include "device.h"
 #include "resourceLimits.h"
 
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <spirv_cross/spirv_glsl.hpp>
 #include <spirv_cross/spirv_msl.hpp>
 #include <utility>
+namespace backend
+{
+Pipeline::Pipeline(Device* handle) :
+    m_handle(handle)
+{}
 
-Shader::Shader()
+void Pipeline::build()
 {
     LOG_INFO("SpirvGeneratorVersion:{}", glslang::GetSpirvGeneratorVersion());
 }
 
-std::pair<std::vector<uint32_t>, std::vector<uint32_t>> Shader::getSpvFromGLSL(std::string_view vertexSource, std::string_view fragSource)
+std::pair<std::vector<uint32_t>, std::vector<uint32_t>> Pipeline::getSpvFromGLSL(std::string_view vertexSource, std::string_view fragSource)
 {
     static bool glslangInited = false;
     if (!glslangInited)
@@ -38,7 +44,7 @@ std::pair<std::vector<uint32_t>, std::vector<uint32_t>> Shader::getSpvFromGLSL(s
     bool vertexResult = vertexShader.parse(&glslang::DefaultTBuiltInResource, 450, ECoreProfile, false, false, messages);
     if (!vertexResult)
     {
-        LOG_ERROR("Internal error parsing Vulkan vertex shader:{}, {}", vertexShader.getInfoLog(), vertexShader.getInfoDebugLog());
+        LOG_ERROR("Internal error parsing Vulkan vertex Pipeline:{}, {}", vertexShader.getInfoLog(), vertexShader.getInfoDebugLog());
     }
 
     glslang::TShader fragmentShader(EShLangFragment);
@@ -48,7 +54,7 @@ std::pair<std::vector<uint32_t>, std::vector<uint32_t>> Shader::getSpvFromGLSL(s
                                                false, false, messages);
     if (!fragmentResult)
     {
-        LOG_ERROR("Internal error parsing Vulkan fragment shader:{}, {}", fragmentShader.getInfoLog(), fragmentShader.getInfoDebugLog());
+        LOG_ERROR("Internal error parsing Vulkan fragment Pipeline:{}, {}", fragmentShader.getInfoLog(), fragmentShader.getInfoDebugLog());
     }
     glslang::TProgram program;
     program.addShader(&vertexShader);
@@ -56,7 +62,7 @@ std::pair<std::vector<uint32_t>, std::vector<uint32_t>> Shader::getSpvFromGLSL(s
     bool linkResult = program.link(messages);
     if (!linkResult)
     {
-        LOG_ERROR("Internal error linking Vulkan shaders:{}", program.getInfoLog());
+        LOG_ERROR("Internal error linking Vulkan Pipelines:{}", program.getInfoLog());
     }
     glslang::TIntermediate* vertexStage = program.getIntermediate(EShLangVertex);
     glslang::TIntermediate* fragmentStage = program.getIntermediate(EShLangFragment);
@@ -66,21 +72,21 @@ std::pair<std::vector<uint32_t>, std::vector<uint32_t>> Shader::getSpvFromGLSL(s
     return { spvVs, spvFs };
 }
 
-std::string Shader::getGlShaderFromSpv(std::vector<uint32_t> shader)
+std::string Pipeline::getGlShaderFromSpv(std::vector<uint32_t> Pipeline)
 {
     using namespace spirv_cross;
     static CompilerGLSL::Options options;
-    CompilerGLSL glsl(std::move(shader));
-    options.version = 450;
+    CompilerGLSL glsl(std::move(Pipeline));
+    options.version = 330;
     options.es = true;
     glsl.set_common_options(options);
     return glsl.compile();
 }
 
-std::string Shader::getMslShaderFromSpv(std::vector<uint32_t> shader)
+std::string Pipeline::getMslShaderFromSpv(std::vector<uint32_t> Pipeline)
 {
     using namespace spirv_cross;
-    CompilerMSL msl(shader);
+    CompilerMSL msl(Pipeline);
     auto option = msl.get_msl_options();
     option.ios_support_base_vertex_instance = true;
     msl.set_msl_options(option);
@@ -100,7 +106,8 @@ std::string Shader::getMslShaderFromSpv(std::vector<uint32_t> shader)
     auto entryPoint = msl.get_entry_points_and_stages();
     for (auto& e : entryPoint)
     {
-        msl.rename_entry_point(e.name, e.execution_model == spv::ExecutionModelVertex ? "vertexShader" : "fragmentShader", e.execution_model);
+        msl.rename_entry_point(e.name, e.execution_model == spv::ExecutionModelVertex ? "vertexShader" : "fragmentPipeline", e.execution_model);
     }
     return msl.compile();
 }
+} // namespace backend
