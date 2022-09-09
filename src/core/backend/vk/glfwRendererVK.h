@@ -35,9 +35,7 @@ private:
     vk::Queue m_deviceQueue;
     vk::Queue m_presentQueue;
     std::shared_ptr<PipelineVk> m_pipeline;
-    vk::PipelineLayout m_pipelineLayout;
     std::vector<vk::Framebuffer> m_frameBuffers;
-    std::vector<vk::PipelineShaderStageCreateInfo> m_pipelineShaderStages;
 };
 } // namespace backend
 

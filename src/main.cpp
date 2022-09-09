@@ -15,6 +15,6 @@ extern void triangleMtl();
 
 int main()
 {
-    triangleVk();
+    windowVk();
     return 0;
 }

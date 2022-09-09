@@ -9,7 +9,9 @@
 #include "utils.h"
 
 using namespace backend;
-class Window : public EffectBase
+namespace
+{
+class Triangle : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
@@ -47,15 +49,15 @@ private:
     DeviceVK* m_device{ nullptr };
     std::shared_ptr<PipelineVk> m_pipeline;
 };
-
+} // namespace
 void triangleVk()
 {
-    Device::Info info{ Device::RenderType::Vulkan, 640, 480, "Vulkan Example Test" };
+    Device::Info info{ Device::RenderType::Vulkan, 640, 480, "Vulkan Triangle" };
     DeviceVK handle(info);
     handle.init();
     GLFWRendererVK renderer(&handle);
     Engine engine(renderer);
-    auto effect = std::make_shared<Window>(&renderer);
+    auto effect = std::make_shared<Triangle>(&renderer);
     engine.setEffect(effect);
     engine.run();
 }
