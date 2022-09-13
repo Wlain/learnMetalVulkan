@@ -7,6 +7,7 @@
 #include "commonMacro.h"
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+
 namespace backend
 {
 static VkBool32 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -88,13 +89,14 @@ void DeviceVK::initDevice()
 void DeviceVK::initInstance()
 {
     // initialize the vk::ApplicationInfo structure
-    vk::ApplicationInfo appInfo(s_appName.c_str(), 1, s_engineName.c_str(), 1, VK_API_VERSION_1_1);
+    vk::ApplicationInfo appInfo(m_info.title.c_str(), 1, m_info.title.c_str(), 1, VK_API_VERSION_1_1);
     // initialize the vk::InstanceCreateInfo
     auto glfwExtensionCount = 0u;
     auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
     std::vector<const char*> glfwExtensionsVector(glfwExtensions, glfwExtensions + glfwExtensionCount);
     glfwExtensionsVector.emplace_back("VK_EXT_debug_utils");
     glfwExtensionsVector.emplace_back("VK_KHR_portability_enumeration");
+    glfwExtensionsVector.emplace_back("VK_KHR_get_physical_device_properties2");
     auto layers = std::vector<const char*>{ "VK_LAYER_KHRONOS_validation" };
     vk::InstanceCreateInfo instanceCreateInfo;
     instanceCreateInfo.setPApplicationInfo(&appInfo)
@@ -108,7 +110,7 @@ void DeviceVK::initDebugger()
 {
     // vk::DispatchLoaderDynamic dldi(*instance);
     auto dldi = vk::DispatchLoaderDynamic(m_instance, vkGetInstanceProcAddr);
-    auto messenger = m_instance.createDebugUtilsMessengerEXTUnique(
+    m_messenger = m_instance.createDebugUtilsMessengerEXT(
         vk::DebugUtilsMessengerCreateInfoEXT{ {},
                                               vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
                                                   vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
@@ -116,7 +118,7 @@ void DeviceVK::initDebugger()
                                                   vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
                                               debugCallback },
         nullptr, dldi);
-    (void)messenger;
+    (void)m_messenger;
 }
 
 void DeviceVK::initSurface()

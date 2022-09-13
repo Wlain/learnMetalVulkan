@@ -42,15 +42,12 @@ private:
     void creatSwapChain();
 
 private:
-    inline static std::string s_appName = "GLFW Vulkan Renderer";
-    inline static std::string s_engineName = "GLFW Vulkan Renderer";
-
-private:
     vk::Instance m_instance;
     vk::PhysicalDevice m_gpu;
     vk::Device m_device;
     vk::SurfaceKHR m_surface;
     vk::SwapchainKHR m_swapChain;
+    vk::DebugUtilsMessengerEXT m_messenger;
     std::vector<vk::ImageView> m_imageViews;
     std::vector<uint32_t> m_uniqueQueueFamilyIndices;
 };

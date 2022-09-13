@@ -106,7 +106,7 @@ std::string Pipeline::getMslShaderFromSpv(std::vector<uint32_t> Pipeline)
     auto entryPoint = msl.get_entry_points_and_stages();
     for (auto& e : entryPoint)
     {
-        msl.rename_entry_point(e.name, e.execution_model == spv::ExecutionModelVertex ? "vertexShader" : "fragmentPipeline", e.execution_model);
+        msl.rename_entry_point(e.name, e.execution_model == spv::ExecutionModelVertex ? "vertexShader" : "fragmentShader", e.execution_model);
     }
     return msl.compile();
 }
