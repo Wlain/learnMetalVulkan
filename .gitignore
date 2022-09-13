@@ -34,5 +34,5 @@
 # clion
 compiledDependencies/
 cmake-build-*
-build-*
 .idea/
+build/

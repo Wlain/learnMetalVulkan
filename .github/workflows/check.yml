@@ -1,0 +1,16 @@
+name: Build macOS
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: chmod +x utils/build-xcode.sh
+      - name: Build
+        run: utils/build-xcode.sh
