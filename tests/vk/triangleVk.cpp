@@ -14,6 +14,16 @@ namespace
 class Triangle : public EffectBase
 {
 public:
+    struct
+    {
+        vk::Buffer buf;
+        vk::DeviceMemory mem;
+        vk::PipelineVertexInputStateCreateInfo vertexInput;
+        vk::VertexInputBindingDescription bindings[1];
+        vk::VertexInputAttributeDescription attrs[2];
+    } Vertices;
+
+public:
     using EffectBase::EffectBase;
 
     void initialize() override
