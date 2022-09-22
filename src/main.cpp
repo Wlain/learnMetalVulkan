@@ -13,8 +13,12 @@ extern void triangleGl();
 extern void triangleVk();
 extern void triangleMtl();
 
+extern void textureGl();
+extern void textureVk();
+extern void textureMtl();
+
 int main()
 {
-    demoVk();
+    triangleMtl();
     return 0;
 }

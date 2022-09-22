@@ -32,8 +32,9 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/src/core/backend/gl
         ${PROJECT_SOURCE_DIR}/src/core/backend/vk
         ${PROJECT_SOURCE_DIR}/src/core/backend/mtl
+        ${PROJECT_SOURCE_DIR}/3rdparty
         ${PROJECT_SOURCE_DIR}/3rdparty/glfw/deps
-        ${CMAKE_CURRENT_LIST_DIR}/3rdparty/glew/include)
+        ${PROJECT_SOURCE_DIR}/3rdparty/glew/include)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.mm tests/*.cpp)
 add_executable(learnMetalVulkan ${SOURCES})

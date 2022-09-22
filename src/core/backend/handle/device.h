@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <string>
+
 struct GLFWwindow;
 namespace backend
 {
