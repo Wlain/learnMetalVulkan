@@ -2,7 +2,7 @@
 // Created by william on 2022/9/4.
 //
 
-#include <vulkan/vulkan.hpp>
+#include "vkCommonDefine.h"
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <iostream>

@@ -7,7 +7,7 @@
 #include <set>
 #include <shaderc/shaderc.hpp>
 #include <vector>
-#include <vulkan/vulkan.hpp>
+#include "vkCommonDefine.h"
 
 struct SharingModeUtil
 {

@@ -6,8 +6,7 @@
 #define LEARNMETALVULKAN_HANDLEMTL_H
 #include "device.h"
 #define GLFW_INCLUDE_NONE
-#include <Metal/Metal.hpp>
-#include <QuartzCore/QuartzCore.hpp>
+#include "mtlCommonDefine.h"
 namespace backend
 {
 class DeviceMtl : public Device

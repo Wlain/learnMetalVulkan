@@ -6,7 +6,11 @@
 
 namespace backend
 {
-Texture::Texture() = default;
+Texture::Texture(Device* device)
+{
+
+}
+
 Texture::~Texture() = default;
 
 bool Texture::createWithRGBAData(const char* data, int width, int height)

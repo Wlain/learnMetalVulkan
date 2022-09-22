@@ -25,15 +25,15 @@ public:
     using EffectBase::EffectBase;
     void initialize() override
     {
-        m_render = static_cast<GLFWRendererGL*>(m_renderer);
+        m_render = dynamic_cast<GLFWRendererGL*>(m_renderer);
         buildPipeline();
         buildBuffers();
         buildTexture();
     }
     void buildPipeline()
     {
-        std::string vertSource = getFileContents("shaders/texture.vert");
-        std::string fragShader = getFileContents("shaders/texture.frag");
+        std::string vertSource = getFileContents("shaders/checkTexCoord.vert");
+        std::string fragShader = getFileContents("shaders/checkTexCoord.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_render->device());
         m_pipeline->setProgram(vertSource, fragShader);
     }
@@ -57,20 +57,20 @@ public:
 
     void buildTexture()
     {
-        m_texture = MAKE_SHARED(m_texture);
-        m_texture->createWithFileName("textures/block.jpg", true);
-        LOG_ERROR("textureID: {}", m_texture->textureId());
+        m_texture = MAKE_SHARED(m_texture, m_render->device());
+        m_texture->createWithFileName("textures/test.jpg", true);
+        LOG_ERROR("textureID: {}", m_texture->handle());
     }
 
     void render() override
     {
         static float red = 1.0f;
-        red = red > 1.0 ? 0.0f : red + 0.01f;
+        //        red = red > 1.0 ? 0.0f : red + 0.01f;
         glClearColor(red, 0.0f, 0.0f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
         m_render->setPipeline(m_pipeline);
         // bind Texture
-        glBindTexture(GL_TEXTURE_2D, m_texture->textureId());
+        glBindTexture(GL_TEXTURE_2D, m_texture->handle());
         glBindVertexArray(m_vao);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
@@ -85,7 +85,7 @@ private:
 
 void textureGl()
 {
-    Device::Info info{ Device::RenderType::OpenGL, 640, 480, "OpenGL Example texture" };
+    Device::Info info{ Device::RenderType::OpenGL, 480, 480, "OpenGL Example texture" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);

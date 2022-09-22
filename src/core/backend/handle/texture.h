@@ -4,9 +4,10 @@
 
 #ifndef LEARNMETALVULKAN_TEXTURE_H
 #define LEARNMETALVULKAN_TEXTURE_H
+#include "device.h"
+
 #include <cstdint>
 #include <string>
-
 namespace backend
 {
 class Texture
@@ -45,7 +46,7 @@ public:
     };
 
 public:
-    Texture();
+    Texture(Device* device);
     virtual ~Texture();
 
 public:

@@ -4,16 +4,16 @@
 
 #include "pipelineVk.h"
 
-#include <vulkan/vulkan.hpp>
+#include "vkCommonDefine.h"
 #define GLFW_INCLUDE_NONE
 #include "deviceVk.h"
 #include "glfwRenderer.h"
 namespace backend
 {
-PipelineVk::PipelineVk(Device* handle) :
-    Pipeline(handle)
+PipelineVk::PipelineVk(Device* device) :
+    Pipeline(device)
 {
-    m_deviceVk = dynamic_cast<DeviceVK*>(handle);
+    m_deviceVk = dynamic_cast<DeviceVK*>(device);
 }
 
 PipelineVk::~PipelineVk()

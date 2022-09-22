@@ -1118,7 +1118,7 @@ static void demo_init_vk(struct demo* demo)
     demo->enabled_extension_count = 0;
     demo->enabled_layer_count = 0;
 
-    constexpr char* instance_validation_layers_alt1[] = {
+    constexpr const char* instance_validation_layers_alt1[] = {
         "VK_LAYER_LUNARG_standard_validation"
     };
 

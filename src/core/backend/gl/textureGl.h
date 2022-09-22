@@ -19,10 +19,10 @@ public:
     bool createWithRGBAData(const char* data, int width, int height) override;
     bool createWithFileName(std::string_view filename, bool premultiplyAlpha) override;
     void updateTextureSampler(bool filterSampling, Wrap warp) const;
-    GLuint textureId() const;
+    GLuint handle() const;
 
 private:
-    GLuint m_id;
+    GLuint m_textureHandle;
 };
 } // namespace backend
 

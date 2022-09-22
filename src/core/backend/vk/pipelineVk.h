@@ -6,7 +6,7 @@
 #define LEARNMETALVULKAN_SHADERVK_H
 #include "pipeline.h"
 
-#include <vulkan/vulkan.hpp>
+#include "vkCommonDefine.h"
 namespace backend
 {
 class DeviceVK;
@@ -14,7 +14,7 @@ class DeviceVK;
 class PipelineVk : public Pipeline
 {
 public:
-    explicit PipelineVk(Device* handle);
+    explicit PipelineVk(Device* device);
     ~PipelineVk() override;
     void setProgram(std::string_view vertShader, std::string_view fragSource) override;
     void initVertexBuffer(const VkPipelineVertexInputStateCreateInfo& info);

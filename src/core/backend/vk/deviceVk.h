@@ -7,7 +7,7 @@
 #include "device.h"
 #include "glfwRenderer.h"
 
-#include <vulkan/vulkan.hpp>
+#include "vkCommonDefine.h"
 namespace backend
 {
 class DeviceVK : public Device
