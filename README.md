@@ -31,6 +31,11 @@ Q4:坐标系:
 
 Q5:纹理的坐标系原点
 
-* OpenGL:**右**下角 :因此需要flipY
+* OpenGL:**左*下角 :因此需要flipY
 * Vulkan:**左**上角
 * Metal:**左**上角
+
+Q6:viewport坐标系原点
+* OpenGL:**左*下角 
+* Metal:**左**上角
+* Vulkan:**左**上角
