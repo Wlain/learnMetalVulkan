@@ -20,7 +20,7 @@ public:
     void setPipeline(const std::shared_ptr<Pipeline>& pipeline) override;
     void initCommandBuffer();
     void initSemaphore();
-    void commit();
+    void commit(const vk::Buffer& buffer);
 
 private:
     DeviceVK* m_deviceVk;

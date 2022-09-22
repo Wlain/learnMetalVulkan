@@ -17,9 +17,9 @@ public:
     explicit PipelineVk(Device* handle);
     ~PipelineVk() override;
     void setProgram(std::string_view vertShader, std::string_view fragSource) override;
-    void initVertexBuffer();
+    void initVertexBuffer(const VkPipelineVertexInputStateCreateInfo& info);
     void setAssembly();
-    void setPipelineLayout();
+    void setPipelineLayout(const vk::PipelineLayout& layout);
     void setViewport();
     void setRasterization();
     void setMultisample();

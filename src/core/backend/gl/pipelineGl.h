@@ -4,16 +4,25 @@
 
 #ifndef LEARNMETALVULKAN_SHADERGL_H
 #define LEARNMETALVULKAN_SHADERGL_H
+#include "glCommonDefine.h"
 #include "pipeline.h"
+
 namespace backend
 {
 class PipelineGL : public Pipeline
 {
 public:
     explicit PipelineGL(Device* handle);
-    ~PipelineGL() override = default;
+    ~PipelineGL() override;
     void build() override;
     void setProgram(std::string_view vertShader, std::string_view fragSource) override;
+    GLuint program() const;
+
+private:
+    GLuint compileShader(std::string_view resource, GLenum type);
+
+private:
+    GLuint m_program{ 0 };
 };
 } // namespace backend
 

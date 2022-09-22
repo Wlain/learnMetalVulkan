@@ -7,24 +7,27 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-
+#include <string>
 #define GLAD_VULKAN_IMPLEMENTATION
 #include "glad/vulkan.h"
 #define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+#include "../mesh/globalMeshs.h"
+#include "utils/utils.h"
 
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 #define DEMO_TEXTURE_COUNT 1
 #define VERTEX_BUFFER_BIND_ID 0
 #define APP_SHORT_NAME "tri"
 #define APP_LONG_NAME "The Vulkan Triangle Demo Program"
-
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 #if defined(NDEBUG) && defined(__GNUC__)
     #define U_ASSERT_ONLY __attribute__((unused))
 #else
     #define U_ASSERT_ONLY
 #endif
+
+#include "pipeline.h"
 
 #define ERR_EXIT(err_msg, err_class) \
     do                               \
@@ -34,66 +37,9 @@
         exit(1);                     \
     } while (0)
 
-static const uint32_t fragShaderCode[] = {
-    0x07230203, 0x00010000, 0x00080007, 0x00000014, 0x00000000, 0x00020011, 0x00000001, 0x0006000b,
-    0x00000001, 0x4c534c47, 0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001,
-    0x0007000f, 0x00000004, 0x00000004, 0x6e69616d, 0x00000000, 0x00000009, 0x00000011, 0x00030010,
-    0x00000004, 0x00000007, 0x00030003, 0x00000002, 0x00000190, 0x00090004, 0x415f4c47, 0x735f4252,
-    0x72617065, 0x5f657461, 0x64616873, 0x6f5f7265, 0x63656a62, 0x00007374, 0x00090004, 0x415f4c47,
-    0x735f4252, 0x69646168, 0x6c5f676e, 0x75676e61, 0x5f656761, 0x70303234, 0x006b6361, 0x00040005,
-    0x00000004, 0x6e69616d, 0x00000000, 0x00050005, 0x00000009, 0x61724675, 0x6c6f4367, 0x0000726f,
-    0x00030005, 0x0000000d, 0x00786574, 0x00050005, 0x00000011, 0x63786574, 0x64726f6f, 0x00000000,
-    0x00040047, 0x00000009, 0x0000001e, 0x00000000, 0x00040047, 0x0000000d, 0x00000022, 0x00000000,
-    0x00040047, 0x0000000d, 0x00000021, 0x00000000, 0x00040047, 0x00000011, 0x0000001e, 0x00000000,
-    0x00020013, 0x00000002, 0x00030021, 0x00000003, 0x00000002, 0x00030016, 0x00000006, 0x00000020,
-    0x00040017, 0x00000007, 0x00000006, 0x00000004, 0x00040020, 0x00000008, 0x00000003, 0x00000007,
-    0x0004003b, 0x00000008, 0x00000009, 0x00000003, 0x00090019, 0x0000000a, 0x00000006, 0x00000001,
-    0x00000000, 0x00000000, 0x00000000, 0x00000001, 0x00000000, 0x0003001b, 0x0000000b, 0x0000000a,
-    0x00040020, 0x0000000c, 0x00000000, 0x0000000b, 0x0004003b, 0x0000000c, 0x0000000d, 0x00000000,
-    0x00040017, 0x0000000f, 0x00000006, 0x00000002, 0x00040020, 0x00000010, 0x00000001, 0x0000000f,
-    0x0004003b, 0x00000010, 0x00000011, 0x00000001, 0x00050036, 0x00000002, 0x00000004, 0x00000000,
-    0x00000003, 0x000200f8, 0x00000005, 0x0004003d, 0x0000000b, 0x0000000e, 0x0000000d, 0x0004003d,
-    0x0000000f, 0x00000012, 0x00000011, 0x00050057, 0x00000007, 0x00000013, 0x0000000e, 0x00000012,
-    0x0003003e, 0x00000009, 0x00000013, 0x000100fd, 0x00010038
-};
-
-static const uint32_t vertShaderCode[] = {
-    0x07230203, 0x00010000, 0x00080007, 0x00000018, 0x00000000, 0x00020011, 0x00000001, 0x0006000b,
-    0x00000001, 0x4c534c47, 0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001,
-    0x0009000f, 0x00000000, 0x00000004, 0x6e69616d, 0x00000000, 0x00000009, 0x0000000b, 0x00000010,
-    0x00000014, 0x00030003, 0x00000002, 0x00000190, 0x00090004, 0x415f4c47, 0x735f4252, 0x72617065,
-    0x5f657461, 0x64616873, 0x6f5f7265, 0x63656a62, 0x00007374, 0x00090004, 0x415f4c47, 0x735f4252,
-    0x69646168, 0x6c5f676e, 0x75676e61, 0x5f656761, 0x70303234, 0x006b6361, 0x00040005, 0x00000004,
-    0x6e69616d, 0x00000000, 0x00050005, 0x00000009, 0x63786574, 0x64726f6f, 0x00000000, 0x00040005,
-    0x0000000b, 0x72747461, 0x00000000, 0x00060005, 0x0000000e, 0x505f6c67, 0x65567265, 0x78657472,
-    0x00000000, 0x00060006, 0x0000000e, 0x00000000, 0x505f6c67, 0x7469736f, 0x006e6f69, 0x00030005,
-    0x00000010, 0x00000000, 0x00030005, 0x00000014, 0x00736f70, 0x00040047, 0x00000009, 0x0000001e,
-    0x00000000, 0x00040047, 0x0000000b, 0x0000001e, 0x00000001, 0x00050048, 0x0000000e, 0x00000000,
-    0x0000000b, 0x00000000, 0x00030047, 0x0000000e, 0x00000002, 0x00040047, 0x00000014, 0x0000001e,
-    0x00000000, 0x00020013, 0x00000002, 0x00030021, 0x00000003, 0x00000002, 0x00030016, 0x00000006,
-    0x00000020, 0x00040017, 0x00000007, 0x00000006, 0x00000002, 0x00040020, 0x00000008, 0x00000003,
-    0x00000007, 0x0004003b, 0x00000008, 0x00000009, 0x00000003, 0x00040020, 0x0000000a, 0x00000001,
-    0x00000007, 0x0004003b, 0x0000000a, 0x0000000b, 0x00000001, 0x00040017, 0x0000000d, 0x00000006,
-    0x00000004, 0x0003001e, 0x0000000e, 0x0000000d, 0x00040020, 0x0000000f, 0x00000003, 0x0000000e,
-    0x0004003b, 0x0000000f, 0x00000010, 0x00000003, 0x00040015, 0x00000011, 0x00000020, 0x00000001,
-    0x0004002b, 0x00000011, 0x00000012, 0x00000000, 0x00040020, 0x00000013, 0x00000001, 0x0000000d,
-    0x0004003b, 0x00000013, 0x00000014, 0x00000001, 0x00040020, 0x00000016, 0x00000003, 0x0000000d,
-    0x00050036, 0x00000002, 0x00000004, 0x00000000, 0x00000003, 0x000200f8, 0x00000005, 0x0004003d,
-    0x00000007, 0x0000000c, 0x0000000b, 0x0003003e, 0x00000009, 0x0000000c, 0x0004003d, 0x0000000d,
-    0x00000015, 0x00000014, 0x00050041, 0x00000016, 0x00000017, 0x00000010, 0x00000012, 0x0003003e,
-    0x00000017, 0x00000015, 0x000100fd, 0x00010038
-};
-
 struct texture_object
 {
-    VkSampler sampler;
-
-    VkImage image;
-    VkImageLayout imageLayout;
-
-    VkDeviceMemory mem;
     VkImageView view;
-    int32_t tex_width, tex_height;
 };
 
 VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -147,18 +93,6 @@ struct demo
     swapChainBuffers* buffers;
 
     VkCommandPool cmd_pool;
-
-    struct
-    {
-        VkFormat format;
-
-        VkImage image;
-        VkDeviceMemory mem;
-        VkImageView view;
-    } depth;
-
-    struct texture_object textures[DEMO_TEXTURE_COUNT];
-
     struct
     {
         VkBuffer buf;
@@ -297,82 +231,6 @@ static void demo_flush_init_cmd(struct demo* demo)
     demo->setup_cmd = VK_NULL_HANDLE;
 }
 
-static void demo_set_image_layout(struct demo* demo, VkImage image,
-                                  VkImageAspectFlags aspectMask,
-                                  VkImageLayout old_image_layout,
-                                  VkImageLayout new_image_layout,
-                                  VkAccessFlagBits srcAccessMask)
-{
-    VkResult U_ASSERT_ONLY err;
-
-    if (demo->setup_cmd == VK_NULL_HANDLE)
-    {
-        const VkCommandBufferAllocateInfo cmd = {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .pNext = nullptr,
-            .commandPool = demo->cmd_pool,
-            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = 1,
-        };
-
-        err = vkAllocateCommandBuffers(demo->device, &cmd, &demo->setup_cmd);
-        assert(!err);
-
-        VkCommandBufferBeginInfo cmd_buf_info = {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .pInheritanceInfo = nullptr,
-        };
-        err = vkBeginCommandBuffer(demo->setup_cmd, &cmd_buf_info);
-        assert(!err);
-    }
-
-    VkImageMemoryBarrier image_memory_barrier = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .pNext = nullptr,
-        .srcAccessMask = srcAccessMask,
-        .dstAccessMask = 0,
-        .oldLayout = old_image_layout,
-        .newLayout = new_image_layout,
-        .image = image,
-        .subresourceRange = { aspectMask, 0, 1, 0, 1 }
-    };
-
-    if (new_image_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-    {
-        /* Make sure anything that was copying from this image has completed */
-        image_memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    }
-
-    if (new_image_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-    {
-        image_memory_barrier.dstAccessMask =
-            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    }
-
-    if (new_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-    {
-        image_memory_barrier.dstAccessMask =
-            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    }
-
-    if (new_image_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-    {
-        /* Make sure any Copy or CPU writes to image are flushed */
-        image_memory_barrier.dstAccessMask =
-            VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-    }
-
-    VkImageMemoryBarrier* pmemory_barrier = &image_memory_barrier;
-
-    VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
-    vkCmdPipelineBarrier(demo->setup_cmd, src_stages, dest_stages, 0, 0, nullptr,
-                         0, nullptr, 1, pmemory_barrier);
-}
-
 static void demo_draw_build_cmd(struct demo* demo)
 {
     const VkCommandBufferBeginInfo cmd_buf_info = {
@@ -429,7 +287,8 @@ static void demo_draw_build_cmd(struct demo* demo)
 
     VkViewport viewport;
     memset(&viewport, 0, sizeof(viewport));
-    viewport.height = (float)demo->height;
+    viewport.y = (float)demo->height;
+    viewport.height = -(float)demo->height;
     viewport.width = (float)demo->width;
     viewport.minDepth = (float)0.0f;
     viewport.maxDepth = (float)1.0f;
@@ -743,329 +602,14 @@ static void demo_prepare_buffers(struct demo* demo)
     }
 }
 
-static void demo_prepare_depth(struct demo* demo)
-{
-    const VkFormat depth_format = VK_FORMAT_D16_UNORM;
-    const VkImageCreateInfo image = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .pNext = nullptr,
-        .imageType = VK_IMAGE_TYPE_2D,
-        .format = depth_format,
-        .extent = { demo->width, demo->height, 1 },
-        .mipLevels = 1,
-        .arrayLayers = 1,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        .flags = 0,
-    };
-    VkMemoryAllocateInfo mem_alloc = {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = nullptr,
-        .allocationSize = 0,
-        .memoryTypeIndex = 0,
-    };
-    VkImageViewCreateInfo view = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .pNext = nullptr,
-        .image = VK_NULL_HANDLE,
-        .format = depth_format,
-        .subresourceRange = { .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-                              .baseMipLevel = 0,
-                              .levelCount = 1,
-                              .baseArrayLayer = 0,
-                              .layerCount = 1 },
-        .flags = 0,
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-    };
-
-    VkMemoryRequirements mem_reqs;
-    VkResult U_ASSERT_ONLY err;
-    bool U_ASSERT_ONLY pass;
-
-    demo->depth.format = depth_format;
-
-    /* create image */
-    err = vkCreateImage(demo->device, &image, nullptr, &demo->depth.image);
-    assert(!err);
-
-    /* get memory requirements for this object */
-    vkGetImageMemoryRequirements(demo->device, demo->depth.image, &mem_reqs);
-
-    /* select memory size and type */
-    mem_alloc.allocationSize = mem_reqs.size;
-    pass = memory_type_from_properties(demo, mem_reqs.memoryTypeBits,
-                                       0, /* No requirements */
-                                       &mem_alloc.memoryTypeIndex);
-    assert(pass);
-
-    /* allocate memory */
-    err = vkAllocateMemory(demo->device, &mem_alloc, nullptr, &demo->depth.mem);
-    assert(!err);
-
-    /* bind memory */
-    err =
-        vkBindImageMemory(demo->device, demo->depth.image, demo->depth.mem, 0);
-    assert(!err);
-
-    demo_set_image_layout(demo, demo->depth.image, VK_IMAGE_ASPECT_DEPTH_BIT,
-                          VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                          static_cast<VkAccessFlagBits>(0));
-
-    /* create image view */
-    view.image = demo->depth.image;
-    err = vkCreateImageView(demo->device, &view, nullptr, &demo->depth.view);
-    assert(!err);
-}
-
-static void
-    demo_prepare_texture_image(struct demo* demo, const uint32_t* tex_colors,
-                               struct texture_object* tex_obj, VkImageTiling tiling,
-                               VkImageUsageFlags usage, VkFlags required_props)
-{
-    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    const int32_t tex_width = 2;
-    const int32_t tex_height = 2;
-    VkResult U_ASSERT_ONLY err;
-    bool U_ASSERT_ONLY pass;
-
-    tex_obj->tex_width = tex_width;
-    tex_obj->tex_height = tex_height;
-
-    const VkImageCreateInfo image_create_info = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .pNext = nullptr,
-        .imageType = VK_IMAGE_TYPE_2D,
-        .format = tex_format,
-        .extent = { tex_width, tex_height, 1 },
-        .mipLevels = 1,
-        .arrayLayers = 1,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .tiling = tiling,
-        .usage = usage,
-        .flags = 0,
-        .initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED
-    };
-    VkMemoryAllocateInfo mem_alloc = {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = nullptr,
-        .allocationSize = 0,
-        .memoryTypeIndex = 0,
-    };
-
-    VkMemoryRequirements mem_reqs;
-
-    err =
-        vkCreateImage(demo->device, &image_create_info, nullptr, &tex_obj->image);
-    assert(!err);
-
-    vkGetImageMemoryRequirements(demo->device, tex_obj->image, &mem_reqs);
-
-    mem_alloc.allocationSize = mem_reqs.size;
-    pass =
-        memory_type_from_properties(demo, mem_reqs.memoryTypeBits,
-                                    required_props, &mem_alloc.memoryTypeIndex);
-    assert(pass);
-
-    /* allocate memory */
-    err = vkAllocateMemory(demo->device, &mem_alloc, nullptr, &tex_obj->mem);
-    assert(!err);
-
-    /* bind memory */
-    err = vkBindImageMemory(demo->device, tex_obj->image, tex_obj->mem, 0);
-    assert(!err);
-
-    if (required_props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-    {
-        const VkImageSubresource subres = {
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .mipLevel = 0,
-            .arrayLayer = 0,
-        };
-        VkSubresourceLayout layout;
-        void* data;
-        int32_t x, y;
-
-        vkGetImageSubresourceLayout(demo->device, tex_obj->image, &subres,
-                                    &layout);
-
-        err = vkMapMemory(demo->device, tex_obj->mem, 0,
-                          mem_alloc.allocationSize, 0, &data);
-        assert(!err);
-
-        for (y = 0; y < tex_height; y++)
-        {
-            auto* row = (uint32_t*)((char*)data + layout.rowPitch * y);
-            for (x = 0; x < tex_width; x++)
-                row[x] = tex_colors[(x & 1) ^ (y & 1)];
-        }
-
-        vkUnmapMemory(demo->device, tex_obj->mem);
-    }
-
-    tex_obj->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    demo_set_image_layout(demo, tex_obj->image, VK_IMAGE_ASPECT_COLOR_BIT,
-                          VK_IMAGE_LAYOUT_PREINITIALIZED, tex_obj->imageLayout,
-                          VK_ACCESS_HOST_WRITE_BIT);
-    /* setting the image layout does not reference the actual memory so no need
-     * to add a mem ref */
-}
-
-static void demo_destroy_texture_image(struct demo* demo,
-                                       struct texture_object* tex_obj)
-{
-    /* clean up staging resources */
-    vkDestroyImage(demo->device, tex_obj->image, nullptr);
-    vkFreeMemory(demo->device, tex_obj->mem, nullptr);
-}
-
-static void demo_prepare_textures(struct demo* demo)
-{
-    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
-    VkFormatProperties props;
-    const uint32_t tex_colors[DEMO_TEXTURE_COUNT][2] = {
-        { 0xffff0000, 0xff00ff00 },
-    };
-    uint32_t i;
-    VkResult U_ASSERT_ONLY err;
-
-    vkGetPhysicalDeviceFormatProperties(demo->gpu, tex_format, &props);
-
-    for (i = 0; i < DEMO_TEXTURE_COUNT; i++)
-    {
-        if ((props.linearTilingFeatures &
-             VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) &&
-            !demo->use_staging_buffer)
-        {
-            /* Device can texture using linear textures */
-            demo_prepare_texture_image(
-                demo, tex_colors[i], &demo->textures[i], VK_IMAGE_TILING_LINEAR,
-                VK_IMAGE_USAGE_SAMPLED_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        }
-        else if (props.optimalTilingFeatures &
-                 VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
-        {
-            /* Must use staging buffer to copy linear texture to optimized */
-            texture_object staging_texture{};
-
-            memset(&staging_texture, 0, sizeof(staging_texture));
-            demo_prepare_texture_image(
-                demo, tex_colors[i], &staging_texture, VK_IMAGE_TILING_LINEAR,
-                VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-            demo_prepare_texture_image(
-                demo, tex_colors[i], &demo->textures[i],
-                VK_IMAGE_TILING_OPTIMAL,
-                (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-            demo_set_image_layout(demo, staging_texture.image,
-                                  VK_IMAGE_ASPECT_COLOR_BIT,
-                                  staging_texture.imageLayout,
-                                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                  static_cast<VkAccessFlagBits>(0));
-
-            demo_set_image_layout(demo, demo->textures[i].image,
-                                  VK_IMAGE_ASPECT_COLOR_BIT,
-                                  demo->textures[i].imageLayout,
-                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                  static_cast<VkAccessFlagBits>(0));
-
-            VkImageCopy copy_region = {
-                .srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-                .srcOffset = { 0, 0, 0 },
-                .dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-                .dstOffset = { 0, 0, 0 },
-                .extent = { static_cast<uint32_t>(staging_texture.tex_width),
-                            static_cast<uint32_t>(staging_texture.tex_height), 1 },
-            };
-            vkCmdCopyImage(
-                demo->setup_cmd, staging_texture.image,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, demo->textures[i].image,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
-
-            demo_set_image_layout(demo, demo->textures[i].image,
-                                  VK_IMAGE_ASPECT_COLOR_BIT,
-                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                  demo->textures[i].imageLayout,
-                                  static_cast<VkAccessFlagBits>(0));
-
-            demo_flush_init_cmd(demo);
-
-            demo_destroy_texture_image(demo, &staging_texture);
-        }
-        else
-        {
-            /* Can't support VK_FORMAT_B8G8R8A8_UNORM !? */
-            assert(!"No support for B8G8R8A8_UNORM as texture image format");
-        }
-
-        const VkSamplerCreateInfo sampler = {
-            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-            .pNext = nullptr,
-            .magFilter = VK_FILTER_NEAREST,
-            .minFilter = VK_FILTER_NEAREST,
-            .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
-            .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-            .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-            .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-            .mipLodBias = 0.0f,
-            .anisotropyEnable = VK_FALSE,
-            .maxAnisotropy = 1,
-            .compareOp = VK_COMPARE_OP_NEVER,
-            .minLod = 0.0f,
-            .maxLod = 0.0f,
-            .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
-            .unnormalizedCoordinates = VK_FALSE,
-        };
-        VkImageViewCreateInfo view = {
-            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .pNext = nullptr,
-            .image = VK_NULL_HANDLE,
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = tex_format,
-            .components = {
-                VK_COMPONENT_SWIZZLE_R,
-                VK_COMPONENT_SWIZZLE_G,
-                VK_COMPONENT_SWIZZLE_B,
-                VK_COMPONENT_SWIZZLE_A,
-            },
-            .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
-            .flags = 0,
-        };
-
-        /* create sampler */
-        err = vkCreateSampler(demo->device, &sampler, nullptr,
-                              &demo->textures[i].sampler);
-        assert(!err);
-
-        /* create image view */
-        view.image = demo->textures[i].image;
-        err = vkCreateImageView(demo->device, &view, nullptr,
-                                &demo->textures[i].view);
-        assert(!err);
-    }
-}
-
 static void demo_prepare_vertices(struct demo* demo)
 {
-    // clang-format off
-    const float vb[3][5] = {
-        /*      position             texcoord */
-        { -1.0f, -1.0f,  0.25f,     0.0f, 0.0f },
-        {  1.0f, -1.0f,  0.25f,     1.0f, 0.0f },
-        {  0.0f,  1.0f,  1.0f,      0.5f, 1.0f },
-    };
+    auto size = g_triangleVertex.size() * sizeof(g_triangleVertex[0]);
     // clang-format on
     const VkBufferCreateInfo buf_info = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .pNext = nullptr,
-        .size = sizeof(vb),
+        .size = size,
         .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         .flags = 0,
     };
@@ -1102,7 +646,7 @@ static void demo_prepare_vertices(struct demo* demo)
                       mem_alloc.allocationSize, 0, &data);
     assert(!err);
 
-    memcpy(data, vb, sizeof(vb));
+    memcpy(data, g_triangleVertex.data(), size);
 
     vkUnmapMemory(demo->device, demo->vertices.mem);
 
@@ -1119,18 +663,18 @@ static void demo_prepare_vertices(struct demo* demo)
     demo->vertices.vi.pVertexAttributeDescriptions = demo->vertices.vi_attrs;
 
     demo->vertices.vi_bindings[0].binding = VERTEX_BUFFER_BIND_ID;
-    demo->vertices.vi_bindings[0].stride = sizeof(vb[0]);
+    demo->vertices.vi_bindings[0].stride = sizeof(glm::vec4) * 2;
     demo->vertices.vi_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     demo->vertices.vi_attrs[0].binding = VERTEX_BUFFER_BIND_ID;
     demo->vertices.vi_attrs[0].location = 0;
-    demo->vertices.vi_attrs[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    demo->vertices.vi_attrs[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
     demo->vertices.vi_attrs[0].offset = 0;
 
     demo->vertices.vi_attrs[1].binding = VERTEX_BUFFER_BIND_ID;
     demo->vertices.vi_attrs[1].location = 1;
-    demo->vertices.vi_attrs[1].format = VK_FORMAT_R32G32_SFLOAT;
-    demo->vertices.vi_attrs[1].offset = sizeof(float) * 3;
+    demo->vertices.vi_attrs[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    demo->vertices.vi_attrs[1].offset = sizeof(float) * 4;
 }
 
 static void demo_prepare_descriptor_layout(struct demo* demo)
@@ -1168,7 +712,7 @@ static void demo_prepare_descriptor_layout(struct demo* demo)
 
 static void demo_prepare_render_pass(struct demo* demo)
 {
-    const VkAttachmentDescription attachments[2] = {
+    const VkAttachmentDescription attachments[1] = {
         [0] = {
             .format = demo->format,
             .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -1178,25 +722,11 @@ static void demo_prepare_render_pass(struct demo* demo)
             .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        },
-        [1] = {
-            .format = demo->depth.format,
-            .samples = VK_SAMPLE_COUNT_1_BIT,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            .initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        },
+        }
     };
     const VkAttachmentReference color_reference = {
         .attachment = 0,
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    };
-    const VkAttachmentReference depth_reference = {
-        .attachment = 1,
-        .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
     };
     const VkSubpassDescription subpass = {
         .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1206,14 +736,14 @@ static void demo_prepare_render_pass(struct demo* demo)
         .colorAttachmentCount = 1,
         .pColorAttachments = &color_reference,
         .pResolveAttachments = nullptr,
-        .pDepthStencilAttachment = &depth_reference,
+        .pDepthStencilAttachment = nullptr,
         .preserveAttachmentCount = 0,
         .pPreserveAttachments = nullptr,
     };
     const VkRenderPassCreateInfo rp_info = {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
         .pNext = nullptr,
-        .attachmentCount = 2,
+        .attachmentCount = 1,
         .pAttachments = attachments,
         .subpassCount = 1,
         .pSubpasses = &subpass,
@@ -1226,8 +756,7 @@ static void demo_prepare_render_pass(struct demo* demo)
     assert(!err);
 }
 
-static VkShaderModule
-    demo_prepare_shader_module(struct demo* demo, const void* code, size_t size)
+static VkShaderModule demo_prepare_shader_module(struct demo* demo, const void* code, size_t size)
 {
     VkShaderModuleCreateInfo moduleCreateInfo;
     VkShaderModule module;
@@ -1241,28 +770,16 @@ static VkShaderModule
     moduleCreateInfo.flags = 0;
     err = vkCreateShaderModule(demo->device, &moduleCreateInfo, nullptr, &module);
     assert(!err);
-
     return module;
 }
 
-static VkShaderModule demo_prepare_vs(struct demo* demo)
+static void demo_prepare_shader(struct demo* demo)
 {
-    size_t size = sizeof(vertShaderCode);
-
-    demo->vert_shader_module =
-        demo_prepare_shader_module(demo, vertShaderCode, size);
-
-    return demo->vert_shader_module;
-}
-
-static VkShaderModule demo_prepare_fs(struct demo* demo)
-{
-    size_t size = sizeof(fragShaderCode);
-
-    demo->frag_shader_module =
-        demo_prepare_shader_module(demo, fragShaderCode, size);
-
-    return demo->frag_shader_module;
+    std::string vertSource = getFileContents("shaders/triangle.vert");
+    std::string fragSource = getFileContents("shaders/triangle.frag");
+    auto shaderSrc = backend::Pipeline::getSpvFromGLSL(vertSource, fragSource);
+    demo->vert_shader_module = demo_prepare_shader_module(demo, shaderSrc.first.data(), shaderSrc.first.size() * sizeof(shaderSrc.first[0]));
+    demo->frag_shader_module = demo_prepare_shader_module(demo, shaderSrc.second.data(), shaderSrc.second.size() * sizeof(shaderSrc.second[0]));
 }
 
 static void demo_prepare_pipeline(struct demo* demo)
@@ -1274,7 +791,6 @@ static void demo_prepare_pipeline(struct demo* demo)
     VkPipelineInputAssemblyStateCreateInfo ia;
     VkPipelineRasterizationStateCreateInfo rs;
     VkPipelineColorBlendStateCreateInfo cb;
-    VkPipelineDepthStencilStateCreateInfo ds;
     VkPipelineViewportStateCreateInfo vp;
     VkPipelineMultisampleStateCreateInfo ms;
     VkDynamicState dynamicStateEnables[(VK_DYNAMIC_STATE_STENCIL_REFERENCE - VK_DYNAMIC_STATE_VIEWPORT + 1)];
@@ -1300,7 +816,7 @@ static void demo_prepare_pipeline(struct demo* demo)
     memset(&rs, 0, sizeof(rs));
     rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rs.polygonMode = VK_POLYGON_MODE_FILL;
-    rs.cullMode = VK_CULL_MODE_BACK_BIT;
+    rs.cullMode = VK_CULL_MODE_NONE;
     rs.frontFace = VK_FRONT_FACE_CLOCKWISE;
     rs.depthClampEnable = VK_FALSE;
     rs.rasterizerDiscardEnable = VK_FALSE;
@@ -1325,18 +841,6 @@ static void demo_prepare_pipeline(struct demo* demo)
     dynamicStateEnables[dynamicState.dynamicStateCount++] =
         VK_DYNAMIC_STATE_SCISSOR;
 
-    memset(&ds, 0, sizeof(ds));
-    ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    ds.depthTestEnable = VK_TRUE;
-    ds.depthWriteEnable = VK_TRUE;
-    ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-    ds.depthBoundsTestEnable = VK_FALSE;
-    ds.back.failOp = VK_STENCIL_OP_KEEP;
-    ds.back.passOp = VK_STENCIL_OP_KEEP;
-    ds.back.compareOp = VK_COMPARE_OP_ALWAYS;
-    ds.stencilTestEnable = VK_FALSE;
-    ds.front = ds.back;
-
     memset(&ms, 0, sizeof(ms));
     ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     ms.pSampleMask = nullptr;
@@ -1346,15 +850,15 @@ static void demo_prepare_pipeline(struct demo* demo)
     pipeline.stageCount = 2;
     VkPipelineShaderStageCreateInfo shaderStages[2];
     memset(&shaderStages, 0, 2 * sizeof(VkPipelineShaderStageCreateInfo));
-
+    demo_prepare_shader(demo);
     shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-    shaderStages[0].module = demo_prepare_vs(demo);
+    shaderStages[0].module = demo->vert_shader_module;
     shaderStages[0].pName = "main";
 
     shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    shaderStages[1].module = demo_prepare_fs(demo);
+    shaderStages[1].module = demo->frag_shader_module;
     shaderStages[1].pName = "main";
 
     pipeline.pVertexInputState = &vi;
@@ -1363,7 +867,7 @@ static void demo_prepare_pipeline(struct demo* demo)
     pipeline.pColorBlendState = &cb;
     pipeline.pMultisampleState = &ms;
     pipeline.pViewportState = &vp;
-    pipeline.pDepthStencilState = &ds;
+    pipeline.pDepthStencilState = nullptr;
     pipeline.pStages = shaderStages;
     pipeline.renderPass = demo->render_pass;
     pipeline.pDynamicState = &dynamicState;
@@ -1374,8 +878,7 @@ static void demo_prepare_pipeline(struct demo* demo)
     err = vkCreatePipelineCache(demo->device, &pipelineCache, nullptr,
                                 &demo->pipelineCache);
     assert(!err);
-    err = vkCreateGraphicsPipelines(demo->device, demo->pipelineCache, 1,
-                                    &pipeline, nullptr, &demo->pipeline);
+    err = vkCreateGraphicsPipelines(demo->device, demo->pipelineCache, 1, &pipeline, nullptr, &demo->pipeline);
     assert(!err);
 
     vkDestroyPipelineCache(demo->device, demo->pipelineCache, nullptr);
@@ -1424,8 +927,7 @@ static void demo_prepare_descriptor_set(struct demo* demo)
     memset(&tex_descs, 0, sizeof(tex_descs));
     for (i = 0; i < DEMO_TEXTURE_COUNT; i++)
     {
-        tex_descs[i].sampler = demo->textures[i].sampler;
-        tex_descs[i].imageView = demo->textures[i].view;
+        //        tex_descs[i].imageView = demo->textures[i].view;
         tex_descs[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     }
 
@@ -1441,14 +943,13 @@ static void demo_prepare_descriptor_set(struct demo* demo)
 
 static void demo_prepare_framebuffers(struct demo* demo)
 {
-    VkImageView attachments[2];
-    attachments[1] = demo->depth.view;
+    VkImageView attachments[1];
 
     const VkFramebufferCreateInfo fb_info = {
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
         .pNext = nullptr,
         .renderPass = demo->render_pass,
-        .attachmentCount = 2,
+        .attachmentCount = 1,
         .pAttachments = attachments,
         .width = demo->width,
         .height = demo->height,
@@ -1495,16 +996,12 @@ static void demo_prepare(struct demo* demo)
     assert(!err);
 
     demo_prepare_buffers(demo);
-    demo_prepare_depth(demo);
-    demo_prepare_textures(demo);
     demo_prepare_vertices(demo);
     demo_prepare_descriptor_layout(demo);
     demo_prepare_render_pass(demo);
     demo_prepare_pipeline(demo);
-
     demo_prepare_descriptor_pool(demo);
     demo_prepare_descriptor_set(demo);
-
     demo_prepare_framebuffers(demo);
 }
 
@@ -1584,9 +1081,7 @@ static void demo_create_window(struct demo* demo)
  * Return 1 (true) if all layer names specified in check_names
  * can be found in given layer properties.
  */
-static VkBool32 demo_check_layers(uint32_t check_count, const char** check_names,
-                                  uint32_t layer_count,
-                                  VkLayerProperties* layers)
+static VkBool32 demo_check_layers(uint32_t check_count, const char** check_names, uint32_t layer_count, VkLayerProperties* layers)
 {
     uint32_t i, j;
     for (i = 0; i < check_count; i++)
@@ -2079,8 +1574,8 @@ static void demo_init(struct demo* demo)
     demo_init_connection(demo);
     demo_init_vk(demo);
 
-    demo->width = 300;
-    demo->height = 300;
+    demo->width = 640;
+    demo->height = 480;
     demo->depthStencil = 1.0;
     demo->depthIncrement = -0.01f;
 }
@@ -2113,20 +1608,13 @@ static void demo_cleanup(struct demo* demo)
 
     for (i = 0; i < DEMO_TEXTURE_COUNT; i++)
     {
-        vkDestroyImageView(demo->device, demo->textures[i].view, nullptr);
-        vkDestroyImage(demo->device, demo->textures[i].image, nullptr);
-        vkFreeMemory(demo->device, demo->textures[i].mem, nullptr);
-        vkDestroySampler(demo->device, demo->textures[i].sampler, nullptr);
+        //        vkDestroyImageView(demo->device, demo->textures[i].view, nullptr);
     }
 
     for (i = 0; i < demo->swapChainImageCount; i++)
     {
         vkDestroyImageView(demo->device, demo->buffers[i].view, nullptr);
     }
-
-    vkDestroyImageView(demo->device, demo->depth.view, nullptr);
-    vkDestroyImage(demo->device, demo->depth.image, nullptr);
-    vkFreeMemory(demo->device, demo->depth.mem, nullptr);
 
     vkDestroySwapchainKHR(demo->device, demo->swapChain, nullptr);
     free(demo->buffers);
@@ -2177,22 +1665,10 @@ static void demo_resize(struct demo* demo)
     vkDestroyBuffer(demo->device, demo->vertices.buf, nullptr);
     vkFreeMemory(demo->device, demo->vertices.mem, nullptr);
 
-    for (i = 0; i < DEMO_TEXTURE_COUNT; i++)
-    {
-        vkDestroyImageView(demo->device, demo->textures[i].view, nullptr);
-        vkDestroyImage(demo->device, demo->textures[i].image, nullptr);
-        vkFreeMemory(demo->device, demo->textures[i].mem, nullptr);
-        vkDestroySampler(demo->device, demo->textures[i].sampler, nullptr);
-    }
-
     for (i = 0; i < demo->swapChainImageCount; i++)
     {
         vkDestroyImageView(demo->device, demo->buffers[i].view, nullptr);
     }
-
-    vkDestroyImageView(demo->device, demo->depth.view, nullptr);
-    vkDestroyImage(demo->device, demo->depth.image, nullptr);
-    vkFreeMemory(demo->device, demo->depth.mem, nullptr);
 
     free(demo->buffers);
 

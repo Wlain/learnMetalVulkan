@@ -72,21 +72,26 @@ std::pair<std::vector<uint32_t>, std::vector<uint32_t>> Pipeline::getSpvFromGLSL
     return { spvVs, spvFs };
 }
 
-std::string Pipeline::getGlShaderFromSpv(std::vector<uint32_t> Pipeline)
+std::string Pipeline::getGlShaderFromSpv(std::vector<uint32_t> shader)
 {
     using namespace spirv_cross;
     static CompilerGLSL::Options options;
-    CompilerGLSL glsl(std::move(Pipeline));
+    CompilerGLSL glsl(std::move(shader));
     options.version = 330;
-    options.es = true;
+    options.es = false;
     glsl.set_common_options(options);
     return glsl.compile();
 }
 
-std::string Pipeline::getMslShaderFromSpv(std::vector<uint32_t> Pipeline)
+std::string Pipeline::getMslShaderFromSpv(std::vector<uint32_t> shader)
 {
     using namespace spirv_cross;
-    CompilerMSL msl(Pipeline);
+    CompilerMSL msl(std::move(shader));
+    CompilerGLSL* glsl = &msl;
+    static CompilerGLSL::Options optionsGlsl;
+    optionsGlsl.vertex.flip_vert_y = true;
+    optionsGlsl.vertex.fixup_clipspace = true;
+    glsl->set_common_options(optionsGlsl);
     auto option = msl.get_msl_options();
     option.ios_support_base_vertex_instance = true;
     msl.set_msl_options(option);
@@ -106,7 +111,7 @@ std::string Pipeline::getMslShaderFromSpv(std::vector<uint32_t> Pipeline)
     auto entryPoint = msl.get_entry_points_and_stages();
     for (auto& e : entryPoint)
     {
-        msl.rename_entry_point(e.name, e.execution_model == spv::ExecutionModelVertex ? "vertexShader" : "fragmentShader", e.execution_model);
+        msl.rename_entry_point(e.name, e.execution_model == spv::ExecutionModelVertex ? "vertexMain" : "fragmentMain", e.execution_model);
     }
     return msl.compile();
 }

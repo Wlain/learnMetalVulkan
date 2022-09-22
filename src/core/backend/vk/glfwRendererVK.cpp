@@ -76,7 +76,7 @@ void GLFWRendererVK::initCommandBuffer()
     m_presentQueue = m_device.getQueue(static_cast<uint32_t>(queueFamilyIndices.back()), 0);
 }
 
-void GLFWRendererVK::commit()
+void GLFWRendererVK::commit(const vk::Buffer& buffer)
 {
     for (size_t i = 0; i < m_commandBuffers.size(); i++)
     {
@@ -96,6 +96,7 @@ void GLFWRendererVK::commit()
         };
         m_commandBuffers[i].beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline); // 等价于 opengl的 bind program 和一设定些状态
         m_commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
+        m_commandBuffers[i].bindVertexBuffers( 0, buffer, { 0 } );
         m_commandBuffers[i].draw(3, 1, 0, 0);
         m_commandBuffers[i].endRenderPass();
         m_commandBuffers[i].end();

@@ -11,7 +11,7 @@ namespace backend
 class EffectBase
 {
 public:
-    EffectBase(GLFWRenderer* renderer);
+    explicit EffectBase(GLFWRenderer* renderer);
     virtual ~EffectBase();
     virtual void initialize();
     virtual void resize(int width, int height);

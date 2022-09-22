@@ -56,9 +56,9 @@ void PipelineVk::build()
     m_pipeline = m_deviceVk->handle().createGraphicsPipeline({}, info).value;
 }
 
-void PipelineVk::initVertexBuffer()
+void PipelineVk::initVertexBuffer(const VkPipelineVertexInputStateCreateInfo& info)
 {
-    m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{ {}, 0u, nullptr, 0u, nullptr };
+    m_vertexInputInfo = info;
 }
 
 const vk::RenderPass& PipelineVk::renderPass() const
@@ -101,9 +101,9 @@ void PipelineVk::setAssembly()
     m_assemblyStateCreateInfo = { {}, vk::PrimitiveTopology::eTriangleList, false };
 }
 
-void PipelineVk::setPipelineLayout()
+void PipelineVk::setPipelineLayout(const vk::PipelineLayout& layout)
 {
-    m_pipelineLayout = m_deviceVk->handle().createPipelineLayout({}, nullptr);
+    m_pipelineLayout = layout;//m_deviceVk->handle().createPipelineLayout({}, nullptr);
 }
 
 void PipelineVk::setViewport()
