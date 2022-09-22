@@ -23,6 +23,6 @@ extern void textureMtl();
 
 int main()
 {
-    quadEboMtl();
+    demoVk();
     return 0;
 }
