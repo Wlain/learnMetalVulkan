@@ -12,6 +12,7 @@ class TextureVK : public Texture
 public:
     ~TextureVK() override;
     bool createWithRGBAData(const char* data, int width, int height) override;
+    bool createWithFileName(std::string_view filename, bool premultiplyAlpha) override;
 };
 } // namespace backend
 #endif // LEARNMETALVULKAN_TEXTUREVK_H
