@@ -21,15 +21,16 @@ Q2:OpenGL默认状态值
 * 剔除(CullMode)：Back（剔除背面）：https://registry.khronos.org/OpenGL-Refpages/es3.0/html/glCullFace.xhtml
 * 顶点连接顺序(FrontFacingWinding):CCW（逆时针）
 
-Q3:metal/Metal-NDC坐标是:0-1， openGL-NDC是-1-1。
+Q3:Metal/Vulkan-NDC坐标是:0-1， openGL-NDC是-1-1。
 
 Q4:坐标系:
 
 * OpenGL:右手坐标系
 * Vulkan:左手坐标系
+* Metal:左手坐标系
 
 Q5:纹理的坐标系原点
 
-* OpenGL:右下角
-* Vulkan:左上角
-* Metal:左上角
+* OpenGL:**右**下角 :因此需要flipY
+* Vulkan:**左**上角
+* Metal:**左**上角
