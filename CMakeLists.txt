@@ -39,5 +39,6 @@ include_directories(
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.mm tests/*.cpp)
 add_executable(learnMetalVulkan ${SOURCES})
 file(COPY tests/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY tests/textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(learnMetalVulkan ${SDL2_LIBRARY} ${Vulkan_LIBRARIES} ${SHADERC_LIB} glfw glm glew spdlog metal-cpp spirv-cross-glsl spirv-cross-msl)

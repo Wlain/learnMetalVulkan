@@ -35,11 +35,9 @@ public:
         PixelFormat format = PixelFormat::RGBA;
         SamplerColorspace colorspace = SamplerColorspace::Linear;
         Wrap warp = Wrap::Repeat;
-        std::string name;
         int width = 0;
         int height = 0;
         int channels = 0;
-        uint32_t id = 0;
         uint32_t target = 0;
         bool transparent; // 透明纹理
         bool generateMipmap = false;
@@ -47,17 +45,23 @@ public:
     };
 
 public:
+    Texture();
     virtual ~Texture();
-    virtual bool createWithRGBAData(const char* data, int width, int height);
 
 public:
+    virtual bool createWithFileName(std::string_view filename, bool premultiplyAlpha);
+    virtual bool createWithRGBAData(const char* data, int width, int height);
+    inline bool isPowerOfTwo(unsigned int x)
+    {
+        // 例如：8:1000 7:111  8 & 7 == 0
+        return ((x != 0) && !(x & (x - 1)));
+    }
     inline int width() const { return m_info.width; }
     inline int height() const { return m_info.height; }
-    inline const std::string& name() const { return m_info.name; }
     inline bool isFilterSampling() const { return m_info.filterSampling; }
     inline Wrap warpUv() const { return m_info.warp; }
 
-private:
+protected:
     Info m_info{};
 };
 } // namespace backend

@@ -19,6 +19,6 @@ extern void textureMtl();
 
 int main()
 {
-    triangleMtl();
+    textureGl();
     return 0;
 }
