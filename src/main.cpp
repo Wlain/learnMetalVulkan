@@ -13,12 +13,16 @@ extern void triangleGl();
 extern void triangleVk();
 extern void triangleMtl();
 
+extern void quadEboGl();
+extern void quadEboVk();
+extern void quadEboMtl();
+
 extern void textureGl();
 extern void textureVk();
 extern void textureMtl();
 
 int main()
 {
-    textureMtl();
+    quadEboMtl();
     return 0;
 }

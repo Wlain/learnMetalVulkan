@@ -2,10 +2,6 @@
 // Created by cwb on 2022/9/22.
 //
 
-//
-// Created by cwb on 2022/9/8.
-//
-
 #include "textureGl.h"
 
 #include "../mesh/globalMeshs.h"
@@ -23,6 +19,11 @@ class TextureGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
+    ~TextureGl() override
+    {
+        glDeleteVertexArrays(1, &m_vao);
+        glDeleteBuffers(1, &m_vbo);
+    }
     void initialize() override
     {
         m_render = dynamic_cast<GLFWRendererGL*>(m_renderer);

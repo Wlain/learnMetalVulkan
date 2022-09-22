@@ -19,7 +19,10 @@ class TriangleMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-
+    ~TriangleMtl() override
+    {
+        m_vertexBuffer->release();
+    }
     void initialize() override
     {
         m_device = dynamic_cast<DeviceMtl*>(m_renderer->device());

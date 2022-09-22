@@ -2,8 +2,6 @@
 // Created by cwb on 2022/9/22.
 //
 
-#include "textureMtl.h"
-
 #include "../mesh/globalMeshs.h"
 #include "commonHandle.h"
 #include "commonMacro.h"
@@ -11,20 +9,23 @@
 #include "engine.h"
 #include "glfwRendererMtl.h"
 #include "pipelineMtl.h"
+#include "textureMtl.h"
 #include "utils/utils.h"
 
 #include <glm/glm.hpp>
 #include <vector>
 
 using namespace backend;
-class TextureMtl : public EffectBase
+class QuadMTL : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TextureMtl() override
+    ~QuadMTL() override
     {
         m_vertexBuffer->release();
+        m_indexBuffer->release();
     }
+
     void initialize() override
     {
         m_device = dynamic_cast<DeviceMtl*>(m_renderer->device());
@@ -44,8 +45,8 @@ public:
 
     void buildPipeline()
     {
-        std::string vertSource = getFileContents("shaders/checkTexCoord.vert");
-        std::string fragShader = getFileContents("shaders/checkTexCoord.frag");
+        std::string vertSource = getFileContents("shaders/texture.vert");
+        std::string fragShader = getFileContents("shaders/texture.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_device);
         m_pipeline->setProgram(vertSource, fragShader);
     }
@@ -53,13 +54,17 @@ public:
     void buildBuffers()
     {
         auto vertexDataSize = g_quadVertex.size() * sizeof(g_quadVertex[0]);
+        auto indexDataSize = g_quadIndices.size() * sizeof(g_quadIndices[0]);
         // static:使用MTL::ResourceCPUCacheModeWriteCombined会获得性能提升
         // other:MTLResourceStorageModeShared
         auto usage = MTL::ResourceCPUCacheModeWriteCombined;
         m_vertexBuffer = m_gpu->newBuffer(vertexDataSize, usage);
+        m_indexBuffer = m_gpu->newBuffer(indexDataSize, usage);
         std::memcpy(m_vertexBuffer->contents(), g_quadVertex.data(), vertexDataSize);
+        std::memcpy(m_indexBuffer->contents(), g_quadIndices.data(), indexDataSize);
         // 通知Metal有关已修改的特定数据范围; 这允许Metal仅更新视频内存副本中的特定范围
         m_vertexBuffer->didModifyRange({ 0, m_vertexBuffer->length() });
+        m_indexBuffer->didModifyRange({ 0, m_indexBuffer->length() });
     }
 
     void render() override
@@ -76,7 +81,7 @@ public:
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
         encoder->setVertexBuffer(m_vertexBuffer, 0, 0);
         encoder->setFragmentTexture(m_texture->handle(), 0);
-        encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangleStrip, NS::UInteger(0), NS::UInteger(4));
+        encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexType::IndexTypeUInt16, m_indexBuffer, 0, 0);
         encoder->endEncoding();
         buffer->presentDrawable(surface);
         buffer->commit();
@@ -89,18 +94,19 @@ private:
     DeviceMtl* m_device{ nullptr };
     MTL::Device* m_gpu{ nullptr };
     MTL::Buffer* m_vertexBuffer{ nullptr };
+    MTL::Buffer* m_indexBuffer{ nullptr };
     std::shared_ptr<PipelineMtl> m_pipeline;
     std::shared_ptr<TextureMTL> m_texture;
 };
 
-void textureMtl()
+void quadEboMtl()
 {
-    Device::Info info{ Device::RenderType::Metal, 480, 480, "Metal Example texture" };
+    Device::Info info{ Device::RenderType::Metal, 480, 480, "Metal Example Quad use EBO" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);
     Engine engine(rendererMtl);
-    auto effect = std::make_shared<TextureMtl>(&rendererMtl);
+    auto effect = std::make_shared<QuadMTL>(&rendererMtl);
     engine.setEffect(effect);
     engine.run();
 }
