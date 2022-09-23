@@ -22,8 +22,6 @@
 #define APP_SHORT_NAME "tri"
 #define APP_LONG_NAME "The Vulkan Triangle Demo Program"
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
-
 #if defined(NDEBUG) && defined(__GNUC__)
     #define U_ASSERT_ONLY __attribute__((unused))
 #else
@@ -101,15 +99,6 @@ struct demo
     swapChainBuffers* buffers;
 
     VkCommandPool cmd_pool;
-
-    struct
-    {
-        VkFormat format;
-
-        VkImage image;
-        VkDeviceMemory mem;
-        VkImageView view;
-    } depth;
 
     struct texture_object textures[DEMO_TEXTURE_COUNT];
 
@@ -336,7 +325,7 @@ static void demo_draw_build_cmd(struct demo* demo)
         .pInheritanceInfo = nullptr,
     };
     const VkClearValue clear_values[2] = {
-        [0] = { .color.float32 = { 0.2f, 0.2f, 0.2f, 0.2f } },
+        [0] = { .color.float32 = { 1.0f, 0.0f, 0.0f, 1.0f } },
         [1] = { .depthStencil = { demo->depthStencil, 0 } },
     };
     const VkRenderPassBeginInfo rp_begin = {
@@ -696,92 +685,12 @@ static void demo_prepare_buffers(struct demo* demo)
     }
 }
 
-static void demo_prepare_depth(struct demo* demo)
-{
-    const VkFormat depth_format = VK_FORMAT_D16_UNORM;
-    const VkImageCreateInfo image = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .pNext = nullptr,
-        .imageType = VK_IMAGE_TYPE_2D,
-        .format = depth_format,
-        .extent = { demo->width, demo->height, 1 },
-        .mipLevels = 1,
-        .arrayLayers = 1,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        .flags = 0,
-    };
-    VkMemoryAllocateInfo mem_alloc = {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = nullptr,
-        .allocationSize = 0,
-        .memoryTypeIndex = 0,
-    };
-    VkImageViewCreateInfo view = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .pNext = nullptr,
-        .image = VK_NULL_HANDLE,
-        .format = depth_format,
-        .subresourceRange = { .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-                              .baseMipLevel = 0,
-                              .levelCount = 1,
-                              .baseArrayLayer = 0,
-                              .layerCount = 1 },
-        .flags = 0,
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-    };
-
-    VkMemoryRequirements mem_reqs;
-    VkResult U_ASSERT_ONLY err;
-    bool U_ASSERT_ONLY pass;
-
-    demo->depth.format = depth_format;
-
-    /* create image */
-    err = vkCreateImage(demo->device, &image, nullptr, &demo->depth.image);
-    assert(!err);
-
-    /* get memory requirements for this object */
-    vkGetImageMemoryRequirements(demo->device, demo->depth.image, &mem_reqs);
-
-    /* select memory size and type */
-    mem_alloc.allocationSize = mem_reqs.size;
-    pass = memory_type_from_properties(demo, mem_reqs.memoryTypeBits,
-                                       0, /* No requirements */
-                                       &mem_alloc.memoryTypeIndex);
-    assert(pass);
-
-    /* allocate memory */
-    err = vkAllocateMemory(demo->device, &mem_alloc, nullptr, &demo->depth.mem);
-    assert(!err);
-
-    /* bind memory */
-    err =
-        vkBindImageMemory(demo->device, demo->depth.image, demo->depth.mem, 0);
-    assert(!err);
-
-    demo_set_image_layout(demo, demo->depth.image, VK_IMAGE_ASPECT_DEPTH_BIT,
-                          VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                          static_cast<VkAccessFlagBits>(0));
-
-    /* create image view */
-    view.image = demo->depth.image;
-    err = vkCreateImageView(demo->device, &view, nullptr, &demo->depth.view);
-    assert(!err);
-}
-
-static void demo_prepare_texture_image(struct demo* demo, const uint32_t* tex_colors,
-                                       struct texture_object* tex_obj, VkImageTiling tiling,
-                                       VkImageUsageFlags usage, VkFlags required_props)
+static void demo_prepare_texture_image(struct demo* demo, struct texture_object* tex_obj, VkImageTiling tiling, VkImageUsageFlags usage, VkFlags required_props)
 {
     int width{}, height{}, channels{};
-    int desireComp = STBI_rgb_alpha;
-    stbi_set_unpremultiply_on_load(true);
-    auto pixelsData = getFileContents("textures/test.jpg");
-    auto* textureData = (char*)stbi_load_from_memory((stbi_uc const*)pixelsData.data(), (int)pixelsData.size(), &width, &height, &channels, desireComp);
-    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
+    auto pixelsData = getFileContents("textures/basn0g01.png");
+    auto* textureData = (char*)stbi_load_from_memory((stbi_uc const*)pixelsData.data(), (int)pixelsData.size(), &width, &height, &channels, STBI_rgb_alpha);
+    const VkFormat tex_format = VK_FORMAT_R8G8B8A8_SRGB;
     VkResult U_ASSERT_ONLY err;
     bool U_ASSERT_ONLY pass;
 
@@ -837,10 +746,8 @@ static void demo_prepare_texture_image(struct demo* demo, const uint32_t* tex_co
         };
         VkSubresourceLayout layout;
         void* data;
-        int32_t x, y;
-
         vkGetImageSubresourceLayout(demo->device, tex_obj->image, &subres, &layout);
-        err = vkMapMemory(demo->device, tex_obj->mem, 0, mem_alloc.allocationSize, 0, &data);
+        err = vkMapMemory(demo->device, tex_obj->mem, 0, mem_alloc.allocationSize, 0, (void **)&data);
         assert(!err);
         std::memcpy(data, textureData, sizeof(unsigned char) * width * height * 4);
         vkUnmapMemory(demo->device, tex_obj->mem);
@@ -865,17 +772,13 @@ static void demo_destroy_texture_image(struct demo* demo,
 
 static void demo_prepare_textures(struct demo* demo)
 {
-    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
+    const VkFormat tex_format = VK_FORMAT_R8G8B8A8_SRGB;
     VkFormatProperties props;
-    const uint32_t tex_colors[DEMO_TEXTURE_COUNT][2] = {
-        { 0xffff0000, 0xff00ff00 },
-    };
-    uint32_t i;
     VkResult U_ASSERT_ONLY err;
 
     vkGetPhysicalDeviceFormatProperties(demo->gpu, tex_format, &props);
     /* Device can texture using linear textures */
-    demo_prepare_texture_image(demo, tex_colors[0], &demo->textures[0], VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_SAMPLED_BIT,
+    demo_prepare_texture_image(demo, &demo->textures[0], VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_SAMPLED_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     const VkSamplerCreateInfo sampler = {
@@ -914,12 +817,12 @@ static void demo_prepare_textures(struct demo* demo)
 
     /* create sampler */
     err = vkCreateSampler(demo->device, &sampler, nullptr,
-                          &demo->textures[i].sampler);
+                          &demo->textures[0].sampler);
     assert(!err);
 
     /* create image view */
-    view.image = demo->textures[i].image;
-    err = vkCreateImageView(demo->device, &view, nullptr, &demo->textures[i].view);
+    view.image = demo->textures[0].image;
+    err = vkCreateImageView(demo->device, &view, nullptr, &demo->textures[0].view);
     assert(!err);
 }
 
@@ -1037,7 +940,7 @@ static void demo_prepare_descriptor_layout(struct demo* demo)
 
 static void demo_prepare_render_pass(struct demo* demo)
 {
-    const VkAttachmentDescription attachments[2] = {
+    const VkAttachmentDescription attachments[1] = {
         [0] = {
             .format = demo->format,
             .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -1047,25 +950,11 @@ static void demo_prepare_render_pass(struct demo* demo)
             .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        },
-        [1] = {
-            .format = demo->depth.format,
-            .samples = VK_SAMPLE_COUNT_1_BIT,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-            .initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        },
+        }
     };
     const VkAttachmentReference color_reference = {
         .attachment = 0,
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-    };
-    const VkAttachmentReference depth_reference = {
-        .attachment = 1,
-        .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
     };
     const VkSubpassDescription subpass = {
         .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1075,14 +964,14 @@ static void demo_prepare_render_pass(struct demo* demo)
         .colorAttachmentCount = 1,
         .pColorAttachments = &color_reference,
         .pResolveAttachments = nullptr,
-        .pDepthStencilAttachment = &depth_reference,
+        .pDepthStencilAttachment = nullptr,
         .preserveAttachmentCount = 0,
         .pPreserveAttachments = nullptr,
     };
     const VkRenderPassCreateInfo rp_info = {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
         .pNext = nullptr,
-        .attachmentCount = 2,
+        .attachmentCount = 1,
         .pAttachments = attachments,
         .subpassCount = 1,
         .pSubpasses = &subpass,
@@ -1299,8 +1188,7 @@ static void demo_prepare_descriptor_set(struct demo* demo)
 
 static void demo_prepare_framebuffers(struct demo* demo)
 {
-    VkImageView attachments[2];
-    attachments[1] = demo->depth.view;
+    VkImageView attachments[1];
 
     const VkFramebufferCreateInfo fb_info = {
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -1315,8 +1203,7 @@ static void demo_prepare_framebuffers(struct demo* demo)
     VkResult U_ASSERT_ONLY err;
     uint32_t i;
 
-    demo->framebuffers = (VkFramebuffer*)malloc(demo->swapChainImageCount *
-                                                sizeof(VkFramebuffer));
+    demo->framebuffers = (VkFramebuffer*)malloc(demo->swapChainImageCount * sizeof(VkFramebuffer));
     assert(demo->framebuffers);
 
     for (i = 0; i < demo->swapChainImageCount; i++)
@@ -1353,7 +1240,6 @@ static void demo_prepare(struct demo* demo)
     assert(!err);
 
     demo_prepare_buffers(demo);
-    demo_prepare_depth(demo);
     demo_prepare_textures(demo);
     demo_prepare_vertices(demo);
     demo_prepare_descriptor_layout(demo);
@@ -1884,7 +1770,7 @@ static void demo_init_vk_swapChain(struct demo* demo)
     // supported format will be returned.
     if (formatCount == 1 && surfFormats[0].format == VK_FORMAT_UNDEFINED)
     {
-        demo->format = VK_FORMAT_B8G8R8A8_UNORM;
+        demo->format = VK_FORMAT_R8G8B8A8_SRGB;
     }
     else
     {
@@ -1974,10 +1860,6 @@ static void demo_cleanup(struct demo* demo)
         vkDestroyImageView(demo->device, demo->buffers[i].view, nullptr);
     }
 
-    vkDestroyImageView(demo->device, demo->depth.view, nullptr);
-    vkDestroyImage(demo->device, demo->depth.image, nullptr);
-    vkFreeMemory(demo->device, demo->depth.mem, nullptr);
-
     vkDestroySwapchainKHR(demo->device, demo->swapChain, nullptr);
     free(demo->buffers);
 
@@ -2039,10 +1921,6 @@ static void demo_resize(struct demo* demo)
     {
         vkDestroyImageView(demo->device, demo->buffers[i].view, nullptr);
     }
-
-    vkDestroyImageView(demo->device, demo->depth.view, nullptr);
-    vkDestroyImage(demo->device, demo->depth.image, nullptr);
-    vkFreeMemory(demo->device, demo->depth.mem, nullptr);
 
     free(demo->buffers);
 
