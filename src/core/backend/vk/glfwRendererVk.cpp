@@ -78,29 +78,6 @@ void GLFWRendererVK::initCommandBuffer()
 
 void GLFWRendererVK::commit(const vk::Buffer& buffer)
 {
-    for (size_t i = 0; i < m_commandBuffers.size(); i++)
-    {
-        auto beginInfo = vk::CommandBufferBeginInfo{};
-        beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-        m_commandBuffers[i].begin(beginInfo);
-        vk::ClearValue clearValues{};
-        static float red = 0.0f;
-        red = red > 1.0f ? 0.0f : red + 0.005f;
-        clearValues.color.setFloat32({ red, 0.0f, 0.0f, 1.0f });
-        auto renderPassBeginInfo = vk::RenderPassBeginInfo{
-            m_pipeline->renderPass(),
-            m_frameBuffers[i],
-            { { 0, 0 }, { m_deviceVk->width(), m_deviceVk->height() } },
-            1,
-            &clearValues
-        };
-        m_commandBuffers[i].beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline); // 等价于 opengl的 bind program 和一设定些状态
-        m_commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
-        m_commandBuffers[i].bindVertexBuffers( 0, buffer, { 0 } );
-        m_commandBuffers[i].draw(3, 1, 0, 0);
-        m_commandBuffers[i].endRenderPass();
-        m_commandBuffers[i].end();
-    }
 }
 
 void GLFWRendererVK::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
@@ -113,5 +90,15 @@ void GLFWRendererVK::initSemaphore()
     auto semaphoreCreateInfo = vk::SemaphoreCreateInfo{};
     m_imageAvailableSemaphore = m_deviceVk->handle().createSemaphore(semaphoreCreateInfo);
     m_renderFinishedSemaphore = m_deviceVk->handle().createSemaphore(semaphoreCreateInfo);
+}
+
+const std::vector<vk::CommandBuffer>& GLFWRendererVK::commandBuffers() const
+{
+    return m_commandBuffers;
+}
+
+const std::vector<vk::Framebuffer>& GLFWRendererVK::frameBuffers() const
+{
+    return m_frameBuffers;
 }
 } // namespace backend

@@ -21,7 +21,7 @@ static const std::vector<TriangleVertex> g_triangleVertex{
     { { 0.0f, 0.5f, 0.0f, 1.0 }, { 0.0f, 0.0f, 1.0, 1.0f } }
 };
 
-struct alignas(16) textureVertex
+struct alignas(16) TextureVertex
 {
     glm::vec4 position;
     glm::vec4 texCoord;

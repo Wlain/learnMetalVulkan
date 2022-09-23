@@ -20,9 +20,9 @@ extern void quadEboMtl();
 extern void textureGl();
 extern void textureVk();
 extern void textureMtl();
-#include "commonMacro.h"
+
 int main()
 {
-    demoVk();
+    triangleVk();
     return 0;
 }

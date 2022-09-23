@@ -15,7 +15,7 @@ static VkBool32 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeve
                               const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                               void* pUserData)
 {
-    LOG_ERROR("validation layer: {}", pCallbackData->pMessage);
+    LOG_INFO("validation layer:\n {}", pCallbackData->pMessage);
     return VK_FALSE;
 }
 
@@ -196,5 +196,34 @@ const std::vector<uint32_t>& DeviceVK::uniqueQueueFamilyIndices() const
 const std::vector<vk::ImageView>& DeviceVK::imageViews() const
 {
     return m_imageViews;
+}
+
+uint32_t DeviceVK::getMemoryType(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32* memoryTypeFound) const
+{
+    for (uint32_t i = 0; i < m_gpu.getMemoryProperties().memoryTypeCount; i++)
+    {
+        if ((bits & 1) == 1)
+        {
+            if ((m_gpu.getMemoryProperties().memoryTypes[i].propertyFlags & properties) == properties)
+            {
+                if (memoryTypeFound)
+                {
+                    *memoryTypeFound = true;
+                }
+                return i;
+            }
+        }
+        bits >>= 1;
+    }
+
+    if (memoryTypeFound)
+    {
+        *memoryTypeFound = false;
+        return 0;
+    }
+    else
+    {
+        throw std::runtime_error("Could not find a matching memory type");
+    }
 }
 } // namespace backend

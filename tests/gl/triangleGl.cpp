@@ -46,10 +46,10 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(g_triangleVertex[0]) * g_triangleVertex.size(), g_triangleVertex.data(), GL_STATIC_DRAW);
         // position attribute
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)nullptr);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(TriangleVertex), (void*)nullptr);
         glEnableVertexAttribArray(0);
         // color attribute
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(4 * sizeof(float)));
+        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(TriangleVertex), (void*)(4 * sizeof(float)));
         glEnableVertexAttribArray(1);
     }
 

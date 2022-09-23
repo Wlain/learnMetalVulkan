@@ -21,6 +21,8 @@ public:
     void initCommandBuffer();
     void initSemaphore();
     void commit(const vk::Buffer& buffer);
+    const std::vector<vk::Framebuffer>& frameBuffers() const;
+    const std::vector<vk::CommandBuffer>& commandBuffers() const;
 
 private:
     DeviceVK* m_deviceVk;
