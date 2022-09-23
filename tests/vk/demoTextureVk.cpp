@@ -690,7 +690,7 @@ static void demo_prepare_texture_image(struct demo* demo, struct texture_object*
     int width{}, height{}, channels{};
     auto pixelsData = getFileContents("textures/test.jpg");
     auto* textureData = (char*)stbi_load_from_memory((stbi_uc const*)pixelsData.data(), (int)pixelsData.size(), &width, &height, &channels, STBI_rgb_alpha);
-    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_SRGB;
+    const VkFormat tex_format = VK_FORMAT_R8G8B8A8_SRGB;
     VkResult U_ASSERT_ONLY err;
     bool U_ASSERT_ONLY pass;
 
