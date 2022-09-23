@@ -8,7 +8,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
-#define GLAD_VULKAN_IMPLEMENTATION
 #include "glad/vulkan.h"
 #define GLFW_INCLUDE_NONE
 #include "../mesh/globalMeshs.h"
@@ -42,19 +41,10 @@ struct texture_object
     VkImageView view;
 };
 
-VKAPI_ATTR VkBool32 VKAPI_CALL
-    BreakCallback(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
+extern VKAPI_ATTR VkBool32 VKAPI_CALL BreakCallback(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
                   uint64_t srcObject, size_t location, int32_t msgCode,
                   const char* pLayerPrefix, const char* pMsg,
-                  void* pUserData)
-{
-#ifdef _WIN32
-    DebugBreak();
-#else
-    raise(SIGTRAP);
-#endif
-    return false;
-}
+                  void* pUserData);
 
 typedef struct
 {
@@ -131,43 +121,9 @@ struct demo
     uint32_t queue_count;
 };
 
-VKAPI_ATTR VkBool32 VKAPI_CALL
-    dbgFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
+extern VKAPI_ATTR VkBool32 VKAPI_CALL dbgFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
             uint64_t srcObject, size_t location, int32_t msgCode,
-            const char* pLayerPrefix, const char* pMsg, void* pUserData)
-{
-    char* message = (char*)malloc(strlen(pMsg) + 100);
-
-    assert(message);
-
-    if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
-    {
-        sprintf(message, "ERROR: [%s] Code %d : %s", pLayerPrefix, msgCode,
-                pMsg);
-    }
-    else if (msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
-    {
-        sprintf(message, "WARNING: [%s] Code %d : %s", pLayerPrefix, msgCode,
-                pMsg);
-    }
-    else
-    {
-        return false;
-    }
-
-    printf("%s\n", message);
-    fflush(stdout);
-    free(message);
-
-    /*
-     * false indicates that layer should not bail-out of an
-     * API call that had validation failures. This may mean that the
-     * app dies inside the driver due to invalid parameter(s).
-     * That's what would happen without validation layers, so we'll
-     * keep that behavior here.
-     */
-    return false;
-}
+            const char* pLayerPrefix, const char* pMsg, void* pUserData);
 
 // Forward declaration:
 static void demo_resize(struct demo* demo);
@@ -620,18 +576,18 @@ static void demo_prepare_vertices(struct demo* demo)
     demo->vertices.vi.pVertexAttributeDescriptions = demo->vertices.vi_attrs;
 
     demo->vertices.vi_bindings[0].binding = VERTEX_BUFFER_BIND_ID;
-    demo->vertices.vi_bindings[0].stride = sizeof(glm::vec4) * 2;
+    demo->vertices.vi_bindings[0].stride = sizeof(TriangleVertex);
     demo->vertices.vi_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     demo->vertices.vi_attrs[0].binding = VERTEX_BUFFER_BIND_ID;
     demo->vertices.vi_attrs[0].location = 0;
     demo->vertices.vi_attrs[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    demo->vertices.vi_attrs[0].offset = 0;
+    demo->vertices.vi_attrs[0].offset = offsetof(TriangleVertex, position);
 
     demo->vertices.vi_attrs[1].binding = VERTEX_BUFFER_BIND_ID;
     demo->vertices.vi_attrs[1].location = 1;
     demo->vertices.vi_attrs[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    demo->vertices.vi_attrs[1].offset = sizeof(float) * 4;
+    demo->vertices.vi_attrs[1].offset = offsetof(TriangleVertex, color);
 }
 
 static void demo_prepare_descriptor_layout(struct demo* demo)
