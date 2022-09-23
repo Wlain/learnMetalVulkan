@@ -688,9 +688,9 @@ static void demo_prepare_buffers(struct demo* demo)
 static void demo_prepare_texture_image(struct demo* demo, struct texture_object* tex_obj, VkImageTiling tiling, VkImageUsageFlags usage, VkFlags required_props)
 {
     int width{}, height{}, channels{};
-    auto pixelsData = getFileContents("textures/basn0g01.png");
+    auto pixelsData = getFileContents("textures/test.jpg");
     auto* textureData = (char*)stbi_load_from_memory((stbi_uc const*)pixelsData.data(), (int)pixelsData.size(), &width, &height, &channels, STBI_rgb_alpha);
-    const VkFormat tex_format = VK_FORMAT_R8G8B8A8_SRGB;
+    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_SRGB;
     VkResult U_ASSERT_ONLY err;
     bool U_ASSERT_ONLY pass;
 
@@ -747,7 +747,7 @@ static void demo_prepare_texture_image(struct demo* demo, struct texture_object*
         VkSubresourceLayout layout;
         void* data;
         vkGetImageSubresourceLayout(demo->device, tex_obj->image, &subres, &layout);
-        err = vkMapMemory(demo->device, tex_obj->mem, 0, mem_alloc.allocationSize, 0, (void **)&data);
+        err = vkMapMemory(demo->device, tex_obj->mem, 0, mem_alloc.allocationSize, 0, (void**)&data);
         assert(!err);
         std::memcpy(data, textureData, sizeof(unsigned char) * width * height * 4);
         vkUnmapMemory(demo->device, tex_obj->mem);
@@ -816,8 +816,7 @@ static void demo_prepare_textures(struct demo* demo)
     };
 
     /* create sampler */
-    err = vkCreateSampler(demo->device, &sampler, nullptr,
-                          &demo->textures[0].sampler);
+    err = vkCreateSampler(demo->device, &sampler, nullptr, &demo->textures[0].sampler);
     assert(!err);
 
     /* create image view */
@@ -832,7 +831,7 @@ static void demo_prepare_vertices(struct demo* demo)
     const float vb[6][5] = {
         /*      position             texcoord */
         {  1.0f,  1.0f,  0.0f,      1.f, 1.0f },
-        { -1.0f, 1.0f,  0.0f,     0.0f, 1.0f },
+        { -1.0f, 1.0f,  0.0f,      0.0f, 1.0f },
         { -1.0f, -1.0f,  0.0f,     0.0f, 0.0f },
         { -1.0f, -1.0f,  0.0f,     0.0f, 0.0f },
         {  1.0f, -1.0f,  0.0f,     1.0f, 0.0f },
