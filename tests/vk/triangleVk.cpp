@@ -29,8 +29,8 @@ public:
         m_deviceVK = dynamic_cast<DeviceVK*>(m_renderer->device());
         m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
         m_device = m_deviceVK->handle();
-        buildPipeline();
         buildBuffers();
+        buildPipeline();
         m_render->initSemaphore();
         m_render->initCommandBuffer();
     }

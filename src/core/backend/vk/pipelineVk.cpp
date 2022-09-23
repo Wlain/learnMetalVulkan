@@ -103,7 +103,7 @@ void PipelineVk::setAssembly()
 
 void PipelineVk::setPipelineLayout(const vk::PipelineLayout& layout)
 {
-    m_pipelineLayout = layout;//m_deviceVk->handle().createPipelineLayout({}, nullptr);
+    m_pipelineLayout = layout;
 }
 
 void PipelineVk::setViewport()
