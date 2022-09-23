@@ -20,7 +20,6 @@ public:
     void setPipeline(const std::shared_ptr<Pipeline>& pipeline) override;
     void initCommandBuffer();
     void initSemaphore();
-    void commit(const vk::Buffer& buffer);
     const std::vector<vk::Framebuffer>& frameBuffers() const;
     const std::vector<vk::CommandBuffer>& commandBuffers() const;
 

@@ -198,8 +198,9 @@ const std::vector<vk::ImageView>& DeviceVK::imageViews() const
     return m_imageViews;
 }
 
-uint32_t DeviceVK::getMemoryType(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32* memoryTypeFound) const
+uint32_t DeviceVK::getMemoryType(uint32_t bits, vk::MemoryPropertyFlags properties) const
 {
+    bool memoryTypeFound = false;
     for (uint32_t i = 0; i < m_gpu.getMemoryProperties().memoryTypeCount; i++)
     {
         if ((bits & 1) == 1)
@@ -208,7 +209,7 @@ uint32_t DeviceVK::getMemoryType(uint32_t bits, vk::MemoryPropertyFlags properti
             {
                 if (memoryTypeFound)
                 {
-                    *memoryTypeFound = true;
+                    memoryTypeFound = true;
                 }
                 return i;
             }
@@ -218,12 +219,12 @@ uint32_t DeviceVK::getMemoryType(uint32_t bits, vk::MemoryPropertyFlags properti
 
     if (memoryTypeFound)
     {
-        *memoryTypeFound = false;
+        memoryTypeFound = false;
         return 0;
     }
     else
     {
-        throw std::runtime_error("Could not find a matching memory type");
+        LOG_ERROR("Could not find a matching memory type");
     }
 }
 } // namespace backend

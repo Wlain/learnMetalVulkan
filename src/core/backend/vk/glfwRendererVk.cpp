@@ -76,10 +76,6 @@ void GLFWRendererVK::initCommandBuffer()
     m_presentQueue = m_device.getQueue(static_cast<uint32_t>(queueFamilyIndices.back()), 0);
 }
 
-void GLFWRendererVK::commit(const vk::Buffer& buffer)
-{
-}
-
 void GLFWRendererVK::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
 {
     m_pipeline = std::dynamic_pointer_cast<PipelineVk>(pipeline);

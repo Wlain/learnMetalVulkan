@@ -6,7 +6,6 @@
 #define LEARNMETALVULKAN_HANDLEVK_H
 #include "device.h"
 #include "glfwRenderer.h"
-
 #include "vkCommonDefine.h"
 namespace backend
 {
@@ -32,7 +31,8 @@ public:
     const vk::SurfaceKHR& surface() const;
     const std::vector<uint32_t>& uniqueQueueFamilyIndices() const;
     const std::vector<vk::ImageView>& imageViews() const;
-    uint32_t getMemoryType(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32 *memoryTypeFound = nullptr) const;
+    uint32_t getMemoryType(uint32_t bits, vk::MemoryPropertyFlags properties) const;
+
 private:
     void initDevice();
     void initInstance();

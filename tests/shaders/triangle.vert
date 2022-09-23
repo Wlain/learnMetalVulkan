@@ -8,5 +8,5 @@ layout(location = 0) out vec3 vColor;
 void main()
 {
     vColor = aColor.xyz;
-    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    gl_Position = vec4(aPos.xyx, 1.0);
 }

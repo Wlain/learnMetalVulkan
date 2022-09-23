@@ -5,6 +5,7 @@
 #include "textureVk.h"
 
 #include <stb/stb_image.h>
+
 namespace backend
 {
 TextureVK::~TextureVK() = default;
