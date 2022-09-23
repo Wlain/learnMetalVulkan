@@ -1,7 +1,8 @@
 //
 // Created by william on 2022/9/3.
 //
-extern void demoVk();
+extern void demoTriangleVk();
+extern void demoTextureVk();
 extern void windowSdlVk();
 extern void windowSdlMtl();
 
@@ -23,6 +24,6 @@ extern void textureMtl();
 
 int main()
 {
-    triangleVk();
+    demoTriangleVk();
     return 0;
 }

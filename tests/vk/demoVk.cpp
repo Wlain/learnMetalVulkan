@@ -1556,7 +1556,7 @@ static void demo_resize(struct demo* demo)
     demo_prepare(demo);
 }
 
-void demoVk()
+void demoTriangleVk()
 {
     demo demo{};
     demo_init(&demo);

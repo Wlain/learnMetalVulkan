@@ -8,5 +8,5 @@ layout(location = 0) out vec2 vTexCoord;
 void main()
 {
     vTexCoord = aTexCoord.xy;
-    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    gl_Position = vec4(aPos.xyz, 1.0);
 }
