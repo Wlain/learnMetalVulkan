@@ -40,7 +40,7 @@ std::pair<std::vector<uint32_t>, std::vector<uint32_t>> Pipeline::getSpvFromGLSL
     glslang::TShader vertexShader(EShLangVertex);
     vertexShader.setStringsWithLengths(&strings[0], &lengths[0], 1);
     vertexShader.setEntryPoint("main");
-    bool vertexResult = vertexShader.parse(&glslang::DefaultTBuiltInResource, 340, ECoreProfile, false, false, messages);
+    bool vertexResult = vertexShader.parse(&glslang::DefaultTBuiltInResource, 450, ECoreProfile, false, false, messages);
     if (!vertexResult)
     {
         LOG_ERROR("Internal error parsing Vulkan vertex Pipeline:{}, {}", vertexShader.getInfoLog(), vertexShader.getInfoDebugLog());
@@ -49,7 +49,7 @@ std::pair<std::vector<uint32_t>, std::vector<uint32_t>> Pipeline::getSpvFromGLSL
     glslang::TShader fragmentShader(EShLangFragment);
     fragmentShader.setStringsWithLengths(&strings[1], &lengths[1], 1);
     fragmentShader.setEntryPoint("main");
-    bool fragmentResult = fragmentShader.parse(&glslang::DefaultTBuiltInResource, 330, ECoreProfile, false, false, messages);
+    bool fragmentResult = fragmentShader.parse(&glslang::DefaultTBuiltInResource, 450, ECoreProfile, false, false, messages);
     if (!fragmentResult)
     {
         LOG_ERROR("Internal error parsing Vulkan fragment Pipeline:{}, {}", fragmentShader.getInfoLog(), fragmentShader.getInfoDebugLog());
