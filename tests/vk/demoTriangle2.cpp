@@ -170,7 +170,7 @@ private:
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        window_ = glfwCreateWindow(1024, 768, "Vulkan", nullptr, nullptr);
+        window_ = glfwCreateWindow(640, 640, "Vulkan triangle", nullptr, nullptr);
         glfwSetWindowUserPointer(window_, this);
         glfwSetFramebufferSizeCallback(window_, framebufferResizeCallback);
     }
@@ -567,9 +567,9 @@ private:
         };
         auto viewport = vk::Viewport{
             .x = 0.0f,
-            .y = static_cast<float>(swapchainExtent_.height),
+            .y = 0.0f,
             .width = static_cast<float>(swapchainExtent_.width),
-            .height = -static_cast<float>(swapchainExtent_.height),
+            .height = static_cast<float>(swapchainExtent_.height),
             .minDepth = 0.0f,
             .maxDepth = 1.0f
         };
@@ -588,7 +588,7 @@ private:
             .rasterizerDiscardEnable = VK_FALSE,
             .polygonMode = vk::PolygonMode::eFill,
             .cullMode = vk::CullModeFlagBits::eBack,
-            .frontFace = vk::FrontFace::eClockwise,
+            .frontFace = vk::FrontFace::eCounterClockwise,
             .depthBiasEnable = VK_FALSE,
             .lineWidth = 1.0f
         };
@@ -698,7 +698,7 @@ private:
         {
             auto beginInfo = vk::CommandBufferBeginInfo{};
             commandBuffers_[i].begin(beginInfo);
-            auto clearValue = vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f } } };
+            auto clearValue = vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f } } };
             auto renderPassInfo = vk::RenderPassBeginInfo{
                 .renderPass = renderPass_,
                 .framebuffer = swapchainFramebuffers_[i],

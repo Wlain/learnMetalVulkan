@@ -87,7 +87,7 @@ std::string Pipeline::getMslShaderFromSpv(std::vector<uint32_t> shader)
     CompilerMSL msl(std::move(shader));
     CompilerGLSL* glsl = &msl;
     static CompilerGLSL::Options optionsGlsl;
-    optionsGlsl.vertex.flip_vert_y = true;
+//    optionsGlsl.vertex.flip_vert_y = true;
     optionsGlsl.vertex.fixup_clipspace = true;
     glsl->set_common_options(optionsGlsl);
     auto option = msl.get_msl_options();
