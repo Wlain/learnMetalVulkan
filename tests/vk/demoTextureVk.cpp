@@ -690,7 +690,7 @@ static void demo_prepare_texture_image(struct demo* demo, struct texture_object*
     int width{}, height{}, channels{};
     auto pixelsData = getFileContents("textures/test.jpg");
     auto* textureData = (char*)stbi_load_from_memory((stbi_uc const*)pixelsData.data(), (int)pixelsData.size(), &width, &height, &channels, STBI_rgb_alpha);
-    const VkFormat tex_format = VK_FORMAT_R8G8B8A8_SRGB;
+    const VkFormat tex_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkResult U_ASSERT_ONLY err;
     bool U_ASSERT_ONLY pass;
 
@@ -772,7 +772,7 @@ static void demo_destroy_texture_image(struct demo* demo,
 
 static void demo_prepare_textures(struct demo* demo)
 {
-    const VkFormat tex_format = VK_FORMAT_R8G8B8A8_SRGB;
+    const VkFormat tex_format = VK_FORMAT_R8G8B8A8_UNORM;
     VkFormatProperties props;
     VkResult U_ASSERT_ONLY err;
 
@@ -1358,7 +1358,7 @@ static void demo_init_vk(struct demo* demo)
     demo->enabled_extension_count = 0;
     demo->enabled_layer_count = 0;
 
-    constexpr char* instance_validation_layers_alt1[] = {
+    constexpr const char* instance_validation_layers_alt1[] = {
         "VK_LAYER_LUNARG_standard_validation"
     };
 
@@ -1769,7 +1769,7 @@ static void demo_init_vk_swapChain(struct demo* demo)
     // supported format will be returned.
     if (formatCount == 1 && surfFormats[0].format == VK_FORMAT_UNDEFINED)
     {
-        demo->format = VK_FORMAT_R8G8B8A8_SRGB;
+        demo->format = VK_FORMAT_R8G8B8A8_UNORM;
     }
     else
     {

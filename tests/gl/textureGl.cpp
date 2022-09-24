@@ -60,7 +60,6 @@ public:
     {
         m_texture = MAKE_SHARED(m_texture, m_render->device());
         m_texture->createWithFileName("textures/test.jpg", true);
-        LOG_ERROR("textureID: {}", m_texture->handle());
     }
 
     void render() override
