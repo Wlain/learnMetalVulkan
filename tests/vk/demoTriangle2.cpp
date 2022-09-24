@@ -10,8 +10,6 @@
 #define VULKAN_HPP_NO_CONSTRUCTORS
 #include "../mesh/globalMeshs.h"
 
-#include <fstream>
-#include <glm/glm.hpp>
 #include <iostream>
 #include <optional>
 #include <set>
@@ -170,7 +168,7 @@ private:
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        window_ = glfwCreateWindow(640, 640, "Vulkan triangle", nullptr, nullptr);
+        window_ = glfwCreateWindow(640, 480, "Vulkan triangle", nullptr, nullptr);
         glfwSetWindowUserPointer(window_, this);
         glfwSetFramebufferSizeCallback(window_, framebufferResizeCallback);
     }
@@ -533,7 +531,7 @@ private:
 
     void createGraphicsPipeline()
     {
-        //        auto [vertShaderCode, fragShaderCode]  = backend::Pipeline::getSpvFromGLSL(getFileContents("shaders/shader.vert"), getFileContents("shaders/shader.frag"));
+        //        auto [vertShaderCode, fragShaderCode] = backend::Pipeline::getSpvFromGLSL(getFileContents("shaders/shader.vert"), getFileContents("shaders/shader.frag"));
         auto vertShaderCode = readFile("shaders/vert.spv");
         auto fragShaderCode = readFile("shaders/frag.spv");
         auto vertShaderModule = createShaderModule(vertShaderCode);
@@ -567,9 +565,9 @@ private:
         };
         auto viewport = vk::Viewport{
             .x = 0.0f,
-            .y = 0.0f,
+            .y = static_cast<float>(swapchainExtent_.height),
             .width = static_cast<float>(swapchainExtent_.width),
-            .height = static_cast<float>(swapchainExtent_.height),
+            .height = -static_cast<float>(swapchainExtent_.height),
             .minDepth = 0.0f,
             .maxDepth = 1.0f
         };
@@ -588,7 +586,7 @@ private:
             .rasterizerDiscardEnable = VK_FALSE,
             .polygonMode = vk::PolygonMode::eFill,
             .cullMode = vk::CullModeFlagBits::eBack,
-            .frontFace = vk::FrontFace::eCounterClockwise,
+            .frontFace = vk::FrontFace::eClockwise,
             .depthBiasEnable = VK_FALSE,
             .lineWidth = 1.0f
         };
