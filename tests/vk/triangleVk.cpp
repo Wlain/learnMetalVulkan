@@ -20,7 +20,6 @@ public:
     using EffectBase::EffectBase;
     ~Triangle() override
     {
-        m_device.freeDescriptorSets(m_descriptorPool, m_descriptorSet);
         m_device.destroy(m_descriptorPool);
         m_device.destroy(m_descriptorSetLayout);
         m_device.destroy(m_pipelineLayout);
@@ -32,10 +31,10 @@ public:
         m_deviceVK = dynamic_cast<DeviceVK*>(m_renderer->device());
         m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
         m_device = m_deviceVK->handle();
+        m_render->createCommandPool();
         buildBuffers();
         buildPipeline();
         m_render->createSyncObjects();
-        m_render->createCommandPool();
         m_render->createCommandBuffers();
     }
 
@@ -137,13 +136,13 @@ public:
         m_device.destroyBuffer(stagingBuffer);
         m_device.freeMemory(stagingBufferMemory);
 
-        auto bindingDescription = getBindingDescription();
-        auto attributeDescriptions = getAttributeDescriptions();
+        m_bindingDescription = getBindingDescription();
+        m_attributeDescriptions = getAttributeDescriptions();
         m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
             .vertexBindingDescriptionCount = 1,
-            .pVertexBindingDescriptions = &bindingDescription,
-            .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()),
-            .pVertexAttributeDescriptions = attributeDescriptions.data()
+            .pVertexBindingDescriptions = &m_bindingDescription,
+            .vertexAttributeDescriptionCount = static_cast<uint32_t>(m_attributeDescriptions.size()),
+            .pVertexAttributeDescriptions = m_attributeDescriptions.data()
         };
         auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 0,
@@ -210,14 +209,13 @@ private:
     std::shared_ptr<PipelineVk> m_pipeline;
     vk::Device m_device;
     vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
-
+    std::array<vk::VertexInputAttributeDescription, 2> m_attributeDescriptions;
     vk::DescriptorSetLayout m_descriptorSetLayout;
     vk::PipelineLayout m_pipelineLayout;
-    vk::VertexInputBindingDescription m_vertexInputBinding;
+    vk::VertexInputBindingDescription m_bindingDescription;
     std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribute;
 
     vk::DescriptorPool m_descriptorPool;
-    vk::DescriptorSet m_descriptorSet;
     vk::Buffer m_vertexBuffer;
     vk::DeviceMemory m_vertexBufferMemory;
 };
