@@ -585,8 +585,8 @@ private:
             .depthClampEnable = VK_FALSE,
             .rasterizerDiscardEnable = VK_FALSE,
             .polygonMode = vk::PolygonMode::eFill,
-            .cullMode = vk::CullModeFlagBits::eBack,
-            .frontFace = vk::FrontFace::eClockwise,
+            .cullMode = vk::CullModeFlagBits::eNone, // 默认值
+            .frontFace = vk::FrontFace::eCounterClockwise, // 默认值
             .depthBiasEnable = VK_FALSE,
             .lineWidth = 1.0f
         };
