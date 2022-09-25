@@ -174,32 +174,28 @@ public:
 
     void render() override
     {
-        uint32_t width = m_deviceVK->width();
-        uint32_t height = m_deviceVK->height();
         auto& commandBuffers = m_render->commandBuffers();
         auto& frameBuffers = m_render->frameBuffers();
-        vk::ClearValue clearValues{};
-        static float red = 1.0f;
-        clearValues.color.setFloat32({ red, 0.0f, 0.0f, 1.0f });
-        vk::RenderPassBeginInfo renderPassBeginInfo;
-        renderPassBeginInfo.setRenderPass(m_pipeline->renderPass());
-        renderPassBeginInfo.setRenderArea({ { 0, 0 }, { width, height } });
-        renderPassBeginInfo.setClearValueCount(1);
-        renderPassBeginInfo.setClearValues(clearValues);
-        vk::Viewport viewport{ 0, 0, (float)width, (float)height, 0.0f, 1.0f };
-        vk::Rect2D scissor{ { 0, 0 }, { width, height } };
-        for (size_t i = 0; i < commandBuffers.size(); i++)
+        for (std::size_t i = 0; i < commandBuffers.size(); ++i)
         {
-            renderPassBeginInfo.framebuffer = frameBuffers[i];
             auto beginInfo = vk::CommandBufferBeginInfo{};
-            beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
             commandBuffers[i].begin(beginInfo);
-            commandBuffers[i].beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-            commandBuffers[i].setViewport(0, 1, &viewport);
-            commandBuffers[i].setScissor(0, 1, &scissor);
-            commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle()); // 等价于 opengl的 bind program 和一设定些状态
-            commandBuffers[i].bindVertexBuffers(0, m_vertexBuffer, { 0 });
-            commandBuffers[i].draw(3, 1, 0, 0);
+            auto clearValue = vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f } } };
+            auto renderPassInfo = vk::RenderPassBeginInfo{
+                .renderPass = m_pipeline->renderPass(),
+                .framebuffer = frameBuffers[i],
+                .renderArea = {
+                    .offset = { 0, 0 },
+                    .extent = m_deviceVK->swapchainExtent() },
+                .clearValueCount = 1,
+                .pClearValues = &clearValue
+            };
+            commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+            commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
+            auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer };
+            auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
+            commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
+            commandBuffers[i].draw(static_cast<std::uint32_t>(g_triangleVertex.size()), 1, 0, 0);
             commandBuffers[i].endRenderPass();
             commandBuffers[i].end();
         }
