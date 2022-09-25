@@ -19,7 +19,10 @@ static VkBool32 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeve
     return VK_FALSE;
 }
 
-DeviceVK::~DeviceVK() = default;
+DeviceVK::~DeviceVK()
+{
+    m_instance.destroyDebugUtilsMessengerEXT(m_messenger);
+}
 
 DeviceVK::DeviceVK(const Info& info) :
     Device(info)

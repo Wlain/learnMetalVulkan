@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(learnMetalVulkan)
 set(CMAKE_CXX_STANDARD 17)
 
+# submodule
 # Vulkan
 find_package(Vulkan REQUIRED)
 # metal-cpp
