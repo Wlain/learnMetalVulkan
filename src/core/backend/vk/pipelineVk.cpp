@@ -3,8 +3,6 @@
 //
 
 #include "pipelineVk.h"
-
-#include "vkCommonDefine.h"
 #define GLFW_INCLUDE_NONE
 #include "deviceVk.h"
 #include "glfwRenderer.h"
@@ -23,7 +21,7 @@ PipelineVk::~PipelineVk()
     device.destroy(m_fragmentShaderModule);
     device.destroy(m_pipelineLayout);
     device.destroy(m_renderPass);
-    for (auto& view : m_deviceVk->imageViews())
+    for (auto& view : m_deviceVk->swapchainImageViews())
     {
         device.destroy(view);
     }
@@ -71,34 +69,39 @@ vk::Pipeline PipelineVk::handle() const
     return m_pipeline;
 }
 
+vk::ShaderModule PipelineVk::createShaderModule(const std::vector<uint32_t>& code)
+{
+    auto createInfo = vk::ShaderModuleCreateInfo{
+        .codeSize = code.size() * sizeof(uint32_t),
+        .pCode = code.data()
+    };
+    return m_deviceVk->handle().createShaderModule(createInfo);
+}
+
 void PipelineVk::setProgram(std::string_view vertShader, std::string_view fragSource)
 {
-    auto shaderCode = PipelineVk::getSpvFromGLSL(vertShader, fragSource);
-    auto vertShaderCode = shaderCode.first;
-    auto vertSize = vertShaderCode.size();
-    auto vertShaderCreateInfo = vk::ShaderModuleCreateInfo{ {}, vertSize * sizeof(uint32_t), vertShaderCode.data() };
-    m_vertexShaderModule = m_deviceVk->handle().createShaderModule(vertShaderCreateInfo);
-    auto vertShaderStageInfo = vk::PipelineShaderStageCreateInfo{ {},
-                                                                  vk::ShaderStageFlagBits::eVertex,
-                                                                  m_vertexShaderModule,
-                                                                  "main" };
-
-    // fragment shader
-    auto fragShaderCode = shaderCode.second;
-    auto fragSize = fragShaderCode.size();
-    auto fragShaderCreateInfo =
-        vk::ShaderModuleCreateInfo{ {}, fragSize * sizeof(uint32_t), fragShaderCode.data() };
-    m_fragmentShaderModule = m_deviceVk->handle().createShaderModule(fragShaderCreateInfo);
-    auto fragShaderStageInfo = vk::PipelineShaderStageCreateInfo{ {},
-                                                                  vk::ShaderStageFlagBits::eFragment,
-                                                                  m_fragmentShaderModule,
-                                                                  "main" };
+    auto [vertShaderCode, fragShaderCode] = PipelineVk::getSpvFromGLSL(vertShader, fragSource);
+    m_vertexShaderModule = createShaderModule(vertShaderCode);
+    m_fragmentShaderModule = createShaderModule(fragShaderCode);
+    auto vertShaderStageInfo = vk::PipelineShaderStageCreateInfo{
+        .stage = vk::ShaderStageFlagBits::eVertex,
+        .module = m_vertexShaderModule,
+        .pName = "main"
+    };
+    auto fragShaderStageInfo = vk::PipelineShaderStageCreateInfo{
+        .stage = vk::ShaderStageFlagBits::eFragment,
+        .module = m_fragmentShaderModule,
+        .pName = "main"
+    };
     m_pipelineShaderStages = { vertShaderStageInfo, fragShaderStageInfo };
 }
 
 void PipelineVk::setAssembly()
 {
-    m_assemblyStateCreateInfo = { {}, vk::PrimitiveTopology::eTriangleList, false };
+    m_assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo{
+        .topology = vk::PrimitiveTopology::eTriangleList,
+        .primitiveRestartEnable = false
+    };
 }
 
 void PipelineVk::setPipelineLayout(const vk::PipelineLayout& layout)
@@ -108,28 +111,45 @@ void PipelineVk::setPipelineLayout(const vk::PipelineLayout& layout)
 
 void PipelineVk::setViewport()
 {
-    m_viewport = vk::Viewport{ 0.0f, 0.0f, static_cast<float>(m_deviceVk->width()), static_cast<float>(m_deviceVk->height()), 0.0f, 1.0f };
-    m_scissor = vk::Rect2D{ { 0, 0 }, {} };
-    m_viewportState = { {}, 1, &m_viewport, 1, &m_scissor };
+    m_viewport = vk::Viewport{
+        .x = 0.0f,
+        .y = static_cast<float>(m_deviceVk->height()),
+        .width = static_cast<float>(m_deviceVk->width()),
+        .height = -static_cast<float>(m_deviceVk->height()),
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f
+    };
+    m_scissor = vk::Rect2D{
+        .offset = { 0, 0 },
+        .extent = m_deviceVk->swapchainExtent()
+    };
+    m_viewportState = {
+        .viewportCount = 1,
+        .pViewports = &m_viewport,
+        .scissorCount = 1,
+        .pScissors = &m_scissor
+    };
 }
 
 void PipelineVk::setRasterization()
 {
-    m_rasterizer = { {}, /*depthClamp*/ false,
-                     /*rasterizeDiscard*/ false,
-                     vk::PolygonMode::eFill,
-                     {},
-                     /*frontFace*/ vk::FrontFace::eCounterClockwise,
-                     {},
-                     {},
-                     {},
-                     {},
-                     1.0f };
+    m_rasterizer = {
+        .depthClampEnable = false,
+        .rasterizerDiscardEnable = false,
+        .polygonMode = vk::PolygonMode::eFill,
+        .cullMode = vk::CullModeFlagBits::eNone,       // 默认值
+        .frontFace = vk::FrontFace::eCounterClockwise, // 默认值
+        .depthBiasEnable = false,
+        .lineWidth = 1.0f
+    };
 }
 
 void PipelineVk::setMultisample()
 {
-    m_multisampling = { {}, vk::SampleCountFlagBits::e1, false, 1.0 };
+    m_multisampling = {
+        .rasterizationSamples = vk::SampleCountFlagBits::e1,
+        .sampleShadingEnable = false
+    };
 }
 
 void PipelineVk::setDepthStencil()
@@ -138,38 +158,66 @@ void PipelineVk::setDepthStencil()
 
 void PipelineVk::setColorBlendAttachment()
 {
-    m_colorBlendAttachment = { {}, /*srcCol*/ vk::BlendFactor::eOne,
-                               /*dstCol*/ vk::BlendFactor::eZero,
-                               /*colBlend*/ vk::BlendOp::eAdd,
-                               /*srcAlpha*/ vk::BlendFactor::eOne,
-                               /*dstAlpha*/ vk::BlendFactor::eZero,
-                               /*alphaBlend*/ vk::BlendOp::eAdd,
-                               vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA };
+    m_colorBlendAttachment = vk::PipelineColorBlendAttachmentState{
+        .blendEnable = false,
+        .colorWriteMask = vk::ColorComponentFlagBits::eR |
+                          vk::ColorComponentFlagBits::eG |
+                          vk::ColorComponentFlagBits::eB |
+                          vk::ColorComponentFlagBits::eA
+    };
 
-    m_colorBlending = { {},
-                        /*logicOpEnable=*/false,
-                        vk::LogicOp::eCopy,
-                        /*attachmentCount=*/1,
-                        /*colourAttachments=*/&m_colorBlendAttachment };
+    m_colorBlending = vk::PipelineColorBlendStateCreateInfo{
+        .logicOpEnable = VK_FALSE,
+        .logicOp = vk::LogicOp::eCopy,
+        .attachmentCount = 1,
+        .pAttachments = &m_colorBlendAttachment,
+        .blendConstants = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }
+    };
 }
 
-void PipelineVk::setRenderPass()
+void PipelineVk::setRenderPass(const vk::RenderPass& renderPass)
 {
-    auto format = vk::Format::eB8G8R8A8Unorm;
-    auto colorAttachment = vk::AttachmentDescription{ {}, format, vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, {}, {}, {}, vk::ImageLayout::ePresentSrcKHR };
-    auto colourAttachmentRef = vk::AttachmentReference{ 0, vk::ImageLayout::eColorAttachmentOptimal };
-    auto subpass = vk::SubpassDescription{ {},
-                                           vk::PipelineBindPoint::eGraphics,
-                                           /*inAttachmentCount*/ 0,
-                                           nullptr,
-                                           1,
-                                           &colourAttachmentRef };
-    auto subPassDependency = vk::SubpassDependency{ VK_SUBPASS_EXTERNAL,
-                                                    0,
-                                                    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                                    vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                                    {},
-                                                    vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite };
-    m_renderPass = m_deviceVk->handle().createRenderPass(vk::RenderPassCreateInfo{ {}, 1, &colorAttachment, 1, &subpass, 1, &subPassDependency });
+    m_renderPass = renderPass ? createRenderPass() : renderPass;
+}
+
+vk::RenderPass PipelineVk::createRenderPass()
+{
+    vk::RenderPass renderPass;
+    auto colorAttachment = vk::AttachmentDescription{
+        .format = m_deviceVk->swapchainImageFormat(),
+        .samples = vk::SampleCountFlagBits::e1,
+        .loadOp = vk::AttachmentLoadOp::eClear,
+        .storeOp = vk::AttachmentStoreOp::eStore,
+        .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
+        .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
+        .initialLayout = vk::ImageLayout::eUndefined,
+        .finalLayout = vk::ImageLayout::ePresentSrcKHR
+    };
+    auto colorAttachmentRef = vk::AttachmentReference{
+        .attachment = 0,
+        .layout = vk::ImageLayout::eColorAttachmentOptimal
+    };
+    auto subpass = vk::SubpassDescription{
+        .pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
+        .colorAttachmentCount = 0,
+        .pColorAttachments = &colorAttachmentRef
+    };
+    auto dependency = vk::SubpassDependency{
+        .srcSubpass = VK_SUBPASS_EXTERNAL,
+        .dstSubpass = 0,
+        .srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        .dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        .dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite
+    };
+    auto renderPassInfo = vk::RenderPassCreateInfo{
+        .attachmentCount = 1,
+        .pAttachments = &colorAttachment,
+        .subpassCount = 1,
+        .pSubpasses = &subpass,
+        .dependencyCount = 1,
+        .pDependencies = &dependency
+    };
+    renderPass = m_deviceVk->handle().createRenderPass(renderPassInfo);
+    return renderPass;
 }
 } // namespace backend

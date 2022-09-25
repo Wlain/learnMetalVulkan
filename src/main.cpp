@@ -25,6 +25,6 @@ extern void textureMtl();
 
 int main()
 {
-    windowMtl();
+    demoTriangle2();
     return 0;
 }

@@ -25,7 +25,7 @@ public:
         m_device.destroy(m_descriptorSetLayout);
         m_device.destroy(m_pipelineLayout);
         m_device.destroyBuffer(m_vertexBuffer);
-        m_device.freeMemory(m_deviceMemory);
+        m_device.freeMemory(m_vertexBufferMemory);
     }
     void initialize() override
     {
@@ -34,65 +34,125 @@ public:
         m_device = m_deviceVK->handle();
         buildBuffers();
         buildPipeline();
-        m_render->initSemaphore();
-        m_render->initCommandBuffer();
+        m_render->createSyncObjects();
+        m_render->createCommandBuffers();
+    }
+
+    vk::VertexInputBindingDescription getBindingDescription()
+    {
+        auto bindingDescription = vk::VertexInputBindingDescription{
+            .binding = 0,
+            .stride = sizeof(TriangleVertex),
+            .inputRate = vk::VertexInputRate::eVertex
+        };
+
+        return bindingDescription;
+    }
+
+    std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions()
+    {
+        auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 2>{
+            vk::VertexInputAttributeDescription{
+                .location = 0,
+                .binding = 0,
+                .format = vk::Format::eR32G32B32A32Sfloat,
+                .offset = offsetof(TriangleVertex, position) },
+            vk::VertexInputAttributeDescription{
+                .location = 1,
+                .binding = 0,
+                .format = vk::Format::eR32G32B32A32Sfloat,
+                .offset = offsetof(TriangleVertex, color) },
+        };
+
+        return attributeDescriptions;
+    }
+
+    std::pair<vk::Buffer, vk::DeviceMemory> createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties)
+    {
+        auto bufferInfo = vk::BufferCreateInfo{
+            .size = size,
+            .usage = usage,
+            .sharingMode = vk::SharingMode::eExclusive
+        };
+
+        auto buffer = m_device.createBuffer(bufferInfo);
+
+        auto memoryRequirements = m_device.getBufferMemoryRequirements(buffer);
+        auto allocInfo = vk::MemoryAllocateInfo{
+            .allocationSize = memoryRequirements.size,
+            .memoryTypeIndex = m_deviceVK->findMemoryType(memoryRequirements.memoryTypeBits, properties)
+        };
+        auto bufferMemory = m_device.allocateMemory(allocInfo);
+        m_device.bindBufferMemory(buffer, bufferMemory, 0);
+        return { buffer, bufferMemory };
+    }
+
+    void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
+    {
+        auto cmdPool = m_render->commandPool();
+        auto allocInfo = vk::CommandBufferAllocateInfo{
+            .commandPool = cmdPool,
+            .level = vk::CommandBufferLevel::ePrimary,
+            .commandBufferCount = 1
+        };
+
+        auto commandBuffers = m_device.allocateCommandBuffers(allocInfo);
+
+        auto beginInfo = vk::CommandBufferBeginInfo{
+            .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+        };
+
+        commandBuffers[0].begin(beginInfo);
+        auto copyRegion = vk::BufferCopy{ .size = size };
+        commandBuffers[0].copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
+        commandBuffers[0].end();
+
+        auto submitInfo = vk::SubmitInfo{
+            .commandBufferCount = 1,
+            .pCommandBuffers = commandBuffers.data()
+        };
+        m_deviceVK->graphicsQueue().submit(submitInfo);
+        m_deviceVK->graphicsQueue().waitIdle();
+        m_device.freeCommandBuffers(cmdPool, 1, commandBuffers.data());
     }
 
     void buildBuffers()
     {
-        auto dataSize = g_triangleVertex.size() * sizeof(g_triangleVertex[0]);
+        vk::DeviceSize bufferSize = g_triangleVertex.size() * sizeof(g_triangleVertex[0]);
         // create a vertex buffer for some vertex and color data
-        m_vertexBuffer = m_device.createBuffer(vk::BufferCreateInfo{ vk::BufferCreateFlags(), dataSize, vk::BufferUsageFlagBits::eVertexBuffer });
-        // allocate device memory for that buffer
-        vk::MemoryRequirements memoryRequirements = m_device.getBufferMemoryRequirements(m_vertexBuffer);
-        m_deviceMemory = m_device.allocateMemory(vk::MemoryAllocateInfo(memoryRequirements.size,
-                                                                        m_deviceVK->getMemoryType(memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent)));
+
+        auto [stagingBuffer, stagingBufferMemory] = createBuffer(bufferSize,
+                                                                 vk::BufferUsageFlagBits::eTransferSrc,
+                                                                 vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
         // copy the vertex and color data into that device memory
-        auto* pData = static_cast<uint8_t*>(m_device.mapMemory(m_deviceMemory, 0, memoryRequirements.size));
-        memcpy(pData, g_triangleVertex.data(), dataSize);
-        m_device.unmapMemory(m_deviceMemory);
-        // and bind the device memory to the vertex buffer
-        m_device.bindBufferMemory(m_vertexBuffer, m_deviceMemory, 0);
-        // Vertex bindings and attributes
-        m_vertexInputBinding.setBinding(0);
-        m_vertexInputBinding.setStride(sizeof(TextureVertex));
-        m_vertexInputBinding.setInputRate(vk::VertexInputRate::eVertex);
-        m_vertexInputAttribute = {
-            vk::VertexInputAttributeDescription(0, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(TextureVertex, position)),
-            vk::VertexInputAttributeDescription(1, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(TextureVertex, texCoord))
-        };
-        m_vertexInputInfo = {
-            {},
-            m_vertexInputBinding,
-            m_vertexInputAttribute
-        };
-    }
+        auto* pData = (m_device.mapMemory(stagingBufferMemory, {}, bufferSize, {}));
+        memcpy(pData, g_triangleVertex.data(), static_cast<std::size_t>(bufferSize));
+        m_device.unmapMemory(stagingBufferMemory);
 
-    void setupDescriptorSet()
-    {
-        // Create a single pool to contain data for our descriptor set
-        vk::DescriptorPoolSize poolSize(vk::DescriptorType::eUniformBuffer, 1);
-        m_descriptorPool = m_device.createDescriptorPool(vk::DescriptorPoolCreateInfo(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1, poolSize));
-        // Populate descriptor sets
-        vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo(m_descriptorPool, m_descriptorSetLayout);
-        m_descriptorSet = m_device.allocateDescriptorSets(descriptorSetAllocateInfo).front();
-    }
+        std::tie(m_vertexBuffer, m_vertexBufferMemory) = createBuffer(bufferSize,
+                                                                      vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
+                                                                      vk::MemoryPropertyFlagBits::eDeviceLocal);
+        copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
+        m_device.destroyBuffer(stagingBuffer);
+        m_device.freeMemory(stagingBufferMemory);
 
-    void setupDescriptorLayout()
-    {
-        // create a DescriptorSetLayout
-        // set binding：也就是gl里面的uniform变量
-        // 此处没有传uniform变量，直接传空即可
-        // set layout:也就是opengl里面的vertex attributes
-        m_descriptorSetLayout = m_device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo(vk::DescriptorSetLayoutCreateFlags(), {}));
-        // create a PipelineLayout using that DescriptorSetLayout
-        m_pipelineLayout = m_device.createPipelineLayout({ vk::PipelineLayoutCreateFlags(), m_descriptorSetLayout });
+        auto bindingDescription = getBindingDescription();
+        auto attributeDescriptions = getAttributeDescriptions();
+        m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
+            .vertexBindingDescriptionCount = 1,
+            .pVertexBindingDescriptions = &bindingDescription,
+            .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()),
+            .pVertexAttributeDescriptions = attributeDescriptions.data()
+        };
+        auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
+            .setLayoutCount = 0,
+            .pushConstantRangeCount = 0
+        };
+        m_pipelineLayout = m_device.createPipelineLayout(pipelineLayoutInfo);
     }
 
     void buildPipeline()
     {
-        setupDescriptorLayout();
-        setupDescriptorSet();
         std::string vertSource = getFileContents("shaders/triangle.vert");
         std::string fragShader = getFileContents("shaders/triangle.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_deviceVK);
@@ -151,7 +211,7 @@ private:
     std::shared_ptr<PipelineVk> m_pipeline;
     vk::Device m_device;
     vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
-    vk::Buffer m_vertexBuffer;
+
     vk::DescriptorSetLayout m_descriptorSetLayout;
     vk::PipelineLayout m_pipelineLayout;
     vk::VertexInputBindingDescription m_vertexInputBinding;
@@ -159,7 +219,8 @@ private:
 
     vk::DescriptorPool m_descriptorPool;
     vk::DescriptorSet m_descriptorSet;
-    vk::DeviceMemory m_deviceMemory;
+    vk::Buffer m_vertexBuffer;
+    vk::DeviceMemory m_vertexBufferMemory;
 };
 } // namespace
 

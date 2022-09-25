@@ -3,12 +3,13 @@
 //
 
 #define GLFW_INCLUDE_VULKAN
-#include "pipeline.h"
 #include "utils/utils.h"
 
 #include <GLFW/glfw3.h>
 #define VULKAN_HPP_NO_CONSTRUCTORS
 #include "../mesh/globalMeshs.h"
+#include "deviceVk.h"
+#include "pipelineVk.h"
 
 #include <iostream>
 #include <optional>
@@ -547,6 +548,7 @@ private:
             .pName = "main"
         };
         auto shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>{ vertShaderStageInfo, fragShaderStageInfo };
+
         auto bindingDescription = getBindingDescription();
         auto attributeDescriptions = getAttributeDescriptions();
         auto vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{

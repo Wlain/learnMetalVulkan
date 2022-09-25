@@ -22,7 +22,7 @@ GLFWRendererVK::GLFWRendererVK(Device* handle) :
 
 GLFWRendererVK::~GLFWRendererVK()
 {
-    for (auto& framebuffer : m_frameBuffers)
+    for (auto& framebuffer : m_swapchainFramebuffers)
     {
         m_device.destroy(framebuffer);
     }
@@ -44,36 +44,24 @@ GLFWRendererVK::~GLFWRendererVK()
 
 void GLFWRendererVK::swapBuffers()
 {
-    auto imageIndex = m_device.acquireNextImageKHR(m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore, {});
-    vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    auto submitInfo = vk::SubmitInfo{ 1, &m_imageAvailableSemaphore, &waitStageMask, 1, &m_commandBuffers[imageIndex.value], 1, &m_renderFinishedSemaphore };
-    m_deviceQueue.submit(submitInfo, {});
-    auto presentInfo = vk::PresentInfoKHR{ 1, &m_renderFinishedSemaphore, 1, &m_swapChain, &imageIndex.value };
-    auto result = m_presentQueue.presentKHR(presentInfo);
-    (void)result;
-    m_device.waitIdle();
+    //    auto imageIndex = m_device.acquireNextImageKHR(m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore, {});
+    //    vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    //    auto submitInfo = vk::SubmitInfo{ 1, &m_imageAvailableSemaphore, &waitStageMask, 1, &m_commandBuffers[imageIndex.value], 1, &m_renderFinishedSemaphore };
+    //    m_deviceQueue.submit(submitInfo, {});
+    //    auto presentInfo = vk::PresentInfoKHR{ 1, &m_renderFinishedSemaphore, 1, &m_swapChain, &imageIndex.value };
+    //    auto result = m_presentQueue.presentKHR(presentInfo);
+    //    (void)result;
+    //    m_device.waitIdle();
 }
 
-void GLFWRendererVK::initCommandBuffer()
+void GLFWRendererVK::createCommandBuffers()
 {
-    uint32_t imageCount = m_deviceVk->imageViews().size();
-    m_frameBuffers = std::vector<vk::Framebuffer>(imageCount);
-    for (size_t i = 0; i < imageCount; i++)
-    {
-        m_frameBuffers[i] = m_device.createFramebuffer(vk::FramebufferCreateInfo{
-            {},
-            m_pipeline->renderPass(),
-            1,
-            &(m_deviceVk->imageViews()[i]),
-            m_deviceVk->width(),
-            m_deviceVk->height(),
-            1 });
-    }
-    const auto& queueFamilyIndices = m_deviceVk->uniqueQueueFamilyIndices();
-    m_commandPool = m_device.createCommandPool({ { vk::CommandPoolCreateFlagBits::eResetCommandBuffer }, queueFamilyIndices.front() });
-    m_commandBuffers = m_device.allocateCommandBuffers(vk::CommandBufferAllocateInfo(m_commandPool, vk::CommandBufferLevel::ePrimary, static_cast<uint32_t>(m_frameBuffers.size())));
-    m_deviceQueue = m_device.getQueue(static_cast<uint32_t>(queueFamilyIndices.front()), 0);
-    m_presentQueue = m_device.getQueue(static_cast<uint32_t>(queueFamilyIndices.back()), 0);
+    auto allocInfo = vk::CommandBufferAllocateInfo{
+        .commandPool = m_commandPool,
+        .level = vk::CommandBufferLevel::ePrimary,
+        .commandBufferCount = static_cast<uint32_t>(m_swapchainFramebuffers.size())
+    };
+    m_commandBuffers = m_device.allocateCommandBuffers(allocInfo);
 }
 
 void GLFWRendererVK::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
@@ -81,7 +69,7 @@ void GLFWRendererVK::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
     m_pipeline = std::dynamic_pointer_cast<PipelineVk>(pipeline);
 }
 
-void GLFWRendererVK::initSemaphore()
+void GLFWRendererVK::createSyncObjects()
 {
     auto semaphoreCreateInfo = vk::SemaphoreCreateInfo{};
     m_imageAvailableSemaphore = m_deviceVk->handle().createSemaphore(semaphoreCreateInfo);
@@ -95,6 +83,36 @@ const std::vector<vk::CommandBuffer>& GLFWRendererVK::commandBuffers() const
 
 const std::vector<vk::Framebuffer>& GLFWRendererVK::frameBuffers() const
 {
-    return m_frameBuffers;
+    return m_swapchainFramebuffers;
+}
+
+void GLFWRendererVK::createFrameBuffers()
+{
+    for (const auto& imageView : m_deviceVk->swapchainImageViews())
+    {
+        auto framebufferInfo = vk::FramebufferCreateInfo{
+            .renderPass = m_pipeline->renderPass(),
+            .attachmentCount = 1,
+            .pAttachments = &imageView,
+            .width = m_deviceVk->swapchainExtent().width,
+            .height = m_deviceVk->swapchainExtent().height,
+            .layers = 1
+        };
+        m_swapchainFramebuffers.push_back(m_device.createFramebuffer(framebufferInfo));
+    }
+}
+
+const vk::CommandPool& GLFWRendererVK::commandPool() const
+{
+    return m_commandPool;
+}
+
+void GLFWRendererVK::createCommandPools()
+{
+    auto queueFamilyIndices = m_deviceVk->findQueueFamilyIndices();
+    auto poolInfo = vk::CommandPoolCreateInfo{
+        .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value()
+    };
+    m_commandPool = m_device.createCommandPool(poolInfo);
 }
 } // namespace backend

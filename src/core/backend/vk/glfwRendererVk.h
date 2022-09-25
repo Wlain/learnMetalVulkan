@@ -16,12 +16,15 @@ public:
     ~GLFWRendererVK() override;
 
 public:
-    void swapBuffers() override;
     void setPipeline(const std::shared_ptr<Pipeline>& pipeline) override;
-    void initCommandBuffer();
-    void initSemaphore();
+    void createFrameBuffers();
+    void createCommandBuffers();
+    void swapBuffers() override;
+    void createSyncObjects();
+    void createCommandPools();
     const std::vector<vk::Framebuffer>& frameBuffers() const;
     const std::vector<vk::CommandBuffer>& commandBuffers() const;
+    const vk::CommandPool& commandPool() const;
 
 private:
     DeviceVK* m_deviceVk;
@@ -30,13 +33,15 @@ private:
     vk::SurfaceKHR m_surface;
     vk::SwapchainKHR m_swapChain;
     vk::CommandPool m_commandPool;
+    std::shared_ptr<PipelineVk> m_pipeline;
     std::vector<vk::CommandBuffer> m_commandBuffers;
+    std::vector<vk::Framebuffer> m_swapchainFramebuffers;
     vk::Semaphore m_imageAvailableSemaphore;
     vk::Semaphore m_renderFinishedSemaphore;
-    vk::Queue m_deviceQueue;
-    vk::Queue m_presentQueue;
-    std::shared_ptr<PipelineVk> m_pipeline;
-    std::vector<vk::Framebuffer> m_frameBuffers;
+    std::vector<vk::Fence> m_inflightFences;
+    std::vector<vk::Fence> m_imagesInflight;
+    std::size_t m_currentFrame{ 0 };
+    bool m_framebufferResized{ false };
 };
 } // namespace backend
 

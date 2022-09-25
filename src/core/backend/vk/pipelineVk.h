@@ -5,8 +5,8 @@
 #ifndef LEARNMETALVULKAN_SHADERVK_H
 #define LEARNMETALVULKAN_SHADERVK_H
 #include "pipeline.h"
-
-#include "vkCommonDefine.h"
+#define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
+#include <vulkan/vulkan.hpp>
 namespace backend
 {
 class DeviceVK;
@@ -25,18 +25,22 @@ public:
     void setMultisample();
     void setDepthStencil();
     void setColorBlendAttachment();
-    void setRenderPass();
+    void setRenderPass(const vk::RenderPass& renderPass = nullptr);
     void build() override;
     const vk::RenderPass& renderPass() const;
     vk::Pipeline handle() const;
 
 private:
+    vk::RenderPass createRenderPass();
+    vk::ShaderModule createShaderModule(const std::vector<uint32_t>& code);
+
+private:
     DeviceVK* m_deviceVk{ nullptr };
     vk::RenderPass m_renderPass;
-    vk::Pipeline m_pipeline;
-    vk::PipelineLayout m_pipelineLayout;
     vk::ShaderModule m_vertexShaderModule;
     vk::ShaderModule m_fragmentShaderModule;
+    vk::Pipeline m_pipeline;
+    vk::PipelineLayout m_pipelineLayout;
     std::vector<vk::PipelineShaderStageCreateInfo> m_pipelineShaderStages;
     vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
     vk::PipelineInputAssemblyStateCreateInfo m_assemblyStateCreateInfo;

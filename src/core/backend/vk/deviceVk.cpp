@@ -7,9 +7,20 @@
 #include "commonMacro.h"
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <set>
+#include <unordered_set>
 
 namespace backend
 {
+#ifndef NDEBUG
+static bool checkValidationLayerSupport()
+{
+    auto layerProperties = vk::enumerateInstanceLayerProperties();
+    return std::any_of(layerProperties.begin(), layerProperties.end(), [](const auto& property) {
+        return std::strcmp("VK_LAYER_KHRONOS_validation", property.layerName) == 0;
+    });
+}
+
 static VkBool32 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                               VkDebugUtilsMessageTypeFlagsEXT messageType,
                               const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -17,6 +28,83 @@ static VkBool32 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeve
 {
     LOG_INFO("validation layer:\n {}", pCallbackData->pMessage);
     return VK_FALSE;
+}
+#endif
+
+static std::vector<const char*> getLayers()
+{
+    std::vector<const char*> layers;
+#ifndef NDEBUG
+    layers.push_back("VK_LAYER_KHRONOS_validation");
+#endif
+    return layers;
+}
+
+static std::vector<const char*> getInstanceExtensions()
+{
+    auto glfwExtensionCount = 0u;
+    auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    std::vector<const char*> glfwExtensionsVector(glfwExtensions, glfwExtensions + glfwExtensionCount);
+#ifndef NDEBUG
+    glfwExtensionsVector.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#endif
+    glfwExtensionsVector.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    glfwExtensionsVector.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+}
+
+static std::vector<const char*> getDeviceExtensions()
+{
+    return {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        "VK_KHR_portability_subset"
+    };
+}
+
+static bool checkDeviceExtensionSupport(vk::PhysicalDevice gpu)
+{
+    auto availableExtensions = gpu.enumerateDeviceExtensionProperties();
+    auto deviceExtensions = getDeviceExtensions();
+    auto requiredExtensions = std::unordered_set<std::string>(deviceExtensions.cbegin(), deviceExtensions.cend());
+    for (const auto& extension : availableExtensions)
+    {
+        requiredExtensions.erase(extension.extensionName);
+    }
+    requiredExtensions.empty();
+}
+
+static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats)
+{
+    auto it = std::find_if(std::begin(availableFormats), std::end(availableFormats), [](vk::SurfaceFormatKHR format) {
+        return format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
+    });
+    return it == availableFormats.cend() ? availableFormats.front() : *it;
+}
+
+static vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes)
+{
+    auto it = std::find(std::begin(availablePresentModes), std::end(availablePresentModes), vk::PresentModeKHR::eMailbox);
+    return it == availablePresentModes.cend() ? vk::PresentModeKHR::eFifo : vk::PresentModeKHR::eMailbox;
+}
+
+vk::Extent2D DeviceVK::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities)
+{
+    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+    {
+        return capabilities.currentExtent;
+    }
+    else
+    {
+        auto actualExtent = vk::Extent2D{ static_cast<uint32_t>(m_info.width), static_cast<uint32_t>(m_info.height) };
+        actualExtent.width = std::clamp(
+            actualExtent.width,
+            capabilities.minImageExtent.width,
+            capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(
+            actualExtent.height,
+            capabilities.minImageExtent.height,
+            capabilities.maxImageExtent.height);
+        return actualExtent;
+    }
 }
 
 DeviceVK::~DeviceVK()
@@ -34,11 +122,14 @@ void DeviceVK::init()
 {
     Device::init();
     initInstance();
+#ifndef NDEBUG
     initDebugger();
+#endif
     initSurface();
-    initPhysicalDevice();
+    pickPhysicalDevice();
     initDevice();
     creatSwapChain();
+    createImageViews();
 }
 
 const vk::Instance& DeviceVK::instance() const
@@ -63,122 +154,168 @@ void DeviceVK::initDevice()
     // 一个是绘制命令：queueFamilyProperties
     // 一个是显示命令: presentQueueFamilyIndex
     // get the QueueFamilyProperties of the first PhysicalDevice
-    std::vector<vk::QueueFamilyProperties> queueFamilyProperties = m_gpu.getQueueFamilyProperties();
-    // get the first index into queueFamiliyProperties which supports graphics
-    size_t graphicsQueueFamilyIndex = std::distance(queueFamilyProperties.begin(), std::find_if(queueFamilyProperties.begin(), queueFamilyProperties.end(), [](vk::QueueFamilyProperties const& qfp) {
-                                                        return qfp.queueFlags & vk::QueueFlagBits::eGraphics;
-                                                    }));
-    assert(graphicsQueueFamilyIndex < queueFamilyProperties.size());
-    size_t presentQueueFamilyIndex = 0u;
-    for (auto i = 0ul; i < queueFamilyProperties.size(); i++)
-    {
-        if (m_gpu.getSurfaceSupportKHR(static_cast<uint32_t>(i), m_surface))
-        {
-            presentQueueFamilyIndex = i;
-        }
-    }
-    m_uniqueQueueFamilyIndices = { static_cast<uint32_t>(graphicsQueueFamilyIndex),
-                                   static_cast<uint32_t>(presentQueueFamilyIndex) };
+    auto indices = findQueueFamilyIndices();
+    auto uniqueQueueFamilyIndices = std::set<uint32_t>{
+        indices.graphicsFamily.value(),
+        indices.presentFamily.value()
+    };
     std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
     float queuePriority = 0.0f;
-    for (auto& queueFamilyIndex : m_uniqueQueueFamilyIndices)
+    for (auto& index : uniqueQueueFamilyIndices)
     {
-        queueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(queueFamilyIndex), 1, &queuePriority);
+        auto queueCreateInfo = vk::DeviceQueueCreateInfo{
+            .queueFamilyIndex = index,
+            .queueCount = 1,
+            .pQueuePriorities = &queuePriority
+        };
+        queueCreateInfos.emplace_back(queueCreateInfo);
     }
-    const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_portability_subset" };
-    m_device = m_gpu.createDevice({ vk::DeviceCreateFlags(), static_cast<uint32_t>(queueCreateInfos.size()), queueCreateInfos.data(), 0u, nullptr, static_cast<uint32_t>(deviceExtensions.size()), deviceExtensions.data() });
+    auto gpuDeviceFeatures = vk::PhysicalDeviceFeatures{};
+    auto layer = getLayers();
+    auto deviceExtensions = getDeviceExtensions();
+    auto createInfo = vk::DeviceCreateInfo{
+        .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
+        .pQueueCreateInfos = queueCreateInfos.data(),
+        .enabledLayerCount = static_cast<uint32_t>(layer.size()),
+        .ppEnabledLayerNames = layer.data(),
+        .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
+        .ppEnabledExtensionNames = deviceExtensions.data(),
+        .pEnabledFeatures = &gpuDeviceFeatures
+    };
+    m_device = m_gpu.createDevice(createInfo);
+    m_graphicsQueue = m_device.getQueue(indices.graphicsFamily.value(), 0);
+    m_presentQueue = m_device.getQueue(indices.presentFamily.value(), 0);
 }
 
 void DeviceVK::initInstance()
 {
+#ifndef NDEBUG
+    if (!checkValidationLayerSupport())
+    {
+        LOG_ERROR("validation layer is requested, but not available!");
+    }
+#endif
     // initialize the vk::ApplicationInfo structure
-    vk::ApplicationInfo appInfo(m_info.title.c_str(), 1, m_info.title.c_str(), 1, VK_API_VERSION_1_1);
+    vk::ApplicationInfo appInfo{
+        .pApplicationName = m_info.title.c_str(),
+        .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+        .pEngineName = m_info.title.c_str(),
+        .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+        .apiVersion = VK_API_VERSION_1_1
+    };
     // initialize the vk::InstanceCreateInfo
-    auto glfwExtensionCount = 0u;
-    auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    std::vector<const char*> glfwExtensionsVector(glfwExtensions, glfwExtensions + glfwExtensionCount);
-    glfwExtensionsVector.emplace_back("VK_EXT_debug_utils");
-    glfwExtensionsVector.emplace_back("VK_KHR_portability_enumeration");
-    glfwExtensionsVector.emplace_back("VK_KHR_get_physical_device_properties2");
-    auto layers = std::vector<const char*>{ "VK_LAYER_KHRONOS_validation" };
-    vk::InstanceCreateInfo instanceCreateInfo;
-    instanceCreateInfo.setPApplicationInfo(&appInfo)
-        .setPEnabledExtensionNames(glfwExtensionsVector)
-        .setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR)
-        .setPEnabledLayerNames(layers);
+    auto layers = getLayers();
+    auto instanceExtensions = getInstanceExtensions();
+    auto instanceCreateInfo = vk::InstanceCreateInfo{
+        .flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR,
+        .pApplicationInfo = &appInfo,
+        .enabledLayerCount = static_cast<uint32_t>(layers.size()),
+        .ppEnabledLayerNames = layers.data(),
+        .enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size()),
+        .ppEnabledExtensionNames = instanceExtensions.data()
+    };
     m_instance = vk::createInstance(instanceCreateInfo);
 }
 
 void DeviceVK::initDebugger()
 {
-    // vk::DispatchLoaderDynamic dldi(*instance);
-    auto dldi = vk::DispatchLoaderDynamic(m_instance, vkGetInstanceProcAddr);
-    m_messenger = m_instance.createDebugUtilsMessengerEXT(
-        vk::DebugUtilsMessengerCreateInfoEXT{ {},
-                                              vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-                                                  vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
-                                              vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-                                                  vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
-                                              debugCallback },
-        nullptr, dldi);
+    auto messageSeverity = vk::DebugUtilsMessageSeverityFlagsEXT{
+        vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
+        vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
+        vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+        vk::DebugUtilsMessageSeverityFlagBitsEXT::eError
+    };
+    auto messageType = vk::DebugUtilsMessageTypeFlagsEXT{
+        vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+        vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+        vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
+    };
+    auto createInfo = vk::DebugUtilsMessengerCreateInfoEXT{
+        .messageSeverity = messageSeverity,
+        .messageType = messageType,
+        .pfnUserCallback = debugCallback
+    };
+    m_messenger = m_instance.createDebugUtilsMessengerEXT(createInfo);
     (void)m_messenger;
 }
 
 void DeviceVK::initSurface()
 {
-    glfwCreateWindowSurface(m_instance, m_window, nullptr, (VkSurfaceKHR*)(&m_surface));
+    VkSurfaceKHR surface;
+    if (glfwCreateWindowSurface(m_instance, m_window, nullptr, &surface))
+    {
+        LOG_ERROR("failed to create window surface!");
+    }
+    m_surface = surface;
 }
 
-void DeviceVK::initPhysicalDevice()
+void DeviceVK::pickPhysicalDevice()
 {
     /// 挑选一块显卡
     // 创建 gpu
     auto gpus = m_instance.enumeratePhysicalDevices();
+    if (gpus.empty())
+    {
+        LOG_ERROR("failed to find gpus with Vulkan support!");
+    }
     // 打印显卡名
-    for (auto& gpu : gpus)
+    for (const auto& gpu : gpus)
     {
         LOG_INFO("gpu:{}", gpu.getProperties().deviceName);
+        if (isDeviceSuitable(gpu))
+        {
+            m_gpu = gpu;
+            break;
+        }
     }
-    m_gpu = gpus.front();
+    if (!m_gpu)
+    {
+        LOG_ERROR("failed to find a suitable GPU!");
+    }
 }
 
 void DeviceVK::creatSwapChain()
 {
-    uint32_t imageCount = 2;
-    SharingModeUtil sharingModeUtil{ (m_uniqueQueueFamilyIndices.begin() != m_uniqueQueueFamilyIndices.end()) ?
-                                         SharingModeUtil{ vk::SharingMode::eConcurrent, 2u, m_uniqueQueueFamilyIndices.data() } :
-                                         SharingModeUtil{ vk::SharingMode::eExclusive, 0u, static_cast<uint32_t*>(nullptr) } };
-    auto format = vk::Format::eB8G8R8A8Unorm;
-    vk::SwapchainCreateInfoKHR swapChainCreateInfo(
-        {},
-        m_surface,
-        imageCount,
-        format,
-        vk::ColorSpaceKHR::eSrgbNonlinear,
-        { (uint32_t)m_info.width, (uint32_t)m_info.height },
-        1,
-        vk::ImageUsageFlagBits::eColorAttachment,
-        sharingModeUtil.sharingMode,
-        sharingModeUtil.familyIndicesCount,
-        sharingModeUtil.familyIndicesDataPtr,
-        vk::SurfaceTransformFlagBitsKHR::eIdentity,
-        vk::CompositeAlphaFlagBitsKHR::eOpaque,
-        vk::PresentModeKHR::eFifo,
-        true,
-        nullptr);
-
-    m_swapChain = m_device.createSwapchainKHR(swapChainCreateInfo);
-    auto swapChainImages = m_device.getSwapchainImagesKHR(m_swapChain);
-    m_imageViews.reserve(swapChainImages.size());
-    for (auto image : swapChainImages)
+    auto details = querySwapchainSupport(m_gpu);
+    auto surfaceFormat = chooseSwapSurfaceFormat(details.formats);
+    auto presentMode = chooseSwapPresentMode(details.presentModes);
+    auto extent = chooseSwapExtent(details.capabilities);
+    uint32_t imageCount = details.capabilities.minImageCount + 1;
+    if (details.capabilities.maxImageCount > 0 && imageCount > details.capabilities.maxImageCount)
     {
-        vk::ImageViewCreateInfo imageViewCreateInfo(vk::ImageViewCreateFlags(), image,
-                                                    vk::ImageViewType::e2D, format,
-                                                    vk::ComponentMapping{ vk::ComponentSwizzle::eR, vk::ComponentSwizzle::eG,
-                                                                          vk::ComponentSwizzle::eB, vk::ComponentSwizzle::eA },
-                                                    vk::ImageSubresourceRange{ vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 });
-        m_imageViews.emplace_back(m_device.createImageView(imageViewCreateInfo));
+        imageCount = details.capabilities.maxImageCount;
     }
+    auto createInfo = vk::SwapchainCreateInfoKHR{
+        .surface = m_surface,
+        .minImageCount = imageCount,
+        .imageFormat = surfaceFormat.format,
+        .imageColorSpace = surfaceFormat.colorSpace,
+        .imageExtent = extent,
+        .imageArrayLayers = 1,
+        .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
+        .preTransform = details.capabilities.currentTransform,
+        .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
+        .presentMode = presentMode,
+        .clipped = VK_TRUE
+    };
+    QueueFamilyIndices indices = findQueueFamilyIndices();
+    uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+    if (indices.graphicsFamily != indices.presentFamily)
+    {
+        createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+    }
+    else
+    {
+        createInfo.imageSharingMode = vk::SharingMode::eExclusive;
+    }
+
+    m_swapChain = m_device.createSwapchainKHR(createInfo);
+    m_swapchainImages = m_device.getSwapchainImagesKHR(m_swapChain);
+    m_swapchainImageFormat = surfaceFormat.format;
+    m_swapchainExtent = extent;
+    m_swapchainImagesView.reserve(m_swapchainImages.size());
 }
 
 const vk::SwapchainKHR& DeviceVK::swapChain() const
@@ -191,43 +328,111 @@ const vk::SurfaceKHR& DeviceVK::surface() const
     return m_surface;
 }
 
-const std::vector<uint32_t>& DeviceVK::uniqueQueueFamilyIndices() const
+uint32_t DeviceVK::findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) const
 {
-    return m_uniqueQueueFamilyIndices;
-}
+    auto memProperties = m_gpu.getMemoryProperties();
 
-const std::vector<vk::ImageView>& DeviceVK::imageViews() const
-{
-    return m_imageViews;
-}
-
-uint32_t DeviceVK::getMemoryType(uint32_t bits, vk::MemoryPropertyFlags properties) const
-{
-    bool memoryTypeFound = false;
-    for (uint32_t i = 0; i < m_gpu.getMemoryProperties().memoryTypeCount; i++)
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
     {
-        if ((bits & 1) == 1)
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
         {
-            if ((m_gpu.getMemoryProperties().memoryTypes[i].propertyFlags & properties) == properties)
-            {
-                if (memoryTypeFound)
-                {
-                    memoryTypeFound = true;
-                }
-                return i;
-            }
+            return i;
         }
-        bits >>= 1;
     }
+    LOG_ERROR("failed to find suitable memory type!");
+    ASSERT(0);
+    return 0;
+}
 
-    if (memoryTypeFound)
+bool DeviceVK::isDeviceSuitable(vk::PhysicalDevice gpu)
+{
+    auto indices = findQueueFamilyIndices();
+    bool extensionsSupported = checkDeviceExtensionSupport(gpu);
+    bool swapchainAdequate{ false };
+    if (extensionsSupported)
     {
-        memoryTypeFound = false;
-        return 0;
+        auto details = querySwapchainSupport(gpu);
+        swapchainAdequate = !details.formats.empty() && details.presentModes.empty();
     }
-    else
+    return indices.isComplete() && extensionsSupported && swapchainAdequate;
+}
+
+DeviceVK::QueueFamilyIndices DeviceVK::findQueueFamilyIndices()
+{
+    auto queueFamilyProperties = m_gpu.getQueueFamilyProperties();
+    QueueFamilyIndices indices;
+    uint32_t i = 0;
+    for (const auto& queueFamily : queueFamilyProperties)
     {
-        LOG_ERROR("Could not find a matching memory type");
+        if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics)
+        {
+            indices.graphicsFamily = i;
+        }
+        if (m_gpu.getSurfaceSupportKHR(i, m_surface))
+        {
+            indices.presentFamily = i;
+        }
+        if (indices.isComplete()) { break; }
+        ++i;
+    }
+    return indices;
+}
+
+DeviceVK::SwapchainSupportDetails DeviceVK::querySwapchainSupport(vk::PhysicalDevice gpu) const
+{
+    SwapchainSupportDetails details;
+    details.capabilities = gpu.getSurfaceCapabilitiesKHR(m_surface);
+    details.formats = gpu.getSurfaceFormatsKHR(m_surface);
+    details.presentModes = gpu.getSurfacePresentModesKHR(m_surface);
+    return details;
+}
+
+const vk::Queue& DeviceVK::graphicsQueue() const
+{
+    return m_graphicsQueue;
+}
+
+const vk::Queue& DeviceVK::presentQueue() const
+{
+    return m_presentQueue;
+}
+
+const std::vector<vk::Image>& DeviceVK::swapchainImages() const
+{
+    return m_swapchainImages;
+}
+
+const std::vector<vk::ImageView>& DeviceVK::swapchainImageViews() const
+{
+    return m_swapchainImagesView;
+}
+
+vk::Format DeviceVK::swapchainImageFormat() const
+{
+    return m_swapchainImageFormat;
+}
+
+const vk::Extent2D& DeviceVK::swapchainExtent() const
+{
+    return m_swapchainExtent;
+}
+
+void DeviceVK::createImageViews()
+{
+    for (auto image : m_swapchainImages)
+    {
+        vk::ImageViewCreateInfo imageViewCreateInfo{
+            .image = image,
+            .viewType = vk::ImageViewType::e2D,
+            .format = m_swapchainImageFormat,
+            .components = {
+                .r = vk::ComponentSwizzle::eIdentity,
+                .g = vk::ComponentSwizzle::eIdentity,
+                .b = vk::ComponentSwizzle::eIdentity,
+                .a = vk::ComponentSwizzle::eIdentity },
+            .subresourceRange = { .aspectMask = vk::ImageAspectFlagBits::eColor, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1 }
+        };
+        m_swapchainImagesView.emplace_back(m_device.createImageView(imageViewCreateInfo));
     }
 }
 } // namespace backend
