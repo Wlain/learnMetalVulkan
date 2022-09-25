@@ -177,7 +177,7 @@ void PipelineVk::setColorBlendAttachment()
 
 void PipelineVk::setRenderPass(const vk::RenderPass& renderPass)
 {
-    m_renderPass = renderPass ? createRenderPass() : renderPass;
+    m_renderPass = m_renderPass ? renderPass : createRenderPass();
 }
 
 vk::RenderPass PipelineVk::createRenderPass()
