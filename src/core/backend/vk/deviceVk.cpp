@@ -44,12 +44,13 @@ static std::vector<const char*> getInstanceExtensions()
 {
     auto glfwExtensionCount = 0u;
     auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    std::vector<const char*> glfwExtensionsVector(glfwExtensions, glfwExtensions + glfwExtensionCount);
+    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 #ifndef NDEBUG
-    glfwExtensionsVector.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
-    glfwExtensionsVector.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-    glfwExtensionsVector.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    return extensions;
 }
 
 static std::vector<const char*> getDeviceExtensions()
@@ -69,7 +70,7 @@ static bool checkDeviceExtensionSupport(vk::PhysicalDevice gpu)
     {
         requiredExtensions.erase(extension.extensionName);
     }
-    requiredExtensions.empty();
+    return requiredExtensions.empty();
 }
 
 static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats)

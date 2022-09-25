@@ -14,10 +14,10 @@
 #define PROJECT_NAME "LearnMetalVulkan"
 
 #define __FILENAME__ (static_cast<const char*>(__FILE__) + ROOT_PATH_SIZE)
-#define LOG_INFO(...) spdlog::info(__VA_ARGS__);
-#define LOG_WARN(...) spdlog::warn(__VA_ARGS__);
-#define LOG_ERROR(...) spdlog::error("in File:" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + " in func:" + std::string(__FUNCTION__) + "]:" + __VA_ARGS__);
-#define LOG_DEBUG(...) spdlog::debug(__VA_ARGS__);
+#define LOG_INFO(...) spdlog::info(__VA_ARGS__)
+#define LOG_WARN(...) spdlog::warn(__VA_ARGS__)
+#define LOG_ERROR(...) spdlog::error("in File:" + std::string(__FILE__) + ":" + std::to_string(__LINE__) + " in func:" + std::string(__FUNCTION__) + "]:" + __VA_ARGS__)
+#define LOG_DEBUG(...) spdlog::debug(__VA_ARGS__)
 #define LOG_FATAL(...) spdlog::debug(__VA_ARGS__)
 
 /// 安卓平台下导出动态库
