@@ -531,9 +531,7 @@ private:
 
     void createGraphicsPipeline()
     {
-        //        auto [vertShaderCode, fragShaderCode] = backend::Pipeline::getSpvFromGLSL(getFileContents("shaders/shader.vert"), getFileContents("shaders/shader.frag"));
-        auto vertShaderCode = readFile("shaders/vert.spv");
-        auto fragShaderCode = readFile("shaders/frag.spv");
+        auto [vertShaderCode, fragShaderCode] = backend::Pipeline::getSpvFromGLSL(getFileContents("shaders/shader.vert"), getFileContents("shaders/shader.frag"));
         auto vertShaderModule = createShaderModule(vertShaderCode);
         auto fragShaderModule = createShaderModule(fragShaderCode);
         auto vertShaderStageInfo = vk::PipelineShaderStageCreateInfo{
@@ -547,12 +545,9 @@ private:
             .module = fragShaderModule,
             .pName = "main"
         };
-
         auto shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>{ vertShaderStageInfo, fragShaderStageInfo };
-
         auto bindingDescription = getBindingDescription();
         auto attributeDescriptions = getAttributeDescriptions();
-
         auto vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
             .vertexBindingDescriptionCount = 1,
             .pVertexBindingDescriptions = &bindingDescription,
@@ -585,7 +580,7 @@ private:
             .depthClampEnable = VK_FALSE,
             .rasterizerDiscardEnable = VK_FALSE,
             .polygonMode = vk::PolygonMode::eFill,
-            .cullMode = vk::CullModeFlagBits::eNone, // 默认值
+            .cullMode = vk::CullModeFlagBits::eNone,       // 默认值
             .frontFace = vk::FrontFace::eCounterClockwise, // 默认值
             .depthBiasEnable = VK_FALSE,
             .lineWidth = 1.0f
@@ -870,11 +865,11 @@ private:
         device_.freeCommandBuffers(commandPool_, 1, commandBuffers.data());
     }
 
-    vk::ShaderModule createShaderModule(const std::vector<char>& code)
+    vk::ShaderModule createShaderModule(const std::vector<uint32_t>& code)
     {
         auto createInfo = vk::ShaderModuleCreateInfo{
-            .codeSize = code.size(),
-            .pCode = reinterpret_cast<const uint32_t*>(code.data())
+            .codeSize = code.size() * sizeof(uint32_t),
+            .pCode = code.data()
         };
 
         return device_.createShaderModule(createInfo);
