@@ -21,7 +21,7 @@ public:
     void createCommandBuffers();
     void swapBuffers() override;
     void createSyncObjects();
-    void createCommandPools();
+    void createCommandPool();
     const std::vector<vk::Framebuffer>& frameBuffers() const;
     const std::vector<vk::CommandBuffer>& commandBuffers() const;
     const vk::CommandPool& commandPool() const;

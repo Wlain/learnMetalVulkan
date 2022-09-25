@@ -121,7 +121,7 @@ const vk::CommandPool& GLFWRendererVK::commandPool() const
     return m_commandPool;
 }
 
-void GLFWRendererVK::createCommandPools()
+void GLFWRendererVK::createCommandPool()
 {
     auto queueFamilyIndices = m_deviceVk->findQueueFamilyIndices(m_deviceVk->gpu());
     auto poolInfo = vk::CommandPoolCreateInfo{

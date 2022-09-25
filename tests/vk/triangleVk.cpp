@@ -35,6 +35,7 @@ public:
         buildBuffers();
         buildPipeline();
         m_render->createSyncObjects();
+        m_render->createCommandPool();
         m_render->createCommandBuffers();
     }
 
