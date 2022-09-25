@@ -1025,7 +1025,7 @@ private:
     }
 };
 
-int demoTriangle2()
+void demoTriangle2()
 {
     HelloTriangleApplication app;
     app.run();
