@@ -40,6 +40,8 @@ private:
     vk::Semaphore m_renderFinishedSemaphore;
     std::vector<vk::Fence> m_inflightFences;
     std::vector<vk::Fence> m_imagesInflight;
+    std::vector<vk::Semaphore> m_imageAvailableSemaphores;
+    std::vector<vk::Semaphore> m_renderFinishedSemaphores;
     std::size_t m_currentFrame{ 0 };
     bool m_framebufferResized{ false };
 };

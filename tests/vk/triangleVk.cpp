@@ -31,11 +31,12 @@ public:
         m_deviceVK = dynamic_cast<DeviceVK*>(m_renderer->device());
         m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
         m_device = m_deviceVK->handle();
+        buildPipeline();
+        m_render->createFrameBuffers();
         m_render->createCommandPool();
         buildBuffers();
-        buildPipeline();
-        m_render->createSyncObjects();
         m_render->createCommandBuffers();
+        m_render->createSyncObjects();
     }
 
     vk::VertexInputBindingDescription getBindingDescription()
@@ -135,7 +136,16 @@ public:
         copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
         m_device.destroyBuffer(stagingBuffer);
         m_device.freeMemory(stagingBufferMemory);
+    }
 
+    void buildPipeline()
+    {
+        std::string vertSource = getFileContents("shaders/triangle.vert");
+        std::string fragShader = getFileContents("shaders/triangle.frag");
+        m_pipeline = MAKE_SHARED(m_pipeline, m_deviceVK);
+        m_pipeline->setProgram(vertSource, fragShader);
+
+        ///
         m_bindingDescription = getBindingDescription();
         m_attributeDescriptions = getAttributeDescriptions();
         m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
@@ -149,14 +159,6 @@ public:
             .pushConstantRangeCount = 0
         };
         m_pipelineLayout = m_device.createPipelineLayout(pipelineLayoutInfo);
-    }
-
-    void buildPipeline()
-    {
-        std::string vertSource = getFileContents("shaders/triangle.vert");
-        std::string fragShader = getFileContents("shaders/triangle.frag");
-        m_pipeline = MAKE_SHARED(m_pipeline, m_deviceVK);
-        m_pipeline->setProgram(vertSource, fragShader);
         m_pipeline->initVertexBuffer(m_vertexInputInfo);
         m_pipeline->setAssembly();
         m_pipeline->setPipelineLayout(m_pipelineLayout);

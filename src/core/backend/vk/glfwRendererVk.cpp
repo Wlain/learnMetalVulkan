@@ -7,7 +7,7 @@
 #include "pipelineVk.h"
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-
+#define MAX_FRAMES_IN_FLIGHT 2
 namespace backend
 {
 GLFWRendererVK::GLFWRendererVK(Device* handle) :
@@ -85,9 +85,15 @@ void GLFWRendererVK::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
 
 void GLFWRendererVK::createSyncObjects()
 {
-    auto semaphoreCreateInfo = vk::SemaphoreCreateInfo{};
-    m_imageAvailableSemaphore = m_deviceVk->handle().createSemaphore(semaphoreCreateInfo);
-    m_renderFinishedSemaphore = m_deviceVk->handle().createSemaphore(semaphoreCreateInfo);
+    auto semaphoreInfo = vk::SemaphoreCreateInfo{};
+    auto fenceInfo = vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled };
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    {
+        m_imageAvailableSemaphores.push_back(m_device.createSemaphore(semaphoreInfo));
+        m_renderFinishedSemaphores.push_back(m_device.createSemaphore(semaphoreInfo));
+        m_inflightFences.push_back(m_device.createFence(fenceInfo));
+    }
+    m_imagesInflight.resize(m_deviceVk->swapchainImages().size(), vk::Fence{ nullptr });
 }
 
 const std::vector<vk::CommandBuffer>& GLFWRendererVK::commandBuffers() const
