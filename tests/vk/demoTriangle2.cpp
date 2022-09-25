@@ -531,7 +531,8 @@ private:
 
     void createGraphicsPipeline()
     {
-        auto [vertShaderCode, fragShaderCode] = backend::Pipeline::getSpvFromGLSL(getFileContents("shaders/shader.vert"), getFileContents("shaders/shader.frag"));
+        auto [vertShaderCode, fragShaderCode] = backend::Pipeline::getSpvFromGLSL(getFileContents("shaders/triangle.vert"),
+                                                                                  getFileContents("shaders/triangle.frag"));
         auto vertShaderModule = createShaderModule(vertShaderCode);
         auto fragShaderModule = createShaderModule(fragShaderCode);
         auto vertShaderStageInfo = vk::PipelineShaderStageCreateInfo{
