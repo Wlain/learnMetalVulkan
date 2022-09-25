@@ -178,7 +178,6 @@ public:
         auto& frameBuffers = m_render->frameBuffers();
         vk::ClearValue clearValues{};
         static float red = 1.0f;
-        //        red = red > 1.0f ? 0.0f : red + 0.005f;
         clearValues.color.setFloat32({ red, 0.0f, 0.0f, 1.0f });
         vk::RenderPassBeginInfo renderPassBeginInfo;
         renderPassBeginInfo.setRenderPass(m_pipeline->renderPass());
@@ -196,7 +195,6 @@ public:
             commandBuffers[i].beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
             commandBuffers[i].setViewport(0, 1, &viewport);
             commandBuffers[i].setScissor(0, 1, &scissor);
-            commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, m_descriptorSet, nullptr);
             commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle()); // 等价于 opengl的 bind program 和一设定些状态
             commandBuffers[i].bindVertexBuffers(0, m_vertexBuffer, { 0 });
             commandBuffers[i].draw(3, 1, 0, 0);

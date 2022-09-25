@@ -155,7 +155,7 @@ void DeviceVK::initDevice()
     // 一个是绘制命令：queueFamilyProperties
     // 一个是显示命令: presentQueueFamilyIndex
     // get the QueueFamilyProperties of the first PhysicalDevice
-    auto indices = findQueueFamilyIndices();
+    auto indices = findQueueFamilyIndices(m_gpu);
     auto uniqueQueueFamilyIndices = std::set<uint32_t>{
         indices.graphicsFamily.value(),
         indices.presentFamily.value()
@@ -217,7 +217,7 @@ void DeviceVK::initInstance()
     };
     m_instance = vk::createInstance(instanceCreateInfo);
 }
-
+#ifndef NDEBUG
 void DeviceVK::initDebugger()
 {
     auto messageSeverity = vk::DebugUtilsMessageSeverityFlagsEXT{
@@ -239,6 +239,7 @@ void DeviceVK::initDebugger()
     m_messenger = m_instance.createDebugUtilsMessengerEXT(createInfo);
     (void)m_messenger;
 }
+#endif
 
 void DeviceVK::initSurface()
 {
@@ -299,7 +300,7 @@ void DeviceVK::creatSwapChain()
         .presentMode = presentMode,
         .clipped = VK_TRUE
     };
-    QueueFamilyIndices indices = findQueueFamilyIndices();
+    QueueFamilyIndices indices = findQueueFamilyIndices(m_gpu);
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
     if (indices.graphicsFamily != indices.presentFamily)
     {
@@ -347,20 +348,20 @@ uint32_t DeviceVK::findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags p
 
 bool DeviceVK::isDeviceSuitable(vk::PhysicalDevice gpu)
 {
-    auto indices = findQueueFamilyIndices();
+    auto indices = findQueueFamilyIndices(gpu);
     bool extensionsSupported = checkDeviceExtensionSupport(gpu);
     bool swapchainAdequate{ false };
     if (extensionsSupported)
     {
         auto details = querySwapchainSupport(gpu);
-        swapchainAdequate = !details.formats.empty() && details.presentModes.empty();
+        swapchainAdequate = !details.formats.empty() && !details.presentModes.empty();
     }
     return indices.isComplete() && extensionsSupported && swapchainAdequate;
 }
 
-DeviceVK::QueueFamilyIndices DeviceVK::findQueueFamilyIndices()
+DeviceVK::QueueFamilyIndices DeviceVK::findQueueFamilyIndices(vk::PhysicalDevice gpu)
 {
-    auto queueFamilyProperties = m_gpu.getQueueFamilyProperties();
+    auto queueFamilyProperties = gpu.getQueueFamilyProperties();
     QueueFamilyIndices indices;
     uint32_t i = 0;
     for (const auto& queueFamily : queueFamilyProperties)
@@ -369,7 +370,7 @@ DeviceVK::QueueFamilyIndices DeviceVK::findQueueFamilyIndices()
         {
             indices.graphicsFamily = i;
         }
-        if (m_gpu.getSurfaceSupportKHR(i, m_surface))
+        if (gpu.getSurfaceSupportKHR(i, m_surface))
         {
             indices.presentFamily = i;
         }

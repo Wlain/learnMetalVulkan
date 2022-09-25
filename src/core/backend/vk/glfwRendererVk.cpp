@@ -44,14 +44,28 @@ GLFWRendererVK::~GLFWRendererVK()
 
 void GLFWRendererVK::swapBuffers()
 {
-    //    auto imageIndex = m_device.acquireNextImageKHR(m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore, {});
-    //    vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    //    auto submitInfo = vk::SubmitInfo{ 1, &m_imageAvailableSemaphore, &waitStageMask, 1, &m_commandBuffers[imageIndex.value], 1, &m_renderFinishedSemaphore };
-    //    m_deviceQueue.submit(submitInfo, {});
-    //    auto presentInfo = vk::PresentInfoKHR{ 1, &m_renderFinishedSemaphore, 1, &m_swapChain, &imageIndex.value };
-    //    auto result = m_presentQueue.presentKHR(presentInfo);
-    //    (void)result;
-    //    m_device.waitIdle();
+    auto imageIndex = m_device.acquireNextImageKHR(m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore, {});
+    vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    auto submitInfo = vk::SubmitInfo{
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &m_imageAvailableSemaphore,
+        .pWaitDstStageMask = &waitStageMask,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &m_commandBuffers[imageIndex.value],
+        .signalSemaphoreCount = 1,
+        .pSignalSemaphores = &m_renderFinishedSemaphore
+    };
+    m_deviceVk->graphicsQueue().submit(submitInfo, {});
+    auto presentInfo = vk::PresentInfoKHR{
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &m_renderFinishedSemaphore,
+        .swapchainCount = 1,
+        .pSwapchains = &m_swapChain,
+        .pImageIndices = &imageIndex.value
+    };
+    auto result = m_deviceVk->presentQueue().presentKHR(presentInfo);
+    (void)result;
+    m_device.waitIdle();
 }
 
 void GLFWRendererVK::createCommandBuffers()
@@ -109,7 +123,7 @@ const vk::CommandPool& GLFWRendererVK::commandPool() const
 
 void GLFWRendererVK::createCommandPools()
 {
-    auto queueFamilyIndices = m_deviceVk->findQueueFamilyIndices();
+    auto queueFamilyIndices = m_deviceVk->findQueueFamilyIndices(m_deviceVk->gpu());
     auto poolInfo = vk::CommandPoolCreateInfo{
         .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value()
     };

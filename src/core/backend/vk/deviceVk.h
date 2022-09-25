@@ -55,11 +55,13 @@ public:
     const std::vector<vk::ImageView>& swapchainImageViews() const;
     vk::Format swapchainImageFormat() const;
     const vk::Extent2D& swapchainExtent() const;
-    QueueFamilyIndices findQueueFamilyIndices();
+    QueueFamilyIndices findQueueFamilyIndices(vk::PhysicalDevice gpu);
 
 private:
     void initInstance();
+#ifndef NDEBUG
     void initDebugger();
+#endif
     void pickPhysicalDevice();
     void initDevice();
     void initSurface();
