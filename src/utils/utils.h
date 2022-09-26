@@ -27,6 +27,7 @@ static std::string getFileContents(const std::filesystem::path& filename)
         return contents;
     }
     LOG_ERROR("Error reading {}. Error code: {}", filename.c_str(), errno);
+    return "";
 }
 
 static std::string_view getCurrentOperationSystem()

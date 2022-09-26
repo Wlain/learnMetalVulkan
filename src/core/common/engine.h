@@ -12,7 +12,7 @@ namespace backend
 class Engine
 {
 public:
-    Engine(GLFWRenderer& renderer);
+    explicit Engine(GLFWRenderer& renderer);
     virtual ~Engine() = default;
 
 public:

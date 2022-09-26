@@ -5,7 +5,7 @@
 #ifndef LEARNMETALVULKAN_SHADERVK_H
 #define LEARNMETALVULKAN_SHADERVK_H
 #include "pipeline.h"
-
+#define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
 #include <vulkan/vulkan.hpp>
 namespace backend
 {
@@ -14,12 +14,12 @@ class DeviceVK;
 class PipelineVk : public Pipeline
 {
 public:
-    explicit PipelineVk(Device* handle);
+    explicit PipelineVk(Device* device);
     ~PipelineVk() override;
     void setProgram(std::string_view vertShader, std::string_view fragSource) override;
-    void initVertexBuffer();
+    void initVertexBuffer(const VkPipelineVertexInputStateCreateInfo& info);
     void setAssembly();
-    void setPipelineLayout();
+    void setPipelineLayout(vk::PipelineLayout layout);
     void setViewport();
     void setRasterization();
     void setMultisample();
@@ -31,15 +31,18 @@ public:
     vk::Pipeline handle() const;
 
 private:
+    vk::ShaderModule createShaderModule(const std::vector<uint32_t>& code);
+
+private:
     DeviceVK* m_deviceVk{ nullptr };
     vk::RenderPass m_renderPass;
-    vk::Pipeline m_pipeline;
-    vk::PipelineLayout m_pipelineLayout;
     vk::ShaderModule m_vertexShaderModule;
     vk::ShaderModule m_fragmentShaderModule;
+    vk::Pipeline m_pipeline;
+    vk::PipelineLayout m_pipelineLayout;
     std::vector<vk::PipelineShaderStageCreateInfo> m_pipelineShaderStages;
     vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
-    vk::PipelineInputAssemblyStateCreateInfo m_assemblyStateCreateInfo;
+    vk::PipelineInputAssemblyStateCreateInfo m_inputAssembly;
     vk::Viewport m_viewport;
     vk::Rect2D m_scissor;
     vk::PipelineViewportStateCreateInfo m_viewportState;

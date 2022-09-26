@@ -40,12 +40,12 @@ private:
     MTL::ClearColor m_color{ 0, 0, 0, 1 };
     CA::MetalLayer* m_swapChain{ nullptr };
     MTL::CommandQueue* m_queue{ nullptr };
-    DeviceMtl* m_device;
+    DeviceMtl* m_device{ nullptr };
 };
 
 void windowMtl()
 {
-    Device::Info info{ Device::RenderType::Metal, 640, 480, "Metal Example window"};
+    Device::Info info{ Device::RenderType::Metal, 640, 480, "Metal Example window" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);

@@ -24,11 +24,11 @@ public:
 
 public:
     void init();
-    void startEventLoop();
+    virtual void startEventLoop();
     GLFWwindow* glfwWindow();
     virtual void swapBuffers() = 0;
     virtual void setPipeline(const std::shared_ptr<Pipeline>& shader) = 0;
-    Device* device() const;
+    [[nodiscard]] Device* device() const;
 
 private:
     void frame(float deltaTimeSec);
@@ -44,8 +44,6 @@ public:
 
 protected:
     GLFWwindow* m_window{ nullptr };
-    int m_windowWidth{ 800 };
-    int m_windowHeight{ 600 };
     Device* m_device{ nullptr };
 
 private:

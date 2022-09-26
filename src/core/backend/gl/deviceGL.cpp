@@ -4,6 +4,7 @@
 
 #include "deviceGL.h"
 
+#include "glCommonDefine.h"
 #include <GLFW/glfw3.h>
 namespace backend
 {
@@ -24,5 +25,10 @@ void DeviceGL::init()
 {
     Device::init();
     glfwMakeContextCurrent(m_window);
+    if (glewInit() != GLEW_OK)
+    {
+        LOG_ERROR("glewInit error");
+        exit(EXIT_FAILURE);
+    }
 }
 } // namespace backend

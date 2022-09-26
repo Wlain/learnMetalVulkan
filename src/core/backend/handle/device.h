@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <string>
+
 struct GLFWwindow;
 namespace backend
 {
@@ -31,7 +32,7 @@ public:
 
 public:
     explicit Device(const Info& info);
-    virtual ~Device() = default;
+    virtual ~Device();
     RenderType type() const;
     uint32_t width() const;
     uint32_t height() const;

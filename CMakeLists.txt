@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(learnMetalVulkan)
 set(CMAKE_CXX_STANDARD 17)
 
+# submodule
 # Vulkan
 find_package(Vulkan REQUIRED)
 # metal-cpp
@@ -32,11 +33,13 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/src/core/backend/gl
         ${PROJECT_SOURCE_DIR}/src/core/backend/vk
         ${PROJECT_SOURCE_DIR}/src/core/backend/mtl
+        ${PROJECT_SOURCE_DIR}/3rdparty
         ${PROJECT_SOURCE_DIR}/3rdparty/glfw/deps
-        ${CMAKE_CURRENT_LIST_DIR}/3rdparty/glew/include)
+        ${PROJECT_SOURCE_DIR}/3rdparty/glew/include)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.mm tests/*.cpp)
 add_executable(learnMetalVulkan ${SOURCES})
 file(COPY tests/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY tests/textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(learnMetalVulkan ${SDL2_LIBRARY} ${Vulkan_LIBRARIES} ${SHADERC_LIB} glfw glm glew spdlog metal-cpp spirv-cross-glsl spirv-cross-msl)

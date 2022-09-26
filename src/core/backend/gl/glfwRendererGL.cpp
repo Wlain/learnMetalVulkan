@@ -4,6 +4,8 @@
 
 #include "glfwRendererGL.h"
 
+#include "pipelineGl.h"
+
 #include <GLFW/glfw3.h>
 namespace backend
 {
@@ -16,6 +18,8 @@ void GLFWRendererGL::swapBuffers()
 
 void GLFWRendererGL::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
 {
+    auto pipelineGL = std::dynamic_pointer_cast<PipelineGL>(pipeline);
+    glUseProgram(pipelineGL->program());
 }
 
 } // namespace backend
