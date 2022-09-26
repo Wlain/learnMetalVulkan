@@ -12,9 +12,9 @@ class Component
 public:
     Component();
     virtual ~Component();
-    Component(const std::string& name);
-    Component(Component&& other);
-    const std::string& name() const;
+    explicit Component(const std::string& name);
+    Component(Component&& other) noexcept ;
+    [[nodiscard]] const std::string& name() const;
     virtual std::type_index type();
 
 private:

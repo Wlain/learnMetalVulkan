@@ -8,7 +8,7 @@ Component::~Component() = default;
 Component::Component(const std::string& name)
 {
 }
-Component::Component(Component&& other) = default;
+Component::Component(Component&& other)  noexcept = default;
 
 const std::string& Component::name() const
 {
