@@ -15,13 +15,6 @@ namespace backend
 class DeviceVK : public Device
 {
 public:
-    struct SharingModeUtil
-    {
-        vk::SharingMode sharingMode;
-        uint32_t familyIndicesCount;
-        uint32_t* familyIndicesDataPtr;
-    };
-
     struct QueueFamilyIndices
     {
         std::optional<uint32_t> graphicsFamily;

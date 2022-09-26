@@ -11,57 +11,28 @@
 #include "deviceVk.h"
 #include "pipelineVk.h"
 
-#include <iostream>
 #include <optional>
 #include <set>
 #include <stdexcept>
-#include <unordered_set>
 #include <vulkan/vulkan.hpp>
 
 constexpr std::size_t MAX_FRAMES_IN_FLIGHT = 2;
-
 #ifndef NDEBUG
-VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugUtilsMessengerEXT(
-    VkInstance instance,
-    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-    const VkAllocationCallbacks* pAllocator,
-    VkDebugUtilsMessengerEXT* pMessenger)
-{
-    auto addr = vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(addr);
-    if (func)
-    {
-        return func(instance, pCreateInfo, pAllocator, pMessenger);
-    }
-    else
-    {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(
-    VkInstance instance,
-    VkDebugUtilsMessengerEXT messenger,
-    const VkAllocationCallbacks* pAllocator)
-{
-    auto addr = vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(addr);
-    if (func)
-    {
-        return func(instance, messenger, pAllocator);
-    }
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-    void* pUserData)
-{
-    std::cerr << pCallbackData->pMessage << "\n";
-    return VK_FALSE;
-}
+extern VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger);
+extern VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger, const VkAllocationCallbacks* pAllocator);
+extern VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+extern bool checkValidationLayerSupport();
 #endif
+
+extern void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+extern std::vector<const char*> getLayers();
+extern std::vector<const char*> getInstanceExtensions();
+extern bool checkDeviceExtensionSupport(vk::PhysicalDevice physicalDevice);
+extern std::vector<const char*> getDeviceExtensions();
+extern vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
+extern vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes);
+extern vk::VertexInputBindingDescription getBindingDescription();
+extern std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions();
 
 struct QueueFamilyIndices
 {
@@ -81,35 +52,6 @@ struct SwapchainSupportDetails
     std::vector<vk::PresentModeKHR> presentModes;
 };
 
-static vk::VertexInputBindingDescription getBindingDescription()
-{
-    auto bindingDescription = vk::VertexInputBindingDescription{
-        .binding = 0,
-        .stride = sizeof(TriangleVertex),
-        .inputRate = vk::VertexInputRate::eVertex
-    };
-
-    return bindingDescription;
-}
-
-static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions()
-{
-    auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 2>{
-        vk::VertexInputAttributeDescription{
-            .location = 0,
-            .binding = 0,
-            .format = vk::Format::eR32G32B32A32Sfloat,
-            .offset = offsetof(TriangleVertex, position) },
-        vk::VertexInputAttributeDescription{
-            .location = 1,
-            .binding = 0,
-            .format = vk::Format::eR32G32B32A32Sfloat,
-            .offset = offsetof(TriangleVertex, color) },
-    };
-
-    return attributeDescriptions;
-}
-
 class HelloTriangleApplication
 {
 private:
@@ -120,37 +62,28 @@ private:
     vk::DebugUtilsMessengerEXT m_debugUtilsMessenger;
 #endif
     vk::SurfaceKHR m_surface;
-
     vk::PhysicalDevice m_physicalDevice;
     vk::Device m_device;
-
     vk::Queue m_graphicsQueue;
     vk::Queue m_presentQueue;
-
     vk::SwapchainKHR m_swapchain;
     std::vector<vk::Image> m_swapchainImages;
     vk::Format m_swapchainImageFormat = vk::Format::eUndefined;
     vk::Extent2D m_swapchainExtent;
     std::vector<vk::ImageView> m_swapchainImageViews;
-
     vk::RenderPass m_renderPass;
     vk::PipelineLayout m_graphicsPipelineLayout;
     vk::Pipeline m_graphicsPipeline;
-
     std::vector<vk::Framebuffer> m_swapchainFramebuffers;
     vk::CommandPool m_commandPool;
-
     vk::Buffer m_vertexBuffer;
     vk::DeviceMemory m_vertexBufferMemory;
-
     std::vector<vk::CommandBuffer> m_commandBuffers;
-
     std::vector<vk::Semaphore> m_imageAvailableSemaphores;
     std::vector<vk::Semaphore> m_renderFinishedSemaphores;
     std::vector<vk::Fence> m_inflightFences;
     std::vector<vk::Fence> m_imagesInflight;
     std::size_t m_currentFrame{ 0 };
-
     bool m_framebufferResized{ false };
 
 public:
@@ -172,6 +105,7 @@ private:
         m_window = glfwCreateWindow(640, 480, "Vulkan triangle", nullptr, nullptr);
         glfwSetWindowUserPointer(m_window, this);
         glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
+        glfwSetKeyCallback(m_window, keyCallback);
     }
 
     void initVulkan()
@@ -247,7 +181,6 @@ private:
             throw std::runtime_error{ "validation layer requested, but not available!" };
         }
 #endif
-
         auto applicationInfo = vk::ApplicationInfo{
             .pApplicationName = "Vulkan Demo",
             .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
@@ -369,16 +302,6 @@ private:
         m_presentQueue = m_device.getQueue(indices.presentFamily.value(), 0);
     }
 
-#ifndef NDEBUG
-    static bool checkValidationLayerSupport()
-    {
-        auto layerProperties = vk::enumerateInstanceLayerProperties();
-        return std::any_of(std::begin(layerProperties), std::end(layerProperties), [](const auto& property) {
-            return std::strcmp("VK_LAYER_KHRONOS_validation", property.layerName) == 0;
-        });
-    }
-#endif
-
     void cleanupSwapchain()
     {
         for (auto framebuffer : m_swapchainFramebuffers)
@@ -448,7 +371,7 @@ private:
             .preTransform = details.capabilities.currentTransform,
             .compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
             .presentMode = presentMode,
-            .clipped = VK_TRUE
+            .clipped = true
         };
 
         QueueFamilyIndices indices = findQueueFamilyIndices(m_physicalDevice);
@@ -532,8 +455,7 @@ private:
 
     void createGraphicsPipeline()
     {
-        auto [vertShaderCode, fragShaderCode] = backend::Pipeline::getSpvFromGLSL(getFileContents("shaders/triangle.vert"),
-                                                                                  getFileContents("shaders/triangle.frag"));
+        auto [vertShaderCode, fragShaderCode] = backend::Pipeline::getSpvFromGLSL(getFileContents("shaders/triangle.vert"), getFileContents("shaders/triangle.frag"));
         auto vertShaderModule = createShaderModule(vertShaderCode);
         auto fragShaderModule = createShaderModule(fragShaderCode);
         auto vertShaderStageInfo = vk::PipelineShaderStageCreateInfo{
@@ -548,7 +470,6 @@ private:
             .pName = "main"
         };
         auto shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>{ vertShaderStageInfo, fragShaderStageInfo };
-
         auto bindingDescription = getBindingDescription();
         auto attributeDescriptions = getAttributeDescriptions();
         auto vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
@@ -559,7 +480,7 @@ private:
         };
         auto inputAssembly = vk::PipelineInputAssemblyStateCreateInfo{
             .topology = vk::PrimitiveTopology::eTriangleList,
-            .primitiveRestartEnable = VK_FALSE
+            .primitiveRestartEnable = false
         };
         auto viewport = vk::Viewport{
             .x = 0.0f,
@@ -580,27 +501,27 @@ private:
             .pScissors = &scissor
         };
         auto rasterizer = vk::PipelineRasterizationStateCreateInfo{
-            .depthClampEnable = VK_FALSE,
-            .rasterizerDiscardEnable = VK_FALSE,
+            .depthClampEnable = false,
+            .rasterizerDiscardEnable = false,
             .polygonMode = vk::PolygonMode::eFill,
             .cullMode = vk::CullModeFlagBits::eNone,       // 默认值
             .frontFace = vk::FrontFace::eCounterClockwise, // 默认值
-            .depthBiasEnable = VK_FALSE,
+            .depthBiasEnable = false,
             .lineWidth = 1.0f
         };
         auto multisampling = vk::PipelineMultisampleStateCreateInfo{
             .rasterizationSamples = vk::SampleCountFlagBits::e1,
-            .sampleShadingEnable = VK_FALSE
+            .sampleShadingEnable = false
         };
         auto colorBlendAttachment = vk::PipelineColorBlendAttachmentState{
-            .blendEnable = VK_FALSE,
+            .blendEnable = false,
             .colorWriteMask = vk::ColorComponentFlagBits::eR |
                               vk::ColorComponentFlagBits::eG |
                               vk::ColorComponentFlagBits::eB |
                               vk::ColorComponentFlagBits::eA
         };
         auto colorBlending = vk::PipelineColorBlendStateCreateInfo{
-            .logicOpEnable = VK_FALSE,
+            .logicOpEnable = false,
             .logicOp = vk::LogicOp::eCopy,
             .attachmentCount = 1,
             .pAttachments = &colorBlendAttachment,
@@ -730,11 +651,7 @@ private:
 
     void drawFrame()
     {
-        auto result = m_device.waitForFences(
-            1,
-            &m_inflightFences[m_currentFrame],
-            VK_TRUE,
-            std::numeric_limits<uint64_t>::max());
+        auto result = m_device.waitForFences(1, &m_inflightFences[m_currentFrame], true, std::numeric_limits<uint64_t>::max());
 
         uint32_t imageIndex;
         result = m_device.acquireNextImageKHR(
@@ -756,7 +673,7 @@ private:
 
         if (m_imagesInflight[imageIndex])
         {
-            result = m_device.waitForFences(1, &m_imagesInflight[imageIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+            result = m_device.waitForFences(1, &m_imagesInflight[imageIndex], true, std::numeric_limits<uint64_t>::max());
         }
         m_imagesInflight[imageIndex] = m_inflightFences[m_currentFrame];
 
@@ -878,20 +795,6 @@ private:
         return m_device.createShaderModule(createInfo);
     }
 
-    static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats)
-    {
-        auto it = std::find_if(std::begin(availableFormats), std::end(availableFormats), [](vk::SurfaceFormatKHR format) {
-            return format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
-        });
-        return it == availableFormats.cend() ? availableFormats.front() : *it;
-    }
-
-    static vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes)
-    {
-        auto it = std::find(std::begin(availablePresentModes), std::end(availablePresentModes), vk::PresentModeKHR::eMailbox);
-        return it == availablePresentModes.cend() ? vk::PresentModeKHR::eFifo : vk::PresentModeKHR::eMailbox;
-    }
-
     vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities)
     {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
@@ -918,20 +821,6 @@ private:
         }
     }
 
-    bool isDeviceSuitable(vk::PhysicalDevice physicalDevice)
-    {
-        QueueFamilyIndices indices = findQueueFamilyIndices(physicalDevice);
-        bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice);
-        bool swapChainAdequate = false;
-        if (extensionsSupported)
-        {
-            auto details = querySwapchainSupport(physicalDevice);
-            swapChainAdequate = !details.formats.empty() && !details.presentModes.empty();
-        }
-
-        return indices.isComplete() && extensionsSupported && swapChainAdequate;
-    }
-
     QueueFamilyIndices findQueueFamilyIndices(vk::PhysicalDevice physicalDevice)
     {
         auto queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
@@ -955,28 +844,6 @@ private:
         return indices;
     }
 
-    static std::vector<const char*> getDeviceExtensions()
-    {
-        return {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-            "VK_KHR_portability_subset"
-        };
-    }
-
-    static bool checkDeviceExtensionSupport(vk::PhysicalDevice physicalDevice)
-    {
-        auto availableExtensions = physicalDevice.enumerateDeviceExtensionProperties();
-        auto deviceExtensions = getDeviceExtensions();
-        auto requiredExtensions = std::unordered_set<std::string>{ deviceExtensions.cbegin(), deviceExtensions.cend() };
-
-        for (const auto& extension : availableExtensions)
-        {
-            requiredExtensions.erase(extension.extensionName);
-        }
-
-        return requiredExtensions.empty();
-    }
-
     [[nodiscard]] SwapchainSupportDetails querySwapchainSupport(vk::PhysicalDevice physicalDevice) const
     {
         SwapchainSupportDetails details;
@@ -986,44 +853,17 @@ private:
         return details;
     }
 
-    static std::vector<char> readFile(const std::string& filename)
+    bool isDeviceSuitable(vk::PhysicalDevice physicalDevice)
     {
-        auto file = std::ifstream{ filename, std::ios::ate | std::ios::binary };
-
-        if (!file.is_open())
+        auto indices = findQueueFamilyIndices(physicalDevice);
+        bool extensionsSupported = checkDeviceExtensionSupport(physicalDevice);
+        bool swapchainAdequate{ false };
+        if (extensionsSupported)
         {
-            throw std::runtime_error("failed to open file!");
+            auto details = querySwapchainSupport(physicalDevice);
+            swapchainAdequate = !details.formats.empty() && !details.presentModes.empty();
         }
-        auto fileSize = file.tellg();
-        auto buffer = std::vector<char>(static_cast<std::size_t>(fileSize));
-
-        file.seekg(0);
-        file.read(buffer.data(), fileSize);
-
-        file.close();
-
-        return buffer;
-    }
-
-    static std::vector<const char*> getLayers()
-    {
-        std::vector<const char*> layers;
-#ifndef NDEBUG
-        layers.push_back("VK_LAYER_KHRONOS_validation");
-#endif
-        return layers;
-    }
-
-    static std::vector<const char*> getInstanceExtensions()
-    {
-        uint32_t glfwExtensionCount = 0;
-        auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-        auto extensions = std::vector<const char*>{ glfwExtensions, glfwExtensions + glfwExtensionCount };
-#ifndef NDEBUG
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-#endif
-        extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-        return extensions;
+        return indices.isComplete() && extensionsSupported && swapchainAdequate;
     }
 };
 

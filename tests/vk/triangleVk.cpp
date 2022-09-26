@@ -12,6 +12,35 @@
 #include <cstddef>
 
 using namespace backend;
+vk::VertexInputBindingDescription getBindingDescription()
+{
+    auto bindingDescription = vk::VertexInputBindingDescription{
+        .binding = 0,
+        .stride = sizeof(TriangleVertex),
+        .inputRate = vk::VertexInputRate::eVertex
+    };
+
+    return bindingDescription;
+}
+
+std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions()
+{
+    auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 2>{
+        vk::VertexInputAttributeDescription{
+            .location = 0,
+            .binding = 0,
+            .format = vk::Format::eR32G32B32A32Sfloat,
+            .offset = offsetof(TriangleVertex, position) },
+        vk::VertexInputAttributeDescription{
+            .location = 1,
+            .binding = 0,
+            .format = vk::Format::eR32G32B32A32Sfloat,
+            .offset = offsetof(TriangleVertex, color) },
+    };
+
+    return attributeDescriptions;
+}
+
 namespace
 {
 class Triangle : public EffectBase
@@ -37,35 +66,6 @@ public:
         buildBuffers();
         m_render->createCommandBuffers();
         m_render->createSyncObjects();
-    }
-
-    vk::VertexInputBindingDescription getBindingDescription()
-    {
-        auto bindingDescription = vk::VertexInputBindingDescription{
-            .binding = 0,
-            .stride = sizeof(TriangleVertex),
-            .inputRate = vk::VertexInputRate::eVertex
-        };
-
-        return bindingDescription;
-    }
-
-    std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions()
-    {
-        auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 2>{
-            vk::VertexInputAttributeDescription{
-                .location = 0,
-                .binding = 0,
-                .format = vk::Format::eR32G32B32A32Sfloat,
-                .offset = offsetof(TriangleVertex, position) },
-            vk::VertexInputAttributeDescription{
-                .location = 1,
-                .binding = 0,
-                .format = vk::Format::eR32G32B32A32Sfloat,
-                .offset = offsetof(TriangleVertex, color) },
-        };
-
-        return attributeDescriptions;
     }
 
     std::pair<vk::Buffer, vk::DeviceMemory> createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties)

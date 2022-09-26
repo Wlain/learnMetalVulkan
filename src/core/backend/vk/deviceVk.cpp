@@ -10,10 +10,32 @@
 #include <set>
 #include <unordered_set>
 
-namespace backend
-{
 #ifndef NDEBUG
-static bool checkValidationLayerSupport()
+VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pMessenger)
+{
+    auto address = vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(address);
+    if (func)
+    {
+        return func(instance, pCreateInfo, pAllocator, pMessenger);
+    }
+    else
+    {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger, const VkAllocationCallbacks* pAllocator)
+{
+    auto address = vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(address);
+    if (func)
+    {
+        return func(instance, messenger, pAllocator);
+    }
+}
+
+bool checkValidationLayerSupport()
 {
     auto layerProperties = vk::enumerateInstanceLayerProperties();
     return std::any_of(layerProperties.begin(), layerProperties.end(), [](const auto& property) {
@@ -21,17 +43,14 @@ static bool checkValidationLayerSupport()
     });
 }
 
-static VkBool32 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                              VkDebugUtilsMessageTypeFlagsEXT messageType,
-                              const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                              void* pUserData)
+VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
-    LOG_INFO("validation layer:\n {}", pCallbackData->pMessage);
+    LOG_ERROR("validation layer:\n {}", pCallbackData->pMessage);
     return VK_FALSE;
 }
 #endif
 
-static std::vector<const char*> getLayers()
+std::vector<const char*> getLayers()
 {
     std::vector<const char*> layers;
 #ifndef NDEBUG
@@ -40,7 +59,7 @@ static std::vector<const char*> getLayers()
     return layers;
 }
 
-static std::vector<const char*> getInstanceExtensions()
+std::vector<const char*> getInstanceExtensions()
 {
     auto glfwExtensionCount = 0u;
     auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -53,7 +72,7 @@ static std::vector<const char*> getInstanceExtensions()
     return extensions;
 }
 
-static std::vector<const char*> getDeviceExtensions()
+std::vector<const char*> getDeviceExtensions()
 {
     return {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -61,7 +80,7 @@ static std::vector<const char*> getDeviceExtensions()
     };
 }
 
-static bool checkDeviceExtensionSupport(vk::PhysicalDevice gpu)
+bool checkDeviceExtensionSupport(vk::PhysicalDevice gpu)
 {
     auto availableExtensions = gpu.enumerateDeviceExtensionProperties();
     auto deviceExtensions = getDeviceExtensions();
@@ -73,7 +92,7 @@ static bool checkDeviceExtensionSupport(vk::PhysicalDevice gpu)
     return requiredExtensions.empty();
 }
 
-static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats)
+vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats)
 {
     auto it = std::find_if(std::begin(availableFormats), std::end(availableFormats), [](vk::SurfaceFormatKHR format) {
         return format.format == vk::Format::eB8G8R8A8Srgb && format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
@@ -81,11 +100,14 @@ static vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::Surfac
     return it == availableFormats.cend() ? availableFormats.front() : *it;
 }
 
-static vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes)
+vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes)
 {
     auto it = std::find(std::begin(availablePresentModes), std::end(availablePresentModes), vk::PresentModeKHR::eMailbox);
     return it == availablePresentModes.cend() ? vk::PresentModeKHR::eFifo : vk::PresentModeKHR::eMailbox;
 }
+
+namespace backend
+{
 
 vk::Extent2D DeviceVK::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities)
 {
