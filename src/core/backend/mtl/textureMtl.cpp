@@ -30,7 +30,9 @@ bool TextureMTL::createWithFileName(std::string_view filename, bool premultiplyA
     int desireComp = STBI_rgb_alpha;
     stbi_set_unpremultiply_on_load(premultiplyAlpha);
     auto pixelsData = getFileContents(filename.data());
+    stbi_set_flip_vertically_on_load(true);
     auto* data = (char*)stbi_load_from_memory((stbi_uc const*)pixelsData.data(), (int)pixelsData.size(), &m_info.width, &m_info.height, &m_info.channels, desireComp);
+    stbi_set_flip_vertically_on_load(false);
     bool isPOT = !isPowerOfTwo(m_info.width) || !isPowerOfTwo(m_info.height);
     if (!isPOT && m_info.filterSampling)
     {

@@ -25,6 +25,6 @@ extern void textureMtl();
 
 int main()
 {
-    triangleVk();
+    textureMtl();
     return 0;
 }
