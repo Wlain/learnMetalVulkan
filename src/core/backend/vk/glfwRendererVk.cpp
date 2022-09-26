@@ -6,6 +6,8 @@
 
 #include "pipelineVk.h"
 #define GLFW_INCLUDE_NONE
+#include "../../../tests/mesh/globalMeshs.h"
+
 #include <GLFW/glfw3.h>
 #define MAX_FRAMES_IN_FLIGHT 2
 namespace backend
@@ -44,28 +46,94 @@ GLFWRendererVK::~GLFWRendererVK()
 
 void GLFWRendererVK::swapBuffers()
 {
-    auto imageIndex = m_device.acquireNextImageKHR(m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore, {});
-    vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    auto result = m_device.waitForFences(
+        1,
+        &m_inflightFences[m_currentFrame],
+        VK_TRUE,
+        std::numeric_limits<uint64_t>::max());
+
+    uint32_t imageIndex;
+    result = m_device.acquireNextImageKHR(
+        m_deviceVk->swapChain(),
+        std::numeric_limits<uint64_t>::max(),
+        m_imageAvailableSemaphores[m_currentFrame],
+        nullptr,
+        &imageIndex);
+
+    if (result == vk::Result::eErrorOutOfDateKHR)
+    {
+        //        recreateSwapchain();
+        return;
+    }
+    else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR)
+    {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
+
+    if (m_imagesInflight[imageIndex])
+    {
+        result = m_device.waitForFences(1, &m_imagesInflight[imageIndex], VK_TRUE, std::numeric_limits<uint64_t>::max());
+    }
+    m_imagesInflight[imageIndex] = m_inflightFences[m_currentFrame];
+
+    auto waitSemaphores = std::vector<vk::Semaphore>{ m_imageAvailableSemaphores[m_currentFrame] };
+    auto waitStages = std::vector<vk::PipelineStageFlags>{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+    auto signalSemaphores = std::vector<vk::Semaphore>{ m_renderFinishedSemaphores[m_currentFrame] };
     auto submitInfo = vk::SubmitInfo{
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &m_imageAvailableSemaphore,
-        .pWaitDstStageMask = &waitStageMask,
+        .pWaitSemaphores = waitSemaphores.data(),
+        .pWaitDstStageMask = waitStages.data(),
         .commandBufferCount = 1,
-        .pCommandBuffers = &m_commandBuffers[imageIndex.value],
+        .pCommandBuffers = &m_commandBuffers[imageIndex],
         .signalSemaphoreCount = 1,
-        .pSignalSemaphores = &m_renderFinishedSemaphore
+        .pSignalSemaphores = signalSemaphores.data()
     };
-    m_deviceVk->graphicsQueue().submit(submitInfo, {});
+
+    result = m_device.resetFences(1, &m_inflightFences[m_currentFrame]);
+    m_deviceVk->graphicsQueue().submit(submitInfo, m_inflightFences[m_currentFrame]);
+
     auto presentInfo = vk::PresentInfoKHR{
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &m_renderFinishedSemaphore,
+        .pWaitSemaphores = signalSemaphores.data(),
         .swapchainCount = 1,
-        .pSwapchains = &m_swapChain,
-        .pImageIndices = &imageIndex.value
+        .pSwapchains = &m_deviceVk->swapChain(),
+        .pImageIndices = &imageIndex
     };
-    auto result = m_deviceVk->presentQueue().presentKHR(presentInfo);
-    (void)result;
-    m_device.waitIdle();
+
+    result = m_deviceVk->presentQueue().presentKHR(presentInfo);
+    if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || m_framebufferResized)
+    {
+        m_framebufferResized = false;
+        //        recreateSwapchain();
+    }
+    else if (result != vk::Result::eSuccess)
+    {
+        throw std::runtime_error("failed to present swap chain image!");
+    }
+
+    m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    //    auto imageIndex = m_device.acquireNextImageKHR(m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore, {});
+    //    vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    //    auto submitInfo = vk::SubmitInfo{
+    //        .waitSemaphoreCount = 1,
+    //        .pWaitSemaphores = &m_imageAvailableSemaphore,
+    //        .pWaitDstStageMask = &waitStageMask,
+    //        .commandBufferCount = 1,
+    //        .pCommandBuffers = &m_commandBuffers[imageIndex.value],
+    //        .signalSemaphoreCount = 1,
+    //        .pSignalSemaphores = &m_renderFinishedSemaphore
+    //    };
+    //    m_deviceVk->graphicsQueue().submit(submitInfo, {});
+    //    auto presentInfo = vk::PresentInfoKHR{
+    //        .waitSemaphoreCount = 1,
+    //        .pWaitSemaphores = &m_renderFinishedSemaphore,
+    //        .swapchainCount = 1,
+    //        .pSwapchains = &m_swapChain,
+    //        .pImageIndices = &imageIndex.value
+    //    };
+    //    auto result = m_deviceVk->presentQueue().presentKHR(presentInfo);
+    //    (void)result;
+    //    m_device.waitIdle();
 }
 
 void GLFWRendererVK::createCommandBuffers()
@@ -76,6 +144,29 @@ void GLFWRendererVK::createCommandBuffers()
         .commandBufferCount = static_cast<uint32_t>(m_swapchainFramebuffers.size())
     };
     m_commandBuffers = m_device.allocateCommandBuffers(allocInfo);
+    for (std::size_t i = 0; i < m_commandBuffers.size(); ++i)
+    {
+        auto beginInfo = vk::CommandBufferBeginInfo{};
+        m_commandBuffers[i].begin(beginInfo);
+        auto clearValue = vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f } } };
+        auto renderPassInfo = vk::RenderPassBeginInfo{
+            .renderPass = m_pipeline->renderPass(),
+            .framebuffer = m_swapchainFramebuffers[i],
+            .renderArea = {
+                .offset = { 0, 0 },
+                .extent = m_deviceVk->swapchainExtent() },
+            .clearValueCount = 1,
+            .pClearValues = &clearValue
+        };
+        m_commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+        m_commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
+        auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer };
+        auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
+        m_commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
+        m_commandBuffers[i].draw(static_cast<std::uint32_t>(g_triangleVertex.size()), 1, 0, 0);
+        m_commandBuffers[i].endRenderPass();
+        m_commandBuffers[i].end();
+    }
 }
 
 void GLFWRendererVK::setPipeline(const std::shared_ptr<Pipeline>& pipeline)

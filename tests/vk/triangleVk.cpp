@@ -134,6 +134,7 @@ public:
                                                                       vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
                                                                       vk::MemoryPropertyFlagBits::eDeviceLocal);
         copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
+        m_render->setVertexBuffer(m_vertexBuffer);
         m_device.destroyBuffer(stagingBuffer);
         m_device.freeMemory(stagingBufferMemory);
     }
@@ -174,31 +175,7 @@ public:
 
     void render() override
     {
-        auto& commandBuffers = m_render->commandBuffers();
-        auto& frameBuffers = m_render->frameBuffers();
-        for (std::size_t i = 0; i < commandBuffers.size(); ++i)
-        {
-            auto beginInfo = vk::CommandBufferBeginInfo{};
-            commandBuffers[i].begin(beginInfo);
-            auto clearValue = vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f } } };
-            auto renderPassInfo = vk::RenderPassBeginInfo{
-                .renderPass = m_pipeline->renderPass(),
-                .framebuffer = frameBuffers[i],
-                .renderArea = {
-                    .offset = { 0, 0 },
-                    .extent = m_deviceVK->swapchainExtent() },
-                .clearValueCount = 1,
-                .pClearValues = &clearValue
-            };
-            commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-            commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
-            auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer };
-            auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
-            commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
-            commandBuffers[i].draw(static_cast<std::uint32_t>(g_triangleVertex.size()), 1, 0, 0);
-            commandBuffers[i].endRenderPass();
-            commandBuffers[i].end();
-        }
+
     }
 
 private:

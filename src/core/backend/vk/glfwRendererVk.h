@@ -25,6 +25,7 @@ public:
     const std::vector<vk::Framebuffer>& frameBuffers() const;
     const std::vector<vk::CommandBuffer>& commandBuffers() const;
     const vk::CommandPool& commandPool() const;
+    inline void setVertexBuffer(vk::Buffer buffer) { m_vertexBuffer = buffer; }
 
 private:
     DeviceVK* m_deviceVk;
@@ -42,6 +43,7 @@ private:
     std::vector<vk::Fence> m_imagesInflight;
     std::vector<vk::Semaphore> m_imageAvailableSemaphores;
     std::vector<vk::Semaphore> m_renderFinishedSemaphores;
+    vk::Buffer m_vertexBuffer;
     std::size_t m_currentFrame{ 0 };
     bool m_framebufferResized{ false };
 };
