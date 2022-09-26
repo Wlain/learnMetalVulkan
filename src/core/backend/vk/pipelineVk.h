@@ -43,7 +43,7 @@ private:
     vk::PipelineLayout m_pipelineLayout;
     std::vector<vk::PipelineShaderStageCreateInfo> m_pipelineShaderStages;
     vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
-    vk::PipelineInputAssemblyStateCreateInfo m_assemblyStateCreateInfo;
+    vk::PipelineInputAssemblyStateCreateInfo inputAssembly;
     vk::Viewport m_viewport;
     vk::Rect2D m_scissor;
     vk::PipelineViewportStateCreateInfo m_viewportState;

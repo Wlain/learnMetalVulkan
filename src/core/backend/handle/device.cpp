@@ -37,4 +37,10 @@ void Device::init()
 {
     m_window = glfwCreateWindow(m_info.width, m_info.height, m_info.title.c_str(), nullptr, nullptr);
 }
+
+Device::~Device()
+{
+    // 销毁window
+    glfwDestroyWindow(m_window);
+}
 } // namespace backend

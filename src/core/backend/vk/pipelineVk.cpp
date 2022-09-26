@@ -17,8 +17,7 @@ PipelineVk::PipelineVk(Device* device) :
 PipelineVk::~PipelineVk()
 {
     auto device = m_deviceVk->handle();
-    device.destroy(m_vertexShaderModule);
-    device.destroy(m_fragmentShaderModule);
+    device.destroy(m_pipelineLayout);
     device.destroy(m_pipelineLayout);
     device.destroy(m_renderPass);
     for (auto& view : m_deviceVk->swapchainImageViews())
@@ -30,28 +29,22 @@ PipelineVk::~PipelineVk()
 
 void PipelineVk::build()
 {
-    vk::GraphicsPipelineCreateInfo info;
-    // set shader config
-    info.setStageCount(2).setPStages(m_pipelineShaderStages.data());
-    // vertex input
-    info.setPVertexInputState(&m_vertexInputInfo);
-    // set Assembly
-    info.setPInputAssemblyState(&m_assemblyStateCreateInfo);
-    // layout
-    info.setLayout(m_pipelineLayout);
-    // viewport and Scissor
-    info.setPViewportState(&m_viewportState);
-    // set rasterization
-    info.setPRasterizationState(&m_rasterizer);
-    // multiSample
-    info.setPMultisampleState(&m_multisampling);
-    // depthStencil
-    info.setPDepthStencilState(nullptr);
-    // color blend
-    info.setPColorBlendState(&m_colorBlending);
-    // renderPass
-    info.setRenderPass(m_renderPass);
-    m_pipeline = m_deviceVk->handle().createGraphicsPipeline({}, info).value;
+    auto pipelineInfo = vk::GraphicsPipelineCreateInfo{
+        .stageCount = 2,
+        .pStages = m_pipelineShaderStages.data(),
+        .pVertexInputState = &m_vertexInputInfo,
+        .pInputAssemblyState = &inputAssembly,
+        .pViewportState = &m_viewportState,
+        .pRasterizationState = &m_rasterizer,
+        .pMultisampleState = &m_multisampling,
+        .pColorBlendState = &m_colorBlending,
+        .layout = m_pipelineLayout,
+        .renderPass = m_renderPass,
+        .subpass = 0
+    };
+    m_pipeline = m_deviceVk->handle().createGraphicsPipeline(nullptr, pipelineInfo).value;
+    m_deviceVk->handle().destroyShaderModule(m_vertexShaderModule);
+    m_deviceVk->handle().destroyShaderModule(m_fragmentShaderModule);
 }
 
 void PipelineVk::initVertexBuffer(const VkPipelineVertexInputStateCreateInfo& info)
@@ -98,7 +91,7 @@ void PipelineVk::setProgram(std::string_view vertShader, std::string_view fragSo
 
 void PipelineVk::setAssembly()
 {
-    m_assemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo{
+    inputAssembly = vk::PipelineInputAssemblyStateCreateInfo{
         .topology = vk::PrimitiveTopology::eTriangleList,
         .primitiveRestartEnable = false
     };

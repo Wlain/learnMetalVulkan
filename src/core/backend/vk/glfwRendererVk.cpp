@@ -28,29 +28,29 @@ GLFWRendererVK::~GLFWRendererVK()
     {
         m_device.destroy(framebuffer);
     }
-    for (auto& cmd : m_commandBuffers)
+    m_swapchainFramebuffers.clear();
+    m_device.freeCommandBuffers(m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
+    m_pipeline = nullptr;
+    m_device.destroyBuffer(m_vertexBuffer);
+    m_device.freeMemory(m_vertexBufferMemory);
+    for (auto fence : m_inflightFences)
     {
-        m_device.freeCommandBuffers(m_commandPool, cmd);
+        m_device.destroyFence(fence);
+    }
+    for (auto semaphore : m_renderFinishedSemaphores)
+    {
+        m_device.destroySemaphore(semaphore);
+    }
+    for (auto semaphore : m_imageAvailableSemaphores)
+    {
+        m_device.destroySemaphore(semaphore);
     }
     m_device.destroyCommandPool(m_commandPool);
-    m_pipeline = nullptr;
-    m_device.destroy(m_imageAvailableSemaphore);
-    m_device.destroy(m_renderFinishedSemaphore);
-    m_device.destroy(m_swapChain);
-    m_device.destroy();
-    m_instance.destroy(m_surface);
-    m_instance.destroy();
-    // 销毁window
-    glfwDestroyWindow(m_window);
 }
 
 void GLFWRendererVK::swapBuffers()
 {
-    auto result = m_device.waitForFences(
-        1,
-        &m_inflightFences[m_currentFrame],
-        VK_TRUE,
-        std::numeric_limits<uint64_t>::max());
+    auto result = m_device.waitForFences(1, &m_inflightFences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     uint32_t imageIndex;
     result = m_device.acquireNextImageKHR(
@@ -112,28 +112,6 @@ void GLFWRendererVK::swapBuffers()
     }
 
     m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-    //    auto imageIndex = m_device.acquireNextImageKHR(m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphore, {});
-    //    vk::PipelineStageFlags waitStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-    //    auto submitInfo = vk::SubmitInfo{
-    //        .waitSemaphoreCount = 1,
-    //        .pWaitSemaphores = &m_imageAvailableSemaphore,
-    //        .pWaitDstStageMask = &waitStageMask,
-    //        .commandBufferCount = 1,
-    //        .pCommandBuffers = &m_commandBuffers[imageIndex.value],
-    //        .signalSemaphoreCount = 1,
-    //        .pSignalSemaphores = &m_renderFinishedSemaphore
-    //    };
-    //    m_deviceVk->graphicsQueue().submit(submitInfo, {});
-    //    auto presentInfo = vk::PresentInfoKHR{
-    //        .waitSemaphoreCount = 1,
-    //        .pWaitSemaphores = &m_renderFinishedSemaphore,
-    //        .swapchainCount = 1,
-    //        .pSwapchains = &m_swapChain,
-    //        .pImageIndices = &imageIndex.value
-    //    };
-    //    auto result = m_deviceVk->presentQueue().presentKHR(presentInfo);
-    //    (void)result;
-    //    m_device.waitIdle();
 }
 
 void GLFWRendererVK::createCommandBuffers()

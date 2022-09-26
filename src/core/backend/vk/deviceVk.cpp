@@ -132,7 +132,12 @@ vk::Extent2D DeviceVK::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabi
 
 DeviceVK::~DeviceVK()
 {
+    m_device.destroy(m_swapChain);
+#ifndef NDEBUG
     m_instance.destroyDebugUtilsMessengerEXT(m_messenger);
+#endif
+    m_instance.destroy(m_surface);
+    m_instance.destroy();
 }
 
 DeviceVK::DeviceVK(const Info& info) :

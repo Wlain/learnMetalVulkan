@@ -80,6 +80,7 @@ private:
     std::vector<vk::ImageView> m_swapchainImagesView;
     vk::Format m_swapchainImageFormat = vk::Format::eUndefined;
     vk::Extent2D m_swapchainExtent;
+
 };
 } // namespace backend
 

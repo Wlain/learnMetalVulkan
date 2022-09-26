@@ -47,14 +47,7 @@ class Triangle : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~Triangle() override
-    {
-        m_device.destroy(m_descriptorPool);
-        m_device.destroy(m_descriptorSetLayout);
-        m_device.destroy(m_pipelineLayout);
-        m_device.destroyBuffer(m_vertexBuffer);
-        m_device.freeMemory(m_vertexBufferMemory);
-    }
+    ~Triangle() override = default;
     void initialize() override
     {
         m_deviceVK = dynamic_cast<DeviceVK*>(m_renderer->device());
@@ -135,6 +128,7 @@ public:
                                                                       vk::MemoryPropertyFlagBits::eDeviceLocal);
         copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
         m_render->setVertexBuffer(m_vertexBuffer);
+        m_render->setVertexBufferMemory(m_vertexBufferMemory);
         m_device.destroyBuffer(stagingBuffer);
         m_device.freeMemory(stagingBufferMemory);
     }
@@ -175,7 +169,6 @@ public:
 
     void render() override
     {
-
     }
 
 private:
@@ -185,12 +178,10 @@ private:
     vk::Device m_device;
     vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
     std::array<vk::VertexInputAttributeDescription, 2> m_attributeDescriptions;
-    vk::DescriptorSetLayout m_descriptorSetLayout;
     vk::PipelineLayout m_pipelineLayout;
     vk::VertexInputBindingDescription m_bindingDescription;
     std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribute;
 
-    vk::DescriptorPool m_descriptorPool;
     vk::Buffer m_vertexBuffer;
     vk::DeviceMemory m_vertexBufferMemory;
 };

@@ -26,7 +26,7 @@ public:
     const std::vector<vk::CommandBuffer>& commandBuffers() const;
     const vk::CommandPool& commandPool() const;
     inline void setVertexBuffer(vk::Buffer buffer) { m_vertexBuffer = buffer; }
-
+    inline void setVertexBufferMemory(vk::DeviceMemory bufferMemory) { m_vertexBufferMemory = bufferMemory; }
 private:
     DeviceVK* m_deviceVk;
     vk::Device m_device;
@@ -37,13 +37,12 @@ private:
     std::shared_ptr<PipelineVk> m_pipeline;
     std::vector<vk::CommandBuffer> m_commandBuffers;
     std::vector<vk::Framebuffer> m_swapchainFramebuffers;
-    vk::Semaphore m_imageAvailableSemaphore;
-    vk::Semaphore m_renderFinishedSemaphore;
     std::vector<vk::Fence> m_inflightFences;
     std::vector<vk::Fence> m_imagesInflight;
     std::vector<vk::Semaphore> m_imageAvailableSemaphores;
     std::vector<vk::Semaphore> m_renderFinishedSemaphores;
     vk::Buffer m_vertexBuffer;
+    vk::DeviceMemory m_vertexBufferMemory;
     std::size_t m_currentFrame{ 0 };
     bool m_framebufferResized{ false };
 };
