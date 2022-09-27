@@ -31,8 +31,33 @@ extern bool checkDeviceExtensionSupport(vk::PhysicalDevice physicalDevice);
 extern std::vector<const char*> getDeviceExtensions();
 extern vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
 extern vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes);
-extern vk::VertexInputBindingDescription getBindingDescription();
-extern std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions();
+
+vk::VertexInputBindingDescription getBindingDescription()
+{
+    auto bindingDescription = vk::VertexInputBindingDescription{
+        .binding = 0,
+        .stride = sizeof(TriangleVertex),
+        .inputRate = vk::VertexInputRate::eVertex
+    };
+    return bindingDescription;
+}
+
+std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions()
+{
+    auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 2>{
+        vk::VertexInputAttributeDescription{
+            .location = 0,
+            .binding = 0,
+            .format = vk::Format::eR32G32B32A32Sfloat,
+            .offset = offsetof(TriangleVertex, position) },
+        vk::VertexInputAttributeDescription{
+            .location = 1,
+            .binding = 0,
+            .format = vk::Format::eR32G32B32A32Sfloat,
+            .offset = offsetof(TriangleVertex, color) },
+    };
+    return attributeDescriptions;
+}
 
 struct QueueFamilyIndices
 {
