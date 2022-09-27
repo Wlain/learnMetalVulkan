@@ -9,6 +9,7 @@
 #include "deviceMtl.h"
 #include "engine.h"
 #include "glfwRendererMtl.h"
+#include "bufferMtl.h"
 #include "pipelineMtl.h"
 #include "utils/utils.h"
 
@@ -19,10 +20,7 @@ class TriangleMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TriangleMtl() override
-    {
-        m_vertexBuffer->release();
-    }
+    ~TriangleMtl() override = default;
     void initialize() override
     {
         m_device = dynamic_cast<DeviceMtl*>(m_renderer->device());
@@ -43,14 +41,8 @@ public:
 
     void buildBuffers()
     {
-        auto vertexDataSize = g_triangleVertex.size() * sizeof(g_triangleVertex[0]);
-        // static:使用MTL::ResourceCPUCacheModeWriteCombined会获得性能提升
-        // other:MTLResourceStorageModeShared
-        auto usage = MTL::ResourceCPUCacheModeWriteCombined;
-        m_vertexBuffer = m_gpu->newBuffer(vertexDataSize, usage);
-        std::memcpy(m_vertexBuffer->contents(), g_triangleVertex.data(), vertexDataSize);
-        // 通知Metal有关已修改的特定数据范围; 这允许Metal仅更新视频内存副本中的特定范围
-        m_vertexBuffer->didModifyRange({ 0, m_vertexBuffer->length() });
+        m_vertexMesh = MAKE_SHARED(m_vertexMesh, m_device);
+        m_vertexMesh->create(g_triangleVertex.size() * sizeof(g_triangleVertex[0]), (void*)g_triangleVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
     }
 
     void render() override
@@ -65,7 +57,7 @@ public:
         auto* buffer = m_queue->commandBuffer();
         auto* encoder = buffer->renderCommandEncoder(pass);
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
-        encoder->setVertexBuffer(m_vertexBuffer, 0, 0);
+        encoder->setVertexBuffer(m_vertexMesh->buffer(), 0, 0);
         encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(3));
         encoder->endEncoding();
         buffer->presentDrawable(surface);
@@ -78,7 +70,7 @@ private:
     MTL::CommandQueue* m_queue{ nullptr };
     DeviceMtl* m_device{ nullptr };
     MTL::Device* m_gpu{ nullptr };
-    MTL::Buffer* m_vertexBuffer{ nullptr };
+    std::shared_ptr<BufferMTL> m_vertexMesh;
     std::shared_ptr<PipelineMtl> m_pipeline;
 };
 

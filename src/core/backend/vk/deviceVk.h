@@ -49,6 +49,14 @@ public:
     vk::Format swapchainImageFormat() const;
     const vk::Extent2D& swapchainExtent() const;
     QueueFamilyIndices findQueueFamilyIndices(vk::PhysicalDevice gpu);
+    const vk::RenderPass& renderPass() const;
+    const vk::CommandPool& commandPool() const;
+    const std::vector<vk::CommandBuffer>& commandBuffers() const;
+    const std::vector<vk::Framebuffer>& swapchainFramebuffers() const;
+    const std::vector<vk::Fence>& inflightFences() const;
+    const std::vector<vk::Fence>& imagesInflight() const;
+    const std::vector<vk::Semaphore>& imageAvailableSemaphores() const;
+    const std::vector<vk::Semaphore>& renderFinishedSemaphores() const;
 
 private:
     void initInstance();
@@ -58,6 +66,11 @@ private:
     void pickPhysicalDevice();
     void initDevice();
     void initSurface();
+    void creatRenderPass();
+    void createFrameBuffers();
+    void createCommandBuffers();
+    void createSyncObjects();
+    void createCommandPool();
 
 private:
     void creatSwapChain();
@@ -66,6 +79,9 @@ private:
     [[nodiscard]] SwapchainSupportDetails querySwapchainSupport(vk::PhysicalDevice gpu) const;
     void cleanupSwapchain();
     vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
+
+public:
+    constexpr static std::size_t MAX_FRAMES_IN_FLIGHT{ 2 };
 
 private:
     vk::Instance m_instance;
@@ -82,6 +98,15 @@ private:
     std::vector<vk::ImageView> m_swapchainImagesView;
     vk::Format m_swapchainImageFormat = vk::Format::eUndefined;
     vk::Extent2D m_swapchainExtent;
+
+    vk::RenderPass m_renderPass;
+    vk::CommandPool m_commandPool;
+    std::vector<vk::CommandBuffer> m_commandBuffers;
+    std::vector<vk::Framebuffer> m_swapchainFramebuffers;
+    std::vector<vk::Fence> m_inflightFences;
+    std::vector<vk::Fence> m_imagesInflight;
+    std::vector<vk::Semaphore> m_imageAvailableSemaphores;
+    std::vector<vk::Semaphore> m_renderFinishedSemaphores;
 };
 } // namespace backend
 

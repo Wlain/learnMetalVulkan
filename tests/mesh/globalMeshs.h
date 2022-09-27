@@ -35,7 +35,7 @@ static const std::vector<TriangleVertex> g_quadVertex = {
     { { 0.5f, -0.5f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } }   // bottom right
 };
 
-static const std::vector<short> g_quadIndices = {
+static const std::vector<uint16_t> g_quadIndices = {
     1, 3, 0,
     3, 2, 0
 };

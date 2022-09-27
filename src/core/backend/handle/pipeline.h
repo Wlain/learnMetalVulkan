@@ -10,13 +10,23 @@
 namespace backend
 {
 class Device;
+
+enum class Topology
+{
+    Points,
+    LineStrip,
+    Triangles,
+    TriangleStrip
+};
+
 class Pipeline
 {
 public:
-    explicit Pipeline(Device* handle);
+    explicit Pipeline(Device* device);
     Pipeline();
     virtual ~Pipeline() = default;
     virtual void setProgram(std::string_view vertShader, std::string_view fragSource) = 0;
+    virtual void setTopology(Topology topology);
     virtual void build();
 
 public:
