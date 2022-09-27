@@ -24,7 +24,7 @@ public:
 
 public:
     void init();
-    virtual void startEventLoop();
+    void startEventLoop();
     GLFWwindow* glfwWindow();
     virtual void swapBuffers() = 0;
     virtual void setPipeline(const std::shared_ptr<Pipeline>& shader) = 0;

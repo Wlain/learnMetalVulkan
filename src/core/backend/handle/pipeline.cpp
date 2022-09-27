@@ -14,8 +14,8 @@
 #include <utility>
 namespace backend
 {
-Pipeline::Pipeline(Device* handle) :
-    m_handle(handle)
+Pipeline::Pipeline(Device* device) :
+    m_handle(device)
 {}
 
 void Pipeline::build()
@@ -112,5 +112,9 @@ std::string Pipeline::getMslShaderFromSpv(std::vector<uint32_t> shader)
         msl.rename_entry_point(e.name, e.execution_model == spv::ExecutionModelVertex ? "vertexMain" : "fragmentMain", e.execution_model);
     }
     return msl.compile();
+}
+
+void Pipeline::setTopology(Topology topology)
+{
 }
 } // namespace backend

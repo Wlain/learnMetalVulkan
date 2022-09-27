@@ -108,7 +108,6 @@ vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& 
 
 namespace backend
 {
-
 vk::Extent2D DeviceVK::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities)
 {
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
@@ -159,6 +158,11 @@ void DeviceVK::init()
     initDevice();
     creatSwapChain();
     createImageViews();
+    creatRenderPass();
+    createFrameBuffers();
+    createCommandPool();
+    createCommandBuffers();
+    createSyncObjects();
 }
 
 const vk::Instance& DeviceVK::instance() const
@@ -465,4 +469,137 @@ void DeviceVK::createImageViews()
         m_swapchainImagesView.emplace_back(m_device.createImageView(imageViewCreateInfo));
     }
 }
+
+void DeviceVK::createFrameBuffers()
+{
+    for (const auto& imageView : swapchainImageViews())
+    {
+        auto framebufferInfo = vk::FramebufferCreateInfo{
+            .renderPass = m_renderPass,
+            .attachmentCount = 1,
+            .pAttachments = &imageView,
+            .width = swapchainExtent().width,
+            .height = swapchainExtent().height,
+            .layers = 1
+        };
+        m_swapchainFramebuffers.push_back(m_device.createFramebuffer(framebufferInfo));
+    }
+}
+
+void DeviceVK::createCommandBuffers()
+{
+    auto allocInfo = vk::CommandBufferAllocateInfo{
+        .commandPool = m_commandPool,
+        .level = vk::CommandBufferLevel::ePrimary,
+        .commandBufferCount = static_cast<uint32_t>(m_swapchainFramebuffers.size())
+    };
+    m_commandBuffers = m_device.allocateCommandBuffers(allocInfo);
+}
+
+void DeviceVK::createSyncObjects()
+{
+    auto semaphoreInfo = vk::SemaphoreCreateInfo{};
+    auto fenceInfo = vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled };
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+    {
+        m_imageAvailableSemaphores.push_back(m_device.createSemaphore(semaphoreInfo));
+        m_renderFinishedSemaphores.push_back(m_device.createSemaphore(semaphoreInfo));
+        m_inflightFences.push_back(m_device.createFence(fenceInfo));
+    }
+    m_imagesInflight.resize(swapchainImages().size(), vk::Fence{ nullptr });
+}
+
+void DeviceVK::createCommandPool()
+{
+    auto queueFamilyIndices = findQueueFamilyIndices(m_gpu);
+    auto poolInfo = vk::CommandPoolCreateInfo{
+        .flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+        .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value()
+    };
+    m_commandPool = m_device.createCommandPool(poolInfo);
+}
+
+void DeviceVK::cleanupSwapchain()
+{
+}
+
+void DeviceVK::creatRenderPass()
+{
+    auto colorAttachment = vk::AttachmentDescription{
+        .format = swapchainImageFormat(),
+        .samples = vk::SampleCountFlagBits::e1,
+        .loadOp = vk::AttachmentLoadOp::eClear,
+        .storeOp = vk::AttachmentStoreOp::eStore,
+        .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
+        .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
+        .initialLayout = vk::ImageLayout::eUndefined,
+        .finalLayout = vk::ImageLayout::ePresentSrcKHR
+    };
+    auto colorAttachmentRef = vk::AttachmentReference{
+        .attachment = 0,
+        .layout = vk::ImageLayout::eColorAttachmentOptimal
+    };
+    auto subpass = vk::SubpassDescription{
+        .pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &colorAttachmentRef
+    };
+    auto dependency = vk::SubpassDependency{
+        .srcSubpass = VK_SUBPASS_EXTERNAL,
+        .dstSubpass = 0,
+        .srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        .dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        .dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite
+    };
+    auto renderPassInfo = vk::RenderPassCreateInfo{
+        .attachmentCount = 1,
+        .pAttachments = &colorAttachment,
+        .subpassCount = 1,
+        .pSubpasses = &subpass,
+        .dependencyCount = 1,
+        .pDependencies = &dependency
+    };
+    m_renderPass = m_device.createRenderPass(renderPassInfo);
+}
+
+const vk::RenderPass& DeviceVK::renderPass() const
+{
+    return m_renderPass;
+}
+
+const vk::CommandPool& DeviceVK::commandPool() const
+{
+    return m_commandPool;
+}
+
+const std::vector<vk::CommandBuffer>& DeviceVK::commandBuffers() const
+{
+    return m_commandBuffers;
+}
+
+const std::vector<vk::Framebuffer>& DeviceVK::swapchainFramebuffers() const
+{
+    return m_swapchainFramebuffers;
+}
+
+const std::vector<vk::Fence>& DeviceVK::inflightFences() const
+{
+    return m_inflightFences;
+}
+
+const std::vector<vk::Fence>& DeviceVK::imagesInflight() const
+{
+    return m_imagesInflight;
+}
+
+const std::vector<vk::Semaphore>& DeviceVK::imageAvailableSemaphores() const
+{
+    return m_imageAvailableSemaphores;
+}
+
+const std::vector<vk::Semaphore>& DeviceVK::renderFinishedSemaphores() const
+{
+    return m_renderFinishedSemaphores;
+}
+
 } // namespace backend

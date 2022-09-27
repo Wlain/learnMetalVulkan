@@ -3,6 +3,7 @@
 //
 
 #include "../mesh/globalMeshs.h"
+#include "bufferGL.h"
 #include "deviceGL.h"
 #include "effectBase.h"
 #include "engine.h"
@@ -21,8 +22,6 @@ public:
     ~QuadGL() override
     {
         glDeleteVertexArrays(1, &m_vao);
-        glDeleteBuffers(1, &m_vbo);
-        glDeleteBuffers(1, &m_ebo);
     }
 
     void initialize() override
@@ -44,14 +43,12 @@ public:
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
         glGenVertexArrays(1, &m_vao);
-        glGenBuffers(1, &m_vbo);
-        glGenBuffers(1, &m_ebo);
-        // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
         glBindVertexArray(m_vao);
-        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(g_quadVertex[0]) * g_quadVertex.size(), g_quadVertex.data(), GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(g_quadIndices[0]) * g_quadIndices.size(), g_quadIndices.data(), GL_STATIC_DRAW);
+        // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+        m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_render->device());
+        m_vertexBuffer->create(g_quadVertex.size() * sizeof(g_quadVertex[0]), (void*)g_quadVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_indexBuffer = MAKE_SHARED(m_indexBuffer, m_render->device());
+        m_indexBuffer->create(g_quadIndices.size() * sizeof(g_quadIndices[0]), (void*)g_quadIndices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::IndexBuffer);
         // position attribute
         glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)nullptr);
         glEnableVertexAttribArray(0);
@@ -81,12 +78,12 @@ public:
     }
 
 private:
-    GLuint m_vao{ 0 };
-    GLuint m_vbo{ 0 };
-    GLuint m_ebo{ 0 };
     std::shared_ptr<PipelineGL> m_pipeline;
     GLFWRendererGL* m_render{ nullptr };
     std::shared_ptr<TextureGL> m_texture;
+    std::shared_ptr<BufferGL> m_vertexBuffer;
+    std::shared_ptr<BufferGL> m_indexBuffer;
+    GLuint m_vao{ 0 };
 };
 
 void quadEboGl()

@@ -18,7 +18,6 @@ public:
     ~PipelineVk() override;
     void setProgram(std::string_view vertShader, std::string_view fragSource) override;
     void initVertexBuffer(const VkPipelineVertexInputStateCreateInfo& info);
-    void setAssembly();
     void setPipelineLayout(vk::PipelineLayout layout);
     void setViewport();
     void setRasterization();
@@ -27,8 +26,8 @@ public:
     void setColorBlendAttachment();
     void setRenderPass();
     void build() override;
-    const vk::RenderPass& renderPass() const;
     vk::Pipeline handle() const;
+    void setTopology(Topology topology) override;
 
 private:
     vk::ShaderModule createShaderModule(const std::vector<uint32_t>& code);
@@ -50,6 +49,7 @@ private:
     vk::PipelineMultisampleStateCreateInfo m_multisampling;
     vk::PipelineColorBlendAttachmentState m_colorBlendAttachment;
     vk::PipelineColorBlendStateCreateInfo m_colorBlending;
+    vk::PrimitiveTopology m_topology;
 };
 } // namespace backend
 

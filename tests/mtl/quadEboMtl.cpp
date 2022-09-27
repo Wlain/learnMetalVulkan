@@ -3,6 +3,7 @@
 //
 
 #include "../mesh/globalMeshs.h"
+#include "bufferMtl.h"
 #include "commonHandle.h"
 #include "commonMacro.h"
 #include "deviceMtl.h"
@@ -20,11 +21,7 @@ class QuadMTL : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~QuadMTL() override
-    {
-        m_vertexBuffer->release();
-        m_indexBuffer->release();
-    }
+    ~QuadMTL() override = default;
 
     void initialize() override
     {
@@ -53,18 +50,10 @@ public:
 
     void buildBuffers()
     {
-        auto vertexDataSize = g_quadVertex.size() * sizeof(g_quadVertex[0]);
-        auto indexDataSize = g_quadIndices.size() * sizeof(g_quadIndices[0]);
-        // static:使用MTL::ResourceCPUCacheModeWriteCombined会获得性能提升
-        // other:MTLResourceStorageModeShared
-        auto usage = MTL::ResourceCPUCacheModeWriteCombined;
-        m_vertexBuffer = m_gpu->newBuffer(vertexDataSize, usage);
-        m_indexBuffer = m_gpu->newBuffer(indexDataSize, usage);
-        std::memcpy(m_vertexBuffer->contents(), g_quadVertex.data(), vertexDataSize);
-        std::memcpy(m_indexBuffer->contents(), g_quadIndices.data(), indexDataSize);
-        // 通知Metal有关已修改的特定数据范围; 这允许Metal仅更新视频内存副本中的特定范围
-        m_vertexBuffer->didModifyRange({ 0, m_vertexBuffer->length() });
-        m_indexBuffer->didModifyRange({ 0, m_indexBuffer->length() });
+        m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_device);
+        m_vertexBuffer->create(g_quadVertex.size() * sizeof(g_quadVertex[0]), (void*)g_quadVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_indexBuffer = MAKE_SHARED(m_indexBuffer, m_device);
+        m_indexBuffer->create(g_quadIndices.size() * sizeof(g_quadIndices[0]), (void*)g_quadIndices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::IndexBuffer);
     }
 
     void render() override
@@ -79,9 +68,9 @@ public:
         auto* buffer = m_queue->commandBuffer();
         auto* encoder = buffer->renderCommandEncoder(pass);
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
-        encoder->setVertexBuffer(m_vertexBuffer, 0, 0);
+        encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
         encoder->setFragmentTexture(m_texture->handle(), 0);
-        encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexType::IndexTypeUInt16, m_indexBuffer, 0, 0);
+        encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexType::IndexTypeUInt16, m_indexBuffer->buffer(), 0, 0);
         encoder->endEncoding();
         buffer->presentDrawable(surface);
         buffer->commit();
@@ -93,10 +82,10 @@ private:
     MTL::CommandQueue* m_queue{ nullptr };
     DeviceMtl* m_device{ nullptr };
     MTL::Device* m_gpu{ nullptr };
-    MTL::Buffer* m_vertexBuffer{ nullptr };
-    MTL::Buffer* m_indexBuffer{ nullptr };
     std::shared_ptr<PipelineMtl> m_pipeline;
     std::shared_ptr<TextureMTL> m_texture;
+    std::shared_ptr<BufferMTL> m_vertexBuffer;
+    std::shared_ptr<BufferMTL> m_indexBuffer;
 };
 
 void quadEboMtl()

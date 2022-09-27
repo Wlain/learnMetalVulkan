@@ -5,6 +5,7 @@
 #include "textureMtl.h"
 
 #include "../mesh/globalMeshs.h"
+#include "bufferMtl.h"
 #include "commonHandle.h"
 #include "commonMacro.h"
 #include "deviceMtl.h"
@@ -21,10 +22,7 @@ class TextureMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TextureMtl() override
-    {
-        m_vertexBuffer->release();
-    }
+    ~TextureMtl() override = default;
     void initialize() override
     {
         m_device = dynamic_cast<DeviceMtl*>(m_renderer->device());
@@ -52,14 +50,8 @@ public:
 
     void buildBuffers()
     {
-        auto vertexDataSize = g_quadVertex.size() * sizeof(g_quadVertex[0]);
-        // static:使用MTL::ResourceCPUCacheModeWriteCombined会获得性能提升
-        // other:MTLResourceStorageModeShared
-        auto usage = MTL::ResourceCPUCacheModeWriteCombined;
-        m_vertexBuffer = m_gpu->newBuffer(vertexDataSize, usage);
-        std::memcpy(m_vertexBuffer->contents(), g_quadVertex.data(), vertexDataSize);
-        // 通知Metal有关已修改的特定数据范围; 这允许Metal仅更新视频内存副本中的特定范围
-        m_vertexBuffer->didModifyRange({ 0, m_vertexBuffer->length() });
+        m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_device);
+        m_vertexBuffer->create(sizeof(g_quadVertex[0]) * g_quadVertex.size(), (void*)g_quadVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
     }
 
     void render() override
@@ -74,7 +66,7 @@ public:
         auto* buffer = m_queue->commandBuffer();
         auto* encoder = buffer->renderCommandEncoder(pass);
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
-        encoder->setVertexBuffer(m_vertexBuffer, 0, 0);
+        encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
         encoder->setFragmentTexture(m_texture->handle(), 0);
         encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangleStrip, NS::UInteger(0), NS::UInteger(4));
         encoder->endEncoding();
@@ -88,9 +80,9 @@ private:
     MTL::CommandQueue* m_queue{ nullptr };
     DeviceMtl* m_device{ nullptr };
     MTL::Device* m_gpu{ nullptr };
-    MTL::Buffer* m_vertexBuffer{ nullptr };
     std::shared_ptr<PipelineMtl> m_pipeline;
     std::shared_ptr<TextureMTL> m_texture;
+    std::shared_ptr<BufferMTL> m_vertexBuffer;
 };
 
 void textureMtl()

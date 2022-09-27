@@ -51,11 +51,6 @@ void PipelineVk::initVertexBuffer(const VkPipelineVertexInputStateCreateInfo& in
     m_vertexInputInfo = info;
 }
 
-const vk::RenderPass& PipelineVk::renderPass() const
-{
-    return m_renderPass;
-}
-
 vk::Pipeline PipelineVk::handle() const
 {
     return m_pipeline;
@@ -86,14 +81,6 @@ void PipelineVk::setProgram(std::string_view vertShader, std::string_view fragSo
         .pName = "main"
     };
     m_pipelineShaderStages = { vertShaderStageInfo, fragShaderStageInfo };
-}
-
-void PipelineVk::setAssembly()
-{
-    m_inputAssembly = vk::PipelineInputAssemblyStateCreateInfo{
-        .topology = vk::PrimitiveTopology::eTriangleList,
-        .primitiveRestartEnable = false
-    };
 }
 
 void PipelineVk::setPipelineLayout(vk::PipelineLayout layout)
@@ -169,40 +156,34 @@ void PipelineVk::setColorBlendAttachment()
 
 void PipelineVk::setRenderPass()
 {
-    auto colorAttachment = vk::AttachmentDescription{
-        .format = m_deviceVk->swapchainImageFormat(),
-        .samples = vk::SampleCountFlagBits::e1,
-        .loadOp = vk::AttachmentLoadOp::eClear,
-        .storeOp = vk::AttachmentStoreOp::eStore,
-        .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
-        .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
-        .initialLayout = vk::ImageLayout::eUndefined,
-        .finalLayout = vk::ImageLayout::ePresentSrcKHR
+    m_renderPass = m_deviceVk->renderPass();
+}
+
+void PipelineVk::setTopology(Topology topology)
+{
+    switch (topology)
+    {
+    case Topology::Points:
+        m_topology = vk::PrimitiveTopology::ePointList;
+        break;
+    case Topology::LineStrip:
+        m_topology = vk::PrimitiveTopology::eLineStrip;
+        break;
+    case Topology::Lines:
+        m_topology = vk::PrimitiveTopology::eLineList;
+        break;
+    case Topology::Triangles:
+        m_topology = vk::PrimitiveTopology::eTriangleList;
+        break;
+    case Topology::TriangleStrip:
+        m_topology = vk::PrimitiveTopology::eTriangleStrip;
+        break;
+    default:
+        break;
+    }
+    m_inputAssembly = vk::PipelineInputAssemblyStateCreateInfo{
+        .topology = m_topology,
+        .primitiveRestartEnable = false
     };
-    auto colorAttachmentRef = vk::AttachmentReference{
-        .attachment = 0,
-        .layout = vk::ImageLayout::eColorAttachmentOptimal
-    };
-    auto subpass = vk::SubpassDescription{
-        .pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &colorAttachmentRef
-    };
-    auto dependency = vk::SubpassDependency{
-        .srcSubpass = VK_SUBPASS_EXTERNAL,
-        .dstSubpass = 0,
-        .srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
-        .dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
-        .dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite
-    };
-    auto renderPassInfo = vk::RenderPassCreateInfo{
-        .attachmentCount = 1,
-        .pAttachments = &colorAttachment,
-        .subpassCount = 1,
-        .pSubpasses = &subpass,
-        .dependencyCount = 1,
-        .pDependencies = &dependency
-    };
-    m_renderPass = m_deviceVk->handle().createRenderPass(renderPassInfo);
 }
 } // namespace backend

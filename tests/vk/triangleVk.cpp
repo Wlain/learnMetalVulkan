@@ -2,6 +2,7 @@
 // Created by cwb on 2022/9/6.
 //
 #include "../mesh/globalMeshs.h"
+#include "bufferVk.h"
 #include "commonHandle.h"
 #include "deviceVk.h"
 #include "engine.h"
@@ -12,6 +13,7 @@
 #include <cstddef>
 
 using namespace backend;
+
 vk::VertexInputBindingDescription getBindingDescription()
 {
     auto bindingDescription = vk::VertexInputBindingDescription{
@@ -19,7 +21,6 @@ vk::VertexInputBindingDescription getBindingDescription()
         .stride = sizeof(TriangleVertex),
         .inputRate = vk::VertexInputRate::eVertex
     };
-
     return bindingDescription;
 }
 
@@ -37,7 +38,6 @@ std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions()
             .format = vk::Format::eR32G32B32A32Sfloat,
             .offset = offsetof(TriangleVertex, color) },
     };
-
     return attributeDescriptions;
 }
 
@@ -50,94 +50,23 @@ public:
     ~Triangle() override = default;
     void initialize() override
     {
-        m_deviceVK = dynamic_cast<DeviceVK*>(m_renderer->device());
+        m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
         m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
-        m_device = m_deviceVK->handle();
         buildPipeline();
-        m_render->createFrameBuffers();
-        m_render->createCommandPool();
         buildBuffers();
-        m_render->createCommandBuffers();
-        m_render->createSyncObjects();
-    }
-
-    std::pair<vk::Buffer, vk::DeviceMemory> createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties)
-    {
-        auto bufferInfo = vk::BufferCreateInfo{
-            .size = size,
-            .usage = usage,
-            .sharingMode = vk::SharingMode::eExclusive
-        };
-
-        auto buffer = m_device.createBuffer(bufferInfo);
-
-        auto memoryRequirements = m_device.getBufferMemoryRequirements(buffer);
-        auto allocInfo = vk::MemoryAllocateInfo{
-            .allocationSize = memoryRequirements.size,
-            .memoryTypeIndex = m_deviceVK->findMemoryType(memoryRequirements.memoryTypeBits, properties)
-        };
-        auto bufferMemory = m_device.allocateMemory(allocInfo);
-        m_device.bindBufferMemory(buffer, bufferMemory, 0);
-        return { buffer, bufferMemory };
-    }
-
-    void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
-    {
-        auto cmdPool = m_render->commandPool();
-        auto allocInfo = vk::CommandBufferAllocateInfo{
-            .commandPool = cmdPool,
-            .level = vk::CommandBufferLevel::ePrimary,
-            .commandBufferCount = 1
-        };
-
-        auto commandBuffers = m_device.allocateCommandBuffers(allocInfo);
-
-        auto beginInfo = vk::CommandBufferBeginInfo{
-            .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
-        };
-
-        commandBuffers[0].begin(beginInfo);
-        auto copyRegion = vk::BufferCopy{ .size = size };
-        commandBuffers[0].copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
-        commandBuffers[0].end();
-
-        auto submitInfo = vk::SubmitInfo{
-            .commandBufferCount = 1,
-            .pCommandBuffers = commandBuffers.data()
-        };
-        m_deviceVK->graphicsQueue().submit(submitInfo);
-        m_deviceVK->graphicsQueue().waitIdle();
-        m_device.freeCommandBuffers(cmdPool, 1, commandBuffers.data());
     }
 
     void buildBuffers()
     {
-        vk::DeviceSize bufferSize = g_triangleVertex.size() * sizeof(g_triangleVertex[0]);
-        // create a vertex buffer for some vertex and color data
-
-        auto [stagingBuffer, stagingBufferMemory] = createBuffer(bufferSize,
-                                                                 vk::BufferUsageFlagBits::eTransferSrc,
-                                                                 vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
-        // copy the vertex and color data into that device memory
-        auto* pData = (m_device.mapMemory(stagingBufferMemory, {}, bufferSize, {}));
-        memcpy(pData, g_triangleVertex.data(), static_cast<std::size_t>(bufferSize));
-        m_device.unmapMemory(stagingBufferMemory);
-
-        std::tie(m_vertexBuffer, m_vertexBufferMemory) = createBuffer(bufferSize,
-                                                                      vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
-                                                                      vk::MemoryPropertyFlagBits::eDeviceLocal);
-        copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
-        m_render->setVertexBuffer(m_vertexBuffer);
-        m_render->setVertexBufferMemory(m_vertexBufferMemory);
-        m_device.destroyBuffer(stagingBuffer);
-        m_device.freeMemory(stagingBufferMemory);
+        m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_deviceVk);
+        m_vertexBuffer->create(g_triangleVertex.size() * sizeof(g_triangleVertex[0]), (void*)g_triangleVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
     }
 
     void buildPipeline()
     {
         std::string vertSource = getFileContents("shaders/triangle.vert");
         std::string fragShader = getFileContents("shaders/triangle.frag");
-        m_pipeline = MAKE_SHARED(m_pipeline, m_deviceVK);
+        m_pipeline = MAKE_SHARED(m_pipeline, m_deviceVk);
         m_pipeline->setProgram(vertSource, fragShader);
         m_bindingDescription = getBindingDescription();
         m_attributeDescriptions = getAttributeDescriptions();
@@ -151,9 +80,9 @@ public:
             .setLayoutCount = 0,
             .pushConstantRangeCount = 0
         };
-        m_pipelineLayout = m_device.createPipelineLayout(pipelineLayoutInfo);
+        m_pipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
         m_pipeline->initVertexBuffer(m_vertexInputInfo);
-        m_pipeline->setAssembly();
+        m_pipeline->setTopology(backend::Topology::Triangles);
         m_pipeline->setPipelineLayout(m_pipelineLayout);
         m_pipeline->setViewport();
         m_pipeline->setRasterization();
@@ -167,20 +96,45 @@ public:
 
     void render() override
     {
+        auto& commandBuffers = m_deviceVk->commandBuffers();
+        auto& framebuffer = m_deviceVk->swapchainFramebuffers();
+        for (std::size_t i = 0; i < commandBuffers.size(); ++i)
+        {
+            auto beginInfo = vk::CommandBufferBeginInfo{};
+            commandBuffers[i].begin(beginInfo);
+            static float red{ 0.0f };
+            red = red > 1.0f ? 0.0 : red + 0.001f;
+            auto clearValue = vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ red, 0.0f, 0.0f, 1.0f } } };
+            auto renderPassInfo = vk::RenderPassBeginInfo{
+                .renderPass = m_deviceVk->renderPass(),
+                .framebuffer = framebuffer[i],
+                .renderArea = {
+                    .offset = { 0, 0 },
+                    .extent = m_deviceVk->swapchainExtent() },
+                .clearValueCount = 1,
+                .pClearValues = &clearValue
+            };
+            commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+            commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
+            auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer->buffer() };
+            auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
+            commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
+            commandBuffers[i].draw(static_cast<std::uint32_t>(g_triangleVertex.size()), 1, 0, 0);
+            commandBuffers[i].endRenderPass();
+            commandBuffers[i].end();
+        }
     }
 
 private:
     GLFWRendererVK* m_render{ nullptr };
-    DeviceVK* m_deviceVK{ nullptr };
+    DeviceVK* m_deviceVk{ nullptr };
     std::shared_ptr<PipelineVk> m_pipeline;
-    vk::Device m_device;
+    std::shared_ptr<BufferVK> m_vertexBuffer;
     vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
     std::array<vk::VertexInputAttributeDescription, 2> m_attributeDescriptions;
     vk::PipelineLayout m_pipelineLayout;
     vk::VertexInputBindingDescription m_bindingDescription;
     std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribute;
-    vk::Buffer m_vertexBuffer;
-    vk::DeviceMemory m_vertexBufferMemory;
 };
 } // namespace
 
