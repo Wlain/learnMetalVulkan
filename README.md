@@ -62,3 +62,18 @@ Q8:是否是一个状态机？
 
 * OpenGL:是一个状态机模式，如果状态没有改变，则状态保持不变
 * Metal:不是一个状态机模型，是现代的OOP设计模式的现代图形api
+
+Q9 关于fixup_clipspace修复推导：
+```C++
+// 已知条件：
+glNdc.z = gl_Position.z / gl_Position.w;
+mtlNdc.z = metal_Position.z / metal_Position.w;
+metal_Position.w = gl_Position.w;
+mtlNdc.z = (glNdc.z + 1) * 0.5;
+
+// 推导-》
+metal_Position.z = mtlNdc.z / metal_Position.w;
+                 = ((glNdc.z + 1) * 0.5) * metal_Position.w;
+                 = ((gl_Position.z / gl_Position.w + 1) * 0.5) * gl_Position.w;
+                 = (gl_Position.z + gl_Position.w) * 0.5;
+```
