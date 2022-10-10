@@ -10,6 +10,7 @@ The Metal/Vulkan version for LearnOpenGL with C++ 17 on MAC-OS.
 * download and install vulkanSDK(1.3.224.1 or latest version)
 
 ## 三个图形API的异同点总结以及解决办法
+https://alain.xyz/blog/comparison-of-modern-graphics-apis
 
 Q1:原始数据是OpenGL的数据，在Vulkan/metal中解决顶点/坐标的翻转问题?
 
