@@ -11,7 +11,7 @@ namespace backend
 PipelineMtl::PipelineMtl(Device* handle) :
     Pipeline(handle)
 {
-    m_deviceMtl = static_cast<DeviceMtl*>(handle);
+    m_deviceMtl = dynamic_cast<DeviceMtl*>(handle);
     m_gpu = m_deviceMtl->gpu();
 }
 

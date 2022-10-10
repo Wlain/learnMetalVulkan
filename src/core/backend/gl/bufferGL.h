@@ -18,9 +18,12 @@ public:
     ~BufferGL() override;
     void create(size_t size, void* data, BufferUsage usage, BufferType type) override;
     void update(void* data, size_t size, size_t offset) override;
+    GLuint buffer() const;
+    GLenum bufferType() const;
 
 private:
     GLuint m_buffer{ 0 };
+    GLenum m_bufferType{ 0 };
 };
 } // namespace backend
 

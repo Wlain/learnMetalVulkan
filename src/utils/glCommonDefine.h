@@ -2,8 +2,9 @@
 // Created by william on 2022/5/24.
 //
 
-#ifndef GRAPHICRENDERENGINE_GLCOMMONDEFINE_H
-#define GRAPHICRENDERENGINE_GLCOMMONDEFINE_H
+#ifndef LEARNMETALVULKAN_GLCOMMONDEFINE_H
+#define LEARNMETALVULKAN_GLCOMMONDEFINE_H
+
 #include "commonMacro.h"
 
 //#define GLFW_INCLUDE_GLCOREARB
@@ -13,7 +14,7 @@
 #include <sstream>
 #include <string>
 
-#define CHECK_GL(x)                 \
+#define GL_CHECK(x)                 \
     do                              \
     {                               \
         (x);                        \
@@ -33,18 +34,23 @@ inline void checkGlError(std::string_view msg = {}) noexcept
         {
         case GL_INVALID_ENUM:
             LOG_ERROR("GL_INVALID_ENUM");
+            ASSERT(0);
             break;
         case GL_INVALID_VALUE:
             LOG_ERROR("GL_INVALID_VALUE");
+            ASSERT(0);
             break;
         case GL_INVALID_OPERATION:
             LOG_ERROR("GL_INVALID_OPERATION");
+            ASSERT(0);
             break;
         case GL_OUT_OF_MEMORY:
             LOG_ERROR("GL_OUT_OF_MEMORY");
+            ASSERT(0);
             break;
         case GL_INVALID_FRAMEBUFFER_OPERATION:
             LOG_ERROR("GL_INVALID_FRAMEBUFFER_OPERATION");
+            ASSERT(0);
             break;
         }
     }
@@ -86,4 +92,4 @@ inline bool hasSRGB()
     return res;
 }
 
-#endif // GRAPHICRENDERENGINE_GLCOMMONDEFINE_H
+#endif // LEARNMETALVULKAN_GLCOMMONDEFINE_H

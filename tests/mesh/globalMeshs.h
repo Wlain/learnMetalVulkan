@@ -4,8 +4,8 @@
 
 #ifndef LEARNMETALVULKAN_GLOBALMESHS_H
 #define LEARNMETALVULKAN_GLOBALMESHS_H
-#include "glm/glm.hpp"
-
+#include <glm/glm.hpp>
+#include <glm/gtx/euler_angles.hpp>
 #include <vector>
 
 struct alignas(16) TriangleVertex
@@ -27,7 +27,16 @@ struct alignas(16) TextureVertex
     glm::vec4 texCoord;
 };
 
-static const std::vector<TriangleVertex> g_quadVertex = {
+struct alignas(16) UniformBufferObject
+{
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
+static UniformBufferObject g_mvpMatrix = { glm::eulerAngleZ(glm::radians(30.0f)), glm::mat4(1.0f), glm::mat4(1.0f) };
+
+static const std::vector<TextureVertex> g_quadVertex = {
     // positions                  // texture coords
     { { -0.5f, 0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },  // top left
     { { 0.5f, 0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },   // top right

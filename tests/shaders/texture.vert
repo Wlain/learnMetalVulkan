@@ -5,8 +5,15 @@ layout (location = 0) in vec4 aPos;
 layout (location = 1) in vec4 aTexCoord;
 layout(location = 0) out vec2 vTexCoord;
 
+layout(binding = 2) uniform UniformBufferObject
+{
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+} ubo;
+
 void main()
 {
     vTexCoord = aTexCoord.xy;
-    gl_Position = vec4(aPos.xyz, 1.0);
+    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(aPos.xyz, 1.0);
 }

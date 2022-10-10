@@ -91,6 +91,7 @@ std::string Pipeline::getMslShaderFromSpv(std::vector<uint32_t> shader)
     optionsGlsl.vertex.fixup_clipspace = true;
     glsl->set_common_options(optionsGlsl);
     auto option = msl.get_msl_options();
+    option.enable_decoration_binding = true;
     option.ios_support_base_vertex_instance = true;
     msl.set_msl_options(option);
     ShaderResources resources = msl.get_shader_resources();

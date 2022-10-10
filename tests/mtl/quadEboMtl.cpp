@@ -42,8 +42,8 @@ public:
 
     void buildPipeline()
     {
-        std::string vertSource = getFileContents("shaders/texture.vert");
-        std::string fragShader = getFileContents("shaders/texture.frag");
+        std::string vertSource = getFileContents("shaders/triangle.vert");
+        std::string fragShader = getFileContents("shaders/triangle.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_device);
         m_pipeline->setProgram(vertSource, fragShader);
     }
@@ -70,7 +70,7 @@ public:
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
         encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
         encoder->setFragmentTexture(m_texture->handle(), 0);
-        encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, 6, MTL::IndexType::IndexTypeUInt16, m_indexBuffer->buffer(), 0, 0);
+        encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, g_quadIndices.size(), MTL::IndexType::IndexTypeUInt16, m_indexBuffer->buffer(), 0, 0);
         encoder->endEncoding();
         buffer->presentDrawable(surface);
         buffer->commit();

@@ -892,7 +892,7 @@ private:
     }
 };
 
-void demoTriangle2()
+void demoTriangleVk()
 {
     HelloTriangleApplication app;
     app.run();

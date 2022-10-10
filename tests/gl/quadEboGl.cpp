@@ -33,8 +33,8 @@ public:
     }
     void buildPipeline()
     {
-        std::string vertSource = getFileContents("shaders/texture.vert");
-        std::string fragShader = getFileContents("shaders/texture.frag");
+        std::string vertSource = getFileContents("shaders/triangle.vert");
+        std::string fragShader = getFileContents("shaders/triangle.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_render->device());
         m_pipeline->setProgram(vertSource, fragShader);
     }
@@ -74,7 +74,7 @@ public:
         // bind Texture
         glBindTexture(GL_TEXTURE_2D, m_texture->handle());
         glBindVertexArray(m_vao);
-        glDrawElements(GL_TRIANGLE_STRIP, 6, GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLES, g_quadIndices.size(), GL_UNSIGNED_SHORT, 0);
     }
 
 private:

@@ -8,7 +8,6 @@
 
 #include <stb/stb_image.h>
 
-
 namespace backend
 {
 TextureGL::~TextureGL()
@@ -68,7 +67,7 @@ bool TextureGL::createWithFileName(std::string_view filename, bool premultiplyAl
     glGenTextures(1, &m_textureHandle);
     m_info.target = GL_TEXTURE_2D;
     GLint mipmapLevel = 0;
-    GLint internalFormat = m_info.colorspace == SamplerColorspace::Linear ? GL_SRGB_ALPHA : GL_RGBA;
+    GLint internalFormat = m_info.colorspace == SamplerColorspace::Gamma ? GL_SRGB_ALPHA : GL_RGBA;
     GLint border = 0;
     GLenum type = GL_UNSIGNED_BYTE;
     int desireComp = STBI_rgb_alpha;
@@ -89,7 +88,6 @@ bool TextureGL::createWithFileName(std::string_view filename, bool premultiplyAl
         LOG_INFO("Texture {} is not power of two (was {} x {}) mipmapping disabled ", filename, m_info.width, m_info.height);
         m_info.generateMipmap = false;
     }
-
     checkGlError();
     glTexImage2D(m_info.target, mipmapLevel, internalFormat, m_info.width, m_info.height, border, GL_RGBA, type, data);
     updateTextureSampler(m_info.filterSampling, m_info.warp);

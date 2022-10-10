@@ -42,8 +42,8 @@ public:
 
     void buildPipeline()
     {
-        std::string vertSource = getFileContents("shaders/checkTexCoord.vert");
-        std::string fragShader = getFileContents("shaders/checkTexCoord.frag");
+        std::string vertSource = getFileContents("shaders/texture.vert");
+        std::string fragShader = getFileContents("shaders/texture.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_device);
         m_pipeline->setProgram(vertSource, fragShader);
     }
@@ -52,6 +52,8 @@ public:
     {
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_device);
         m_vertexBuffer->create(sizeof(g_quadVertex[0]) * g_quadVertex.size(), (void*)g_quadVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_indexBuffer = MAKE_SHARED(m_indexBuffer, m_device);
+        m_indexBuffer->create(g_quadIndices.size() * sizeof(g_quadIndices[0]), (void*)g_quadIndices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::IndexBuffer);
     }
 
     void render() override
@@ -67,8 +69,9 @@ public:
         auto* encoder = buffer->renderCommandEncoder(pass);
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
         encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
-        encoder->setFragmentTexture(m_texture->handle(), 0);
-        encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangleStrip, NS::UInteger(0), NS::UInteger(4));
+        encoder->setVertexBytes(&g_mvpMatrix, sizeof(g_mvpMatrix), 2); // ubo：小内存，大内存用buffer
+        encoder->setFragmentTexture(m_texture->handle(), 1);
+        encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, g_quadIndices.size(), MTL::IndexType::IndexTypeUInt16, m_indexBuffer->buffer(), 0, 0);
         encoder->endEncoding();
         buffer->presentDrawable(surface);
         buffer->commit();
@@ -83,6 +86,7 @@ private:
     std::shared_ptr<PipelineMtl> m_pipeline;
     std::shared_ptr<TextureMTL> m_texture;
     std::shared_ptr<BufferMTL> m_vertexBuffer;
+    std::shared_ptr<BufferMTL> m_indexBuffer;
 };
 
 void textureMtl()

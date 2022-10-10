@@ -6,7 +6,6 @@
 
 namespace backend
 {
-
 BufferGL::BufferGL(backend::Device* device) :
     Buffer(device)
 {
@@ -57,13 +56,23 @@ GLenum getBufferType(Buffer::BufferType type)
 void BufferGL::create(size_t size, void* data, Buffer::BufferUsage usage, Buffer::BufferType type)
 {
     auto bufferUsage = getBufferUsage(usage);
-    auto bufferType = getBufferType(type);
-    glBindBuffer(bufferType, m_buffer);
-    glBufferData(bufferType, size, data, bufferUsage);
+    m_bufferType = getBufferType(type);
+    glBindBuffer(m_bufferType, m_buffer);
+    glBufferData(m_bufferType, size, data, bufferUsage);
 }
 
 void BufferGL::update(void* data, size_t size, size_t offset)
 {
     Buffer::update(data, size, offset);
+}
+
+GLuint BufferGL::buffer() const
+{
+    return m_buffer;
+}
+
+GLenum BufferGL::bufferType() const
+{
+    return m_bufferType;
 }
 } // namespace backend

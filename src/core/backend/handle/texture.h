@@ -39,6 +39,8 @@ public:
         int width = 0;
         int height = 0;
         int channels = 0;
+        uint32_t layerCount;
+        uint32_t mipLevels;
         uint32_t target = 0;
         bool transparent; // 透明纹理
         bool generateMipmap = false;
