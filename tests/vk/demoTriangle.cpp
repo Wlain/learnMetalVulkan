@@ -92,7 +92,9 @@ private:
     std::vector<vk::Framebuffer> m_swapchainFramebuffers;
     vk::CommandPool m_commandPool;
     vk::Buffer m_vertexBuffer;
+    vk::Buffer m_indexBuffer;
     vk::DeviceMemory m_vertexBufferMemory;
+    vk::DeviceMemory m_indexBufferMemory;
     std::vector<vk::CommandBuffer> m_commandBuffers;
     std::vector<vk::Semaphore> m_imageAvailableSemaphores;
     std::vector<vk::Semaphore> m_renderFinishedSemaphores;
@@ -139,6 +141,8 @@ private:
         createFramebuffers();
         createCommandPool();
         createVertexBuffer();
+        createIndexBuffer();
+        createIndexBuffer();
         createCommandBuffers();
         createSyncObjects();
     }
@@ -158,6 +162,8 @@ private:
         cleanupSwapchain();
         m_device.destroyBuffer(m_vertexBuffer);
         m_device.freeMemory(m_vertexBufferMemory);
+        m_device.destroyBuffer(m_indexBuffer);
+        m_device.freeMemory(m_indexBufferMemory);
         for (auto fence : m_inflightFences)
         {
             m_device.destroyFence(fence);
@@ -494,7 +500,7 @@ private:
             .pVertexAttributeDescriptions = attributeDescriptions.data()
         };
         auto inputAssembly = vk::PipelineInputAssemblyStateCreateInfo{
-            .topology = vk::PrimitiveTopology::eTriangleList,
+            .topology = vk::PrimitiveTopology::eTriangleStrip,
             .primitiveRestartEnable = false
         };
         auto viewport = vk::Viewport{
@@ -595,15 +601,15 @@ private:
 
     void createVertexBuffer()
     {
-        vk::DeviceSize bufferSize = sizeof(TriangleVertex) * g_triangleVertex.size();
+        vk::DeviceSize bufferSize = sizeof(TriangleVertex) * g_quadVertex.size();
 
         auto [stagingBuffer, stagingBufferMemory] = createBuffer(
             bufferSize,
             vk::BufferUsageFlagBits::eTransferSrc,
             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
-        auto data = m_device.mapMemory(stagingBufferMemory, {}, bufferSize, {});
-        memcpy(data, g_triangleVertex.data(), static_cast<std::size_t>(bufferSize));
+        auto* data = m_device.mapMemory(stagingBufferMemory, {}, bufferSize, {});
+        memcpy(data, g_quadVertex.data(), static_cast<std::size_t>(bufferSize));
         m_device.unmapMemory(stagingBufferMemory);
 
         std::tie(m_vertexBuffer, m_vertexBufferMemory) = createBuffer(
@@ -612,6 +618,29 @@ private:
             vk::MemoryPropertyFlagBits::eDeviceLocal);
 
         copyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
+
+        m_device.destroyBuffer(stagingBuffer);
+        m_device.freeMemory(stagingBufferMemory);
+    }
+
+    void createIndexBuffer()
+    {
+        VkDeviceSize bufferSize = sizeof(g_quadIndices[0]) * g_quadIndices.size();
+        auto [stagingBuffer, stagingBufferMemory] = createBuffer(
+            bufferSize,
+            vk::BufferUsageFlagBits::eTransferSrc,
+            vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+        auto* data = m_device.mapMemory(stagingBufferMemory, {}, bufferSize, {});
+        memcpy(data, g_quadIndices.data(), static_cast<std::size_t>(bufferSize));
+        m_device.unmapMemory(stagingBufferMemory);
+
+        std::tie(m_indexBuffer, m_indexBufferMemory) = createBuffer(
+            bufferSize,
+            vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+        copyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
 
         m_device.destroyBuffer(stagingBuffer);
         m_device.freeMemory(stagingBufferMemory);
@@ -644,8 +673,10 @@ private:
             m_commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphicsPipeline);
             auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer };
             auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
+            // bind the index buffer
+            m_commandBuffers[i].bindIndexBuffer(m_indexBuffer, 0, vk::IndexType::eUint16);
             m_commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
-            m_commandBuffers[i].draw(static_cast<std::uint32_t>(g_triangleVertex.size()), 1, 0, 0);
+            m_commandBuffers[i].drawIndexed(static_cast<uint32_t>(g_quadIndices.size()), 1, 0, 0, 0);
             m_commandBuffers[i].endRenderPass();
             m_commandBuffers[i].end();
         }
