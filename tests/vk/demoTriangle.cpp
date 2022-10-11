@@ -14,7 +14,6 @@
 #include <optional>
 #include <set>
 #include <stdexcept>
-#include <vulkan/vulkan.hpp>
 
 constexpr std::size_t MAX_FRAMES_IN_FLIGHT = 2;
 #ifndef NDEBUG
@@ -31,6 +30,8 @@ extern bool checkDeviceExtensionSupport(vk::PhysicalDevice physicalDevice);
 extern std::vector<const char*> getDeviceExtensions();
 extern vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats);
 extern vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& availablePresentModes);
+
+using namespace backend;
 
 vk::VertexInputBindingDescription getBindingDescription()
 {
@@ -58,17 +59,6 @@ std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions()
     };
     return attributeDescriptions;
 }
-
-struct QueueFamilyIndices
-{
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    [[nodiscard]] bool isComplete() const
-    {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
 
 struct SwapchainSupportDetails
 {
@@ -207,7 +197,7 @@ private:
         }
 #endif
         auto applicationInfo = vk::ApplicationInfo{
-            .pApplicationName = "Vulkan Demo",
+            .pApplicationName = "Vulkan Triangle demo",
             .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
             .pEngineName = "No Engine",
             .engineVersion = VK_MAKE_VERSION(1, 0, 0),

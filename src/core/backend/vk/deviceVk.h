@@ -12,19 +12,18 @@
 
 namespace backend
 {
+struct QueueFamilyIndices
+{
+    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
+    [[nodiscard]] inline bool isComplete() const
+    {
+        return graphicsFamily.has_value() && presentFamily.has_value();
+    }
+};
 class DeviceVK : public Device
 {
 public:
-    struct QueueFamilyIndices
-    {
-        std::optional<uint32_t> graphicsFamily;
-        std::optional<uint32_t> presentFamily;
-        [[nodiscard]] inline bool isComplete() const
-        {
-            return graphicsFamily.has_value() && presentFamily.has_value();
-        }
-    };
-
     struct SwapchainSupportDetails
     {
         vk::SurfaceCapabilitiesKHR capabilities;

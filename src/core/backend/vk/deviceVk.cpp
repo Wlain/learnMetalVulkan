@@ -391,7 +391,7 @@ bool DeviceVK::isDeviceSuitable(vk::PhysicalDevice gpu)
     return indices.isComplete() && extensionsSupported && swapchainAdequate;
 }
 
-DeviceVK::QueueFamilyIndices DeviceVK::findQueueFamilyIndices(vk::PhysicalDevice gpu)
+QueueFamilyIndices DeviceVK::findQueueFamilyIndices(vk::PhysicalDevice gpu)
 {
     auto queueFamilyProperties = gpu.getQueueFamilyProperties();
     QueueFamilyIndices indices;
