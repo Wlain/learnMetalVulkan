@@ -5,6 +5,7 @@
 #include "deviceVk.h"
 
 #include "commonMacro.h"
+#include "vkCommonDefine.h"
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <set>
@@ -600,6 +601,35 @@ const std::vector<vk::Semaphore>& DeviceVK::imageAvailableSemaphores() const
 const std::vector<vk::Semaphore>& DeviceVK::renderFinishedSemaphores() const
 {
     return m_renderFinishedSemaphores;
+}
+
+vk::CommandBuffer DeviceVK::beginSingleTimeCommands()
+{
+    auto allocInfo = vk::CommandBufferAllocateInfo{
+        .commandPool = m_commandPool,
+        .level = vk::CommandBufferLevel::ePrimary,
+        .commandBufferCount = 1
+    };
+    vk::CommandBuffer commandBuffers;
+    VK_CHECK(m_device.allocateCommandBuffers(&allocInfo, &commandBuffers));
+    auto beginInfo = vk::CommandBufferBeginInfo{
+        .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+    };
+    commandBuffers.begin(beginInfo);
+    return commandBuffers;
+}
+
+void DeviceVK::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
+{
+    commandBuffer.end();
+    auto submitInfo = vk::SubmitInfo{
+        .sType = vk::StructureType::eSubmitInfo,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &commandBuffer
+    };
+    m_graphicsQueue.submit(submitInfo, nullptr);
+    m_device.waitIdle();
+    m_device.freeCommandBuffers(m_commandPool, 1, &commandBuffer);
 }
 
 } // namespace backend

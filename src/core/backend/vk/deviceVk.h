@@ -56,6 +56,8 @@ public:
     const std::vector<vk::Fence>& imagesInflight() const;
     const std::vector<vk::Semaphore>& imageAvailableSemaphores() const;
     const std::vector<vk::Semaphore>& renderFinishedSemaphores() const;
+    vk::CommandBuffer beginSingleTimeCommands();
+    void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
 
 private:
     void initInstance();

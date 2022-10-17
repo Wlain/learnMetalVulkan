@@ -16,17 +16,21 @@ public:
     bool createWithRGBAData(const char* data, int width, int height) override;
     bool createWithFileName(std::string_view filename, bool premultiplyAlpha) override;
 
-public:
+private:
     void updateDescriptor();
-
+    std::pair<vk::Buffer, vk::DeviceMemory> createBuffer(vk::DeviceSize bufferSize, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties);
+    std::pair<vk::Image, vk::DeviceMemory> createImage(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
+                                                       vk::MemoryPropertyFlags properties);
+    void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 private:
     vk::Image m_image;
-    vk::ImageView m_imageView;
     vk::DeviceMemory m_deviceMemory;
+    vk::ImageView m_imageView;
     vk::ImageLayout m_imageLayout;
     vk::DescriptorImageInfo m_descriptor;
     vk::Sampler m_sampler;
     DeviceVK* m_deviceVk{ nullptr };
+    vk::Device m_device;
 };
 } // namespace backend
 #endif // LEARNMETALVULKAN_TEXTUREVK_H
