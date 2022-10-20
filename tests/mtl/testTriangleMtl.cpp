@@ -16,11 +16,11 @@
 #include <glm/glm.hpp>
 #include <vector>
 using namespace backend;
-class TriangleMtl : public EffectBase
+class TestTriangleMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TriangleMtl() override = default;
+    ~TestTriangleMtl() override = default;
     void initialize() override
     {
         m_device = dynamic_cast<DeviceMtl*>(m_renderer->device());
@@ -73,14 +73,14 @@ private:
     std::shared_ptr<PipelineMtl> m_pipeline;
 };
 
-void triangleMtl()
+void testTriangleMtl()
 {
     Device::Info info{ Device::RenderType::Metal, 640, 480, "Metal Example triangle" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);
     Engine engine(rendererMtl);
-    auto effect = std::make_shared<TriangleMtl>(&rendererMtl);
+    auto effect = std::make_shared<TestTriangleMtl>(&rendererMtl);
     engine.setEffect(effect);
     engine.run();
 }

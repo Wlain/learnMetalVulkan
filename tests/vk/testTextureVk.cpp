@@ -19,11 +19,11 @@ extern std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptio
 
 namespace
 {
-class TextureVKDemo : public EffectBase
+class TestTextureVk : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TextureVKDemo() override = default;
+    ~TestTextureVk() override = default;
     void initialize() override
     {
         m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
@@ -226,14 +226,14 @@ private:
 };
 } // namespace
 
-void textureVk()
+void testTextureVk()
 {
     Device::Info info{ Device::RenderType::Vulkan, 640, 640, "Vulkan Texture Use EBO" };
     DeviceVK handle(info);
     handle.init();
     GLFWRendererVK renderer(&handle);
     Engine engine(renderer);
-    auto effect = std::make_shared<TextureVKDemo>(&renderer);
+    auto effect = std::make_shared<TestTextureVk>(&renderer);
     engine.setEffect(effect);
     engine.run();
 }

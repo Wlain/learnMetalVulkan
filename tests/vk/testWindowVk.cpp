@@ -19,7 +19,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
 extern VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
-void windowVk()
+void testWindowVk()
 {
     uint32_t width = 640;
     uint32_t height = 480;

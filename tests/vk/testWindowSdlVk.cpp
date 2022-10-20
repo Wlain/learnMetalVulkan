@@ -16,7 +16,7 @@ struct SharingModeUtil
     uint32_t* familyIndicesDataPtr;
 };
 
-void windowSdlVk()
+void testWindowSdlVk()
 {
     uint32_t width = 640;
     uint32_t height = 480;

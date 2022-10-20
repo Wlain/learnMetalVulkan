@@ -8,7 +8,7 @@
 #include "glCommonDefine.h"
 #include "glfwRendererGL.h"
 using namespace backend;
-class WindowGL : public EffectBase
+class TestWindowGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
@@ -22,14 +22,14 @@ public:
     }
 };
 
-void windowGl()
+void testWindowGl()
 {
     Device::Info info{ DeviceGL::RenderType::OpenGL, 640, 480, "OpenGL Example window" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
     Engine engine(rendererGl);
-    auto effect = std::make_shared<WindowGL>(&rendererGl);
+    auto effect = std::make_shared<TestWindowGl>(&rendererGl);
     engine.setEffect(effect);
     engine.run();
 }

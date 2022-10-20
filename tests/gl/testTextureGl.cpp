@@ -16,11 +16,11 @@
 
 using namespace backend;
 
-class TextureGl : public EffectBase
+class TestTextureGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TextureGl() override
+    ~TestTextureGl() override
     {
         glDeleteVertexArrays(1, &m_vao);
     }
@@ -93,14 +93,14 @@ private:
     GLuint m_vao{ 0 };
 };
 
-void textureGl()
+void testTextureGl()
 {
     Device::Info info{ Device::RenderType::OpenGL, 480, 480, "OpenGL Example texture" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
     Engine engine(rendererGl);
-    auto effect = std::make_shared<TextureGl>(&rendererGl);
+    auto effect = std::make_shared<TestTextureGl>(&rendererGl);
     engine.setEffect(effect);
     engine.run();
 }

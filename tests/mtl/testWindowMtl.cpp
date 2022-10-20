@@ -7,11 +7,11 @@
 #include "engine.h"
 #include "glfwRendererMtl.h"
 using namespace backend;
-class WindowMtl : public EffectBase
+class TestWindowMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-
+    ~TestWindowMtl() override = default;
     void initialize() override
     {
         auto* renderMtl = dynamic_cast<GLFWRendererMtl*>(m_renderer);
@@ -43,14 +43,14 @@ private:
     DeviceMtl* m_device{ nullptr };
 };
 
-void windowMtl()
+void testWindowMtl()
 {
     Device::Info info{ Device::RenderType::Metal, 640, 480, "Metal Example window" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);
     Engine engine(rendererMtl);
-    auto effect = std::make_shared<WindowMtl>(&rendererMtl);
+    auto effect = std::make_shared<TestWindowMtl>(&rendererMtl);
     engine.setEffect(effect);
     engine.run();
 }

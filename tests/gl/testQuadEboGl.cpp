@@ -15,11 +15,11 @@
 
 using namespace backend;
 
-class QuadGL : public EffectBase
+class TestQuadGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~QuadGL() override
+    ~TestQuadGl() override
     {
         glDeleteVertexArrays(1, &m_vao);
     }
@@ -86,14 +86,14 @@ private:
     GLuint m_vao{ 0 };
 };
 
-void quadEboGl()
+void testQuadEboGl()
 {
     Device::Info info{ Device::RenderType::OpenGL, 640, 480, "OpenGL Example Quad use EBO" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
     Engine engine(rendererGl);
-    auto effect = std::make_shared<QuadGL>(&rendererGl);
+    auto effect = std::make_shared<TestQuadGl>(&rendererGl);
     engine.setEffect(effect);
     engine.run();
 }

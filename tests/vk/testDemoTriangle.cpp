@@ -913,7 +913,7 @@ private:
     }
 };
 
-void demoTriangleVk()
+void testDemoTriangleVk()
 {
     HelloTriangleApplication app;
     app.run();

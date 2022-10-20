@@ -14,11 +14,11 @@
 
 using namespace backend;
 
-class TriangleGl : public EffectBase
+class TestTriangleGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TriangleGl() override
+    ~TestTriangleGl() override
     {
         glDeleteVertexArrays(1, &m_vao);
     }
@@ -70,14 +70,14 @@ private:
     GLuint m_vao{ 0 };
 };
 
-void triangleGl()
+void testTriangleGl()
 {
     Device::Info info{ Device::RenderType::OpenGL, 640, 480, "OpenGL Example triangle" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
     Engine engine(rendererGl);
-    auto effect = std::make_shared<TriangleGl>(&rendererGl);
+    auto effect = std::make_shared<TestTriangleGl>(&rendererGl);
     engine.setEffect(effect);
     engine.run();
 }

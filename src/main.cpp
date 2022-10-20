@@ -1,29 +1,29 @@
 //
 // Created by william on 2022/9/3.
 //
-extern void demoTriangleVk();
-extern void demoTextureVk();
-extern void windowSdlVk();
-extern void windowSdlMtl();
+extern void testDemoTriangleVk();
+extern void testDemoTextureVk();
+extern void testWindowSdlVk();
+extern void testWindowSdlMtl();
 
-extern void windowGl();
-extern void windowVk();
-extern void windowMtl();
+extern void testWindowGl();
+extern void testWindowVk();
+extern void testWindowMtl();
 
-extern void triangleGl();
-extern void triangleVk();
-extern void triangleMtl();
+extern void testTriangleGl();
+extern void testTriangleVk();
+extern void testTriangleMtl();
 
-extern void quadEboGl();
-extern void quadEboVk();
-extern void quadEboMtl();
+extern void testQuadEboGl();
+extern void testQuadEboVk();
+extern void testQuadEboMtl();
 
-extern void textureGl();
-extern void textureVk();
-extern void textureMtl();
+extern void testTextureGl();
+extern void testTextureVk();
+extern void testTextureMtl();
 
 int main()
 {
-    windowMtl();
+    testTextureMtl();
     return 0;
 }

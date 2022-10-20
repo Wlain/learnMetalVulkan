@@ -1,5 +1,5 @@
 //
-// Created by cwb on 2022/9/6.
+// Created by cwb on 2022/9/22.
 //
 #include "../mesh/globalMeshs.h"
 #include "bufferVk.h"
@@ -17,11 +17,11 @@ extern std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptio
 
 namespace
 {
-class Triangle : public EffectBase
+class TestQuadVK : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~Triangle() override = default;
+    ~TestQuadVK() override = default;
     void initialize() override
     {
         m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
@@ -33,7 +33,9 @@ public:
     void buildBuffers()
     {
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_deviceVk);
-        m_vertexBuffer->create(g_triangleVertex.size() * sizeof(g_triangleVertex[0]), (void*)g_triangleVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_vertexBuffer->create(g_quadVertex.size() * sizeof(g_quadVertex[0]), (void*)g_quadVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_indexBuffer = MAKE_SHARED(m_indexBuffer, m_deviceVk);
+        m_indexBuffer->create(g_quadIndices.size() * sizeof(g_quadIndices[0]), (void*)g_quadIndices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::IndexBuffer);
     }
 
     void buildPipeline()
@@ -52,7 +54,8 @@ public:
         };
         auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 0,
-            .pushConstantRangeCount = 0
+            .pushConstantRangeCount = 0,   // optional
+            .pPushConstantRanges = nullptr // optional
         };
         m_pipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
         m_pipeline->initVertexBuffer(m_vertexInputInfo);
@@ -93,7 +96,8 @@ public:
             auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer->buffer() };
             auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
             commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
-            commandBuffers[i].draw(static_cast<std::uint32_t>(g_triangleVertex.size()), 1, 0, 0);
+            commandBuffers[i].bindIndexBuffer(m_indexBuffer->buffer(), 0, vk::IndexType::eUint16);
+            commandBuffers[i].drawIndexed(static_cast<std::uint32_t>(g_quadIndices.size()), 1, 0, 0, 0);
             commandBuffers[i].endRenderPass();
             commandBuffers[i].end();
         }
@@ -104,6 +108,7 @@ private:
     DeviceVK* m_deviceVk{ nullptr };
     std::shared_ptr<PipelineVk> m_pipeline;
     std::shared_ptr<BufferVK> m_vertexBuffer;
+    std::shared_ptr<BufferVK> m_indexBuffer;
     vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
     std::array<vk::VertexInputAttributeDescription, 2> m_attributeDescriptions;
     vk::PipelineLayout m_pipelineLayout;
@@ -112,14 +117,14 @@ private:
 };
 } // namespace
 
-void triangleVk()
+void testQuadEboVk()
 {
-    Device::Info info{ Device::RenderType::Vulkan, 640, 480, "Vulkan Triangle" };
+    Device::Info info{ Device::RenderType::Vulkan, 640, 480, "Vulkan Quad Use EBO" };
     DeviceVK handle(info);
     handle.init();
     GLFWRendererVK renderer(&handle);
     Engine engine(renderer);
-    auto effect = std::make_shared<Triangle>(&renderer);
+    auto effect = std::make_shared<TestQuadVK>(&renderer);
     engine.setEffect(effect);
     engine.run();
 }

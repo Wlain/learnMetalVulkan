@@ -1,5 +1,5 @@
 //
-// Created by cwb on 2022/9/22.
+// Created by cwb on 2022/9/6.
 //
 #include "../mesh/globalMeshs.h"
 #include "bufferVk.h"
@@ -17,11 +17,11 @@ extern std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptio
 
 namespace
 {
-class QuadVK : public EffectBase
+class TestTriangleVk : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~QuadVK() override = default;
+    ~TestTriangleVk() override = default;
     void initialize() override
     {
         m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
@@ -33,55 +33,7 @@ public:
     void buildBuffers()
     {
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_deviceVk);
-        m_vertexBuffer->create(g_quadVertex.size() * sizeof(g_quadVertex[0]), (void*)g_quadVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
-        m_indexBuffer = MAKE_SHARED(m_indexBuffer, m_deviceVk);
-        m_indexBuffer->create(g_quadIndices.size() * sizeof(g_quadIndices[0]), (void*)g_quadIndices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::IndexBuffer);
-    }
-
-    vk::DescriptorSetLayout createDescriptorSetLayout()
-    {
-        auto uboLayoutBinding = vk::DescriptorSetLayoutBinding{
-            .binding = 2,
-            .descriptorType = vk::DescriptorType::eUniformBuffer,
-            .descriptorCount = 1,
-            .stageFlags = vk::ShaderStageFlagBits::eVertex,
-            .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
-        };
-        auto samplerLayoutBinding = vk::DescriptorSetLayoutBinding{
-            .binding = 1,
-            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-            .descriptorCount = 1,
-            .stageFlags = vk::ShaderStageFlagBits::eFragment,
-            .pImmutableSamplers = nullptr,
-        };
-        std::array binding = { uboLayoutBinding, samplerLayoutBinding };
-        auto layoutInfo = vk::DescriptorSetLayoutCreateInfo{
-            .bindingCount = binding.size(),
-            .pBindings = binding.data()
-        };
-        auto descriptorSetLayout = m_deviceVk->handle().createDescriptorSetLayout(layoutInfo);
-        return descriptorSetLayout;
-    }
-
-    void createDescriptorPool()
-    {
-        std::array<vk::DescriptorPoolSize, 2> poolSizes{};
-        poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
-        poolSizes[0].descriptorCount = static_cast<uint32_t>(m_deviceVk->swapchainImages().size());
-        poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
-        poolSizes[1].descriptorCount = static_cast<uint32_t>(m_deviceVk->swapchainImages().size());
-        auto poolInfo = vk::DescriptorPoolCreateInfo {
-
-        };
-    }
-
-    std::array<vk::WriteDescriptorSet, 2> createDescriptorSets()
-    {
-        //        auto bufferInfo = vk::DescriptorBufferInfo
-        //        {
-        //            .buffer =
-        //        };
-        return {};
+        m_vertexBuffer->create(g_triangleVertex.size() * sizeof(g_triangleVertex[0]), (void*)g_triangleVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
     }
 
     void buildPipeline()
@@ -100,8 +52,7 @@ public:
         };
         auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 0,
-            .pushConstantRangeCount = 0,   // optional
-            .pPushConstantRanges = nullptr // optional
+            .pushConstantRangeCount = 0
         };
         m_pipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
         m_pipeline->initVertexBuffer(m_vertexInputInfo);
@@ -142,8 +93,7 @@ public:
             auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer->buffer() };
             auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
             commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
-            commandBuffers[i].bindIndexBuffer(m_indexBuffer->buffer(), 0, vk::IndexType::eUint16);
-            commandBuffers[i].drawIndexed(static_cast<std::uint32_t>(g_quadIndices.size()), 1, 0, 0, 0);
+            commandBuffers[i].draw(static_cast<std::uint32_t>(g_triangleVertex.size()), 1, 0, 0);
             commandBuffers[i].endRenderPass();
             commandBuffers[i].end();
         }
@@ -154,7 +104,6 @@ private:
     DeviceVK* m_deviceVk{ nullptr };
     std::shared_ptr<PipelineVk> m_pipeline;
     std::shared_ptr<BufferVK> m_vertexBuffer;
-    std::shared_ptr<BufferVK> m_indexBuffer;
     vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
     std::array<vk::VertexInputAttributeDescription, 2> m_attributeDescriptions;
     vk::PipelineLayout m_pipelineLayout;
@@ -163,14 +112,14 @@ private:
 };
 } // namespace
 
-void quadEboVk()
+void testTriangleVk()
 {
-    Device::Info info{ Device::RenderType::Vulkan, 640, 480, "Vulkan Quad Use EBO" };
+    Device::Info info{ Device::RenderType::Vulkan, 640, 480, "Vulkan Triangle" };
     DeviceVK handle(info);
     handle.init();
     GLFWRendererVK renderer(&handle);
     Engine engine(renderer);
-    auto effect = std::make_shared<QuadVK>(&renderer);
+    auto effect = std::make_shared<TestTriangleVk>(&renderer);
     engine.setEffect(effect);
     engine.run();
 }

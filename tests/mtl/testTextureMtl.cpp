@@ -2,8 +2,6 @@
 // Created by cwb on 2022/9/22.
 //
 
-#include "textureMtl.h"
-
 #include "../mesh/globalMeshs.h"
 #include "bufferMtl.h"
 #include "commonHandle.h"
@@ -12,17 +10,18 @@
 #include "engine.h"
 #include "glfwRendererMtl.h"
 #include "pipelineMtl.h"
+#include "textureMtl.h"
 #include "utils/utils.h"
 
 #include <glm/glm.hpp>
 #include <vector>
 
 using namespace backend;
-class TextureMtl : public EffectBase
+class TestTextureMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TextureMtl() override = default;
+    ~TestTextureMtl() override = default;
     void initialize() override
     {
         m_device = dynamic_cast<DeviceMtl*>(m_renderer->device());
@@ -89,14 +88,14 @@ private:
     std::shared_ptr<BufferMTL> m_indexBuffer;
 };
 
-void textureMtl()
+void testTextureMtl()
 {
-    Device::Info info{ Device::RenderType::Metal, 480, 480, "Metal Example texture" };
+    Device::Info info{ Device::RenderType::Metal, 640, 640, "Metal Example texture" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);
     Engine engine(rendererMtl);
-    auto effect = std::make_shared<TextureMtl>(&rendererMtl);
+    auto effect = std::make_shared<TestTextureMtl>(&rendererMtl);
     engine.setEffect(effect);
     engine.run();
 }

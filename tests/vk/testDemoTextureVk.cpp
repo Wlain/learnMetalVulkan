@@ -1595,7 +1595,7 @@ private:
     }
 };
 
-void demoTextureVk()
+void testDemoTextureVk()
 {
     TextureApplication app;
     try
