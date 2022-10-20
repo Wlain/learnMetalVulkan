@@ -25,7 +25,7 @@ GLFWRenderer::~GLFWRenderer()
 
 void GLFWRenderer::init()
 {
-    if (!m_window)
+    if (m_window)
     {
         // glfw window creation
         glfwSetWindowUserPointer(m_window, this);

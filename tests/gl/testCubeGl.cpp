@@ -1,9 +1,6 @@
 //
-// Created by cwb on 2022/9/22.
+// Created by william on 2022/10/20.
 //
-
-#include "textureGl.h"
-
 #include "../mesh/globalMeshs.h"
 #include "bufferGL.h"
 #include "deviceGL.h"
@@ -12,15 +9,16 @@
 #include "glCommonDefine.h"
 #include "glfwRendererGL.h"
 #include "pipelineGl.h"
+#include "textureGl.h"
 #include "utils/utils.h"
 
 using namespace backend;
 
-class TestTextureGl : public EffectBase
+class TestCubeGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestTextureGl() override
+    ~TestCubeGl() override
     {
         glDeleteVertexArrays(1, &m_vao);
     }
@@ -44,6 +42,7 @@ public:
         auto uboIndex = glGetUniformBlockIndex(program, "UniformBufferObject");
         glUniformBlockBinding(program, uboIndex, 0);
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_render->device());
+        g_mvpMatrix.view = glm::translate(g_mvpMatrix.view, glm::vec3(0.0f, 0.0f, -3.0f));
         m_uniformBuffer->create(sizeof(UniformBufferObject), &g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
         // define the range of the buffer that links to a uniform binding point
         glBindBufferRange(m_uniformBuffer->bufferType(), uboIndex, m_uniformBuffer->buffer(), 0, sizeof(UniformBufferObject));
@@ -53,9 +52,7 @@ public:
         glBindVertexArray(m_vao);
         // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_render->device());
-        m_vertexBuffer->create(g_quadVertex.size() * sizeof(g_quadVertex[0]), (void*)g_quadVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
-        m_indexBuffer = MAKE_SHARED(m_indexBuffer, m_render->device());
-        m_indexBuffer->create(g_quadIndices.size() * sizeof(g_quadIndices[0]), (void*)g_quadIndices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::IndexBuffer);
+        m_vertexBuffer->create(g_cubeVertex.size() * sizeof(g_cubeVertex[0]), (void*)g_cubeVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
         // position attribute
         glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)nullptr);
         glEnableVertexAttribArray(0);
@@ -70,17 +67,25 @@ public:
         m_texture->createWithFileName("textures/test.jpg", true);
     }
 
+    void resize(int width, int height) override
+    {
+        g_mvpMatrix.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+    }
+
     void render() override
     {
+        glEnable(GL_DEPTH_TEST);
         static float red = 1.0f;
-        //        red = red > 1.0 ? 0.0f : red + 0.01f;
         glClearColor(red, 0.0f, 0.0f, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_render->setPipeline(m_pipeline);
+        g_mvpMatrix.model = glm::mat4(1.0f);
+        g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
+        m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), 0);
         // bind Texture
         glBindTexture(GL_TEXTURE_2D, m_texture->handle());
         glBindVertexArray(m_vao);
-        glDrawElements(GL_TRIANGLES, (int32_t)g_quadIndices.size(), GL_UNSIGNED_SHORT, nullptr);
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<uint32_t>(g_cubeVertex.size()));
     }
 
 private:
@@ -88,19 +93,18 @@ private:
     GLFWRendererGL* m_render{ nullptr };
     std::shared_ptr<TextureGL> m_texture;
     std::shared_ptr<BufferGL> m_vertexBuffer;
-    std::shared_ptr<BufferGL> m_indexBuffer;
     std::shared_ptr<BufferGL> m_uniformBuffer;
     GLuint m_vao{ 0 };
 };
 
-void testTextureGl()
+void testCubeGl()
 {
-    Device::Info info{ Device::RenderType::OpenGL, 480, 480, "OpenGL Example texture" };
+    Device::Info info{ Device::RenderType::OpenGL, 800, 600, "OpenGL Example Cube" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
     Engine engine(rendererGl);
-    auto effect = std::make_shared<TestTextureGl>(&rendererGl);
+    auto effect = std::make_shared<TestCubeGl>(&rendererGl);
     engine.setEffect(effect);
     engine.run();
 }

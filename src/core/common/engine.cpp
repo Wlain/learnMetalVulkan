@@ -20,6 +20,7 @@ void Engine::setEffect(const std::shared_ptr<EffectBase>& effect)
 void Engine::run()
 {
     m_handle->initialize();
+    m_handle->resize(m_renderer.device()->width(), m_renderer.device()->height());
     m_renderer.m_frameUpdate = [&](float deltaTime) {
         m_handle->update(deltaTime);
     };

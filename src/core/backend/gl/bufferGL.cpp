@@ -63,7 +63,8 @@ void BufferGL::create(size_t size, void* data, Buffer::BufferUsage usage, Buffer
 
 void BufferGL::update(void* data, size_t size, size_t offset)
 {
-    Buffer::update(data, size, offset);
+    glBindBuffer(m_bufferType, m_buffer);
+    glBufferSubData(m_bufferType, offset, size, data);
 }
 
 GLuint BufferGL::buffer() const
