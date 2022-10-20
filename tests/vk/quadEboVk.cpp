@@ -17,11 +17,11 @@ extern std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptio
 
 namespace
 {
-class QuadMTL : public EffectBase
+class QuadVK : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~QuadMTL() override = default;
+    ~QuadVK() override = default;
     void initialize() override
     {
         m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
@@ -36,6 +36,52 @@ public:
         m_vertexBuffer->create(g_quadVertex.size() * sizeof(g_quadVertex[0]), (void*)g_quadVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
         m_indexBuffer = MAKE_SHARED(m_indexBuffer, m_deviceVk);
         m_indexBuffer->create(g_quadIndices.size() * sizeof(g_quadIndices[0]), (void*)g_quadIndices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::IndexBuffer);
+    }
+
+    vk::DescriptorSetLayout createDescriptorSetLayout()
+    {
+        auto uboLayoutBinding = vk::DescriptorSetLayoutBinding{
+            .binding = 2,
+            .descriptorType = vk::DescriptorType::eUniformBuffer,
+            .descriptorCount = 1,
+            .stageFlags = vk::ShaderStageFlagBits::eVertex,
+            .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
+        };
+        auto samplerLayoutBinding = vk::DescriptorSetLayoutBinding{
+            .binding = 1,
+            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+            .descriptorCount = 1,
+            .stageFlags = vk::ShaderStageFlagBits::eFragment,
+            .pImmutableSamplers = nullptr,
+        };
+        std::array binding = { uboLayoutBinding, samplerLayoutBinding };
+        auto layoutInfo = vk::DescriptorSetLayoutCreateInfo{
+            .bindingCount = binding.size(),
+            .pBindings = binding.data()
+        };
+        auto descriptorSetLayout = m_deviceVk->handle().createDescriptorSetLayout(layoutInfo);
+        return descriptorSetLayout;
+    }
+
+    void createDescriptorPool()
+    {
+        std::array<vk::DescriptorPoolSize, 2> poolSizes{};
+        poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
+        poolSizes[0].descriptorCount = static_cast<uint32_t>(m_deviceVk->swapchainImages().size());
+        poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
+        poolSizes[1].descriptorCount = static_cast<uint32_t>(m_deviceVk->swapchainImages().size());
+        auto poolInfo = vk::DescriptorPoolCreateInfo {
+
+        };
+    }
+
+    std::array<vk::WriteDescriptorSet, 2> createDescriptorSets()
+    {
+        //        auto bufferInfo = vk::DescriptorBufferInfo
+        //        {
+        //            .buffer =
+        //        };
+        return {};
     }
 
     void buildPipeline()
@@ -54,7 +100,8 @@ public:
         };
         auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 0,
-            .pushConstantRangeCount = 0
+            .pushConstantRangeCount = 0,   // optional
+            .pPushConstantRanges = nullptr // optional
         };
         m_pipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
         m_pipeline->initVertexBuffer(m_vertexInputInfo);
@@ -123,7 +170,7 @@ void quadEboVk()
     handle.init();
     GLFWRendererVK renderer(&handle);
     Engine engine(renderer);
-    auto effect = std::make_shared<QuadMTL>(&renderer);
+    auto effect = std::make_shared<QuadVK>(&renderer);
     engine.setEffect(effect);
     engine.run();
 }

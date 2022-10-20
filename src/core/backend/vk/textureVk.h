@@ -15,6 +15,11 @@ public:
     ~TextureVK() override;
     bool createWithRGBAData(const char* data, int width, int height) override;
     bool createWithFileName(std::string_view filename, bool premultiplyAlpha) override;
+    const vk::Image& image() const;
+    const vk::DeviceMemory& deviceMemory() const;
+    const vk::ImageView& imageView() const;
+    vk::ImageLayout imageLayout() const;
+    const vk::Sampler& sampler() const;
 
 private:
     void updateDescriptor();
@@ -22,6 +27,10 @@ private:
     std::pair<vk::Image, vk::DeviceMemory> createImage(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
                                                        vk::MemoryPropertyFlags properties);
     void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
+    void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
+    vk::ImageView createImageView(vk::Image image, vk::Format format);
+    vk::Sampler createSampler();
+
 private:
     vk::Image m_image;
     vk::DeviceMemory m_deviceMemory;

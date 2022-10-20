@@ -88,7 +88,7 @@ private:
 
 void quadEboGl()
 {
-    Device::Info info{ Device::RenderType::OpenGL, 480, 480, "OpenGL Example Quad use EBO" };
+    Device::Info info{ Device::RenderType::OpenGL, 640, 480, "OpenGL Example Quad use EBO" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
