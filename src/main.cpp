@@ -28,6 +28,6 @@ extern void testCubeMtl();
 
 int main()
 {
-    testCubeGl();
+    testCubeMtl();
     return 0;
 }

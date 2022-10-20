@@ -62,4 +62,39 @@ MTL::Texture* TextureMTL::handle() const
 {
     return m_textureHandle;
 }
+
+bool TextureMTL::createDepthTexture(int width, int height, Texture::DepthPrecision precision)
+{
+    MTL::PixelFormat format;
+    switch (precision)
+    {
+    case DepthPrecision::I16:
+        break;
+    case DepthPrecision::I24:
+        break;
+    case DepthPrecision::I32:
+        format = MTL::PixelFormatRG32Sint;
+        break;
+    case DepthPrecision::F32:
+        format = MTL::PixelFormatDepth32Float;
+        break;
+    case DepthPrecision::I24_STENCIL8:
+        break;
+    case DepthPrecision::F32_STENCIL8:
+        break;
+    case DepthPrecision::STENCIL8:
+        break;
+    case DepthPrecision::None:
+        break;
+    }
+    auto* textureDesc = MTL::TextureDescriptor::alloc()->init();
+    textureDesc->setWidth(width);
+    textureDesc->setHeight(height);
+    textureDesc->setPixelFormat(format);
+    textureDesc->setTextureType(MTL::TextureType2D);
+    textureDesc->setStorageMode(MTL::StorageModePrivate);
+    textureDesc->setUsage(MTL::TextureUsageRenderTarget);
+    m_textureHandle = m_deviceMtl->gpu()->newTexture(textureDesc);
+    return true;
+}
 } // namespace backend

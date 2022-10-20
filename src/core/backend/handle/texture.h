@@ -31,6 +31,18 @@ public:
         Mirror
     };
 
+    enum class DepthPrecision
+    {
+        I16,          // 16 bit integer
+        I24,          // 24 bit integer
+        I32,          // 32 bit integer
+        F32,          // 32 bit float
+        I24_STENCIL8, // 24 bit integer 8 bit stencil
+        F32_STENCIL8, // 32 bit float 8 bit stencil
+        STENCIL8,     // 8 bit stencil
+        None
+    };
+
     struct Info
     {
         PixelFormat format = PixelFormat::RGBA;
@@ -54,6 +66,8 @@ public:
 public:
     virtual bool createWithFileName(std::string_view filename, bool premultiplyAlpha);
     virtual bool createWithRGBAData(const char* data, int width, int height);
+    virtual bool createDepthTexture(int width, int height, DepthPrecision precision);
+
     inline bool isPowerOfTwo(unsigned int x)
     {
         // 例如：8:1000 7:111  8 & 7 == 0

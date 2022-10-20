@@ -54,6 +54,8 @@ void PipelineMtl::setProgram(std::string_view vertShader, std::string_view fragS
     descriptor->setFragmentFunction(fragFunc);
     descriptor->colorAttachments()->object(0)->setPixelFormat(MTL::PixelFormatBGRA8Unorm_sRGB);
     descriptor->setVertexDescriptor(vertexDescriptor);
+    // depth
+    descriptor->setDepthAttachmentPixelFormat(MTL::PixelFormat::PixelFormatDepth32Float);
     m_pipelineState = m_gpu->newRenderPipelineState(descriptor, &error);
     if (!m_pipelineState)
     {

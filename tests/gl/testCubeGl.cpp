@@ -72,6 +72,11 @@ public:
         g_mvpMatrix.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
     }
 
+    void update(float deltaTime) override
+    {
+        m_duringTime += deltaTime;
+    }
+
     void render() override
     {
         glEnable(GL_DEPTH_TEST);
@@ -80,7 +85,7 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_render->setPipeline(m_pipeline);
         g_mvpMatrix.model = glm::mat4(1.0f);
-        g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
+        g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
         m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), 0);
         // bind Texture
         glBindTexture(GL_TEXTURE_2D, m_texture->handle());
@@ -95,6 +100,7 @@ private:
     std::shared_ptr<BufferGL> m_vertexBuffer;
     std::shared_ptr<BufferGL> m_uniformBuffer;
     GLuint m_vao{ 0 };
+    float m_duringTime{};
 };
 
 void testCubeGl()

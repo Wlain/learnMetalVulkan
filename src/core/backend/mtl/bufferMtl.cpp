@@ -22,11 +22,8 @@ void BufferMTL::create(size_t bufferSize, void* data, Buffer::BufferUsage usage,
 {
     // static:使用MTL::ResourceCPUCacheModeWriteCombined会获得性能提升
     // other:MTLResourceStorageModeShared
-    auto usageFlag = MTL::ResourceCPUCacheModeWriteCombined;
-    m_buffer = m_deviceMtl->gpu()->newBuffer(bufferSize, usageFlag);
-    std::memcpy(m_buffer->contents(), data, bufferSize);
-    // 通知Metal有关已修改的特定数据范围; 这允许Metal仅更新视频内存副本中的特定范围
-    m_buffer->didModifyRange({ 0, m_buffer->length() });
+    auto usageFlag = MTL::ResourceStorageModeShared;
+    m_buffer = m_deviceMtl->gpu()->newBuffer(data, bufferSize, usageFlag);
 }
 
 void BufferMTL::update(void* data, size_t size, size_t offset)

@@ -96,6 +96,63 @@ bool TextureGL::createWithFileName(std::string_view filename, bool premultiplyAl
     return true;
 }
 
+bool TextureGL::createDepthTexture(int width, int height, backend::Texture::DepthPrecision precision)
+{
+    m_info.target = GL_TEXTURE_2D;
+    GLint internalFormat;
+    GLint format = GL_DEPTH_COMPONENT;
+    GLenum type = GL_UNSIGNED_BYTE;
+    if (precision == DepthPrecision::I16)
+    {
+        internalFormat = GL_DEPTH_COMPONENT16;
+        type = GL_UNSIGNED_SHORT;
+    }
+    else if (precision == DepthPrecision::I24)
+    {
+        internalFormat = GL_DEPTH_COMPONENT24;
+        type = GL_UNSIGNED_INT;
+    }
+    else if (precision == DepthPrecision::I32)
+    {
+        internalFormat = GL_DEPTH_COMPONENT32;
+        type = GL_UNSIGNED_INT;
+    }
+    else if (precision == DepthPrecision::I24_STENCIL8)
+    {
+        internalFormat = GL_DEPTH24_STENCIL8;
+        type = GL_UNSIGNED_INT;
+        format = GL_DEPTH_STENCIL;
+    }
+    else if (precision == DepthPrecision::F32_STENCIL8)
+    {
+        internalFormat = GL_DEPTH32F_STENCIL8;
+        type = GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
+        format = GL_DEPTH_STENCIL;
+    }
+    else if (precision == DepthPrecision::F32)
+    {
+        internalFormat = GL_DEPTH_COMPONENT32F;
+        type = GL_FLOAT;
+    }
+    else if (precision == DepthPrecision::STENCIL8)
+    {
+        internalFormat = GL_STENCIL_INDEX8;
+        format = GL_STENCIL_INDEX;
+        type = GL_UNSIGNED_BYTE;
+    }
+    else
+    {
+        ASSERT(false);
+    }
+    m_info.width = width;
+    m_info.height = height;
+    GLint border = 0;
+    glBindTexture(m_info.target, m_textureHandle);
+    glTexImage2D(m_info.target, 0, internalFormat, width, height, border, format, type, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+}
+
 GLuint TextureGL::handle() const
 {
     return m_textureHandle;

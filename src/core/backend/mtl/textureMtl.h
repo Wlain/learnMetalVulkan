@@ -16,6 +16,7 @@ public:
     TextureMTL(Device* device);
     ~TextureMTL() override;
     bool createWithRGBAData(const char* data, int width, int height) override;
+    bool createDepthTexture(int width, int height, DepthPrecision precision) override;
     bool createWithFileName(std::string_view filename, bool premultiplyAlpha) override;
     MTL::Texture* handle() const;
 
