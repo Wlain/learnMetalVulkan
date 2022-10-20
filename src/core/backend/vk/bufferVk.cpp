@@ -81,29 +81,10 @@ vk::BufferUsageFlags BufferVK::getBufferType(Buffer::BufferType type)
 
 void BufferVK::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
 {
-    auto device = m_deviceVk->handle();
-    auto commandPool = m_deviceVk->commandPool();
-    auto allocInfo = vk::CommandBufferAllocateInfo{
-        .commandPool = commandPool,
-        .level = vk::CommandBufferLevel::ePrimary,
-        .commandBufferCount = 1
-    };
-    auto commandBuffers = device.allocateCommandBuffers(allocInfo);
-    auto beginInfo = vk::CommandBufferBeginInfo{
-        .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
-    };
-    commandBuffers[0].begin(beginInfo);
+    auto commandBuffer = m_deviceVk->beginSingleTimeCommands();
     auto copyRegion = vk::BufferCopy{ .size = size };
-    commandBuffers[0].copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
-    commandBuffers[0].end();
-
-    auto submitInfo = vk::SubmitInfo{
-        .commandBufferCount = 1,
-        .pCommandBuffers = commandBuffers.data()
-    };
-    m_deviceVk->graphicsQueue().submit(submitInfo);
-    m_deviceVk->graphicsQueue().waitIdle();
-    device.freeCommandBuffers(commandPool, 1, commandBuffers.data());
+    commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
+    m_deviceVk->endSingleTimeCommands(commandBuffer);
 }
 
 void BufferVK::create(size_t bufferSize, void* data, BufferUsage usage, BufferType type)

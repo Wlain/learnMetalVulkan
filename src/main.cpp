@@ -24,6 +24,6 @@ extern void textureMtl();
 
 int main()
 {
-    demoTextureVk();
+    windowMtl();
     return 0;
 }

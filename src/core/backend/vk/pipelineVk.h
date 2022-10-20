@@ -5,7 +5,9 @@
 #ifndef LEARNMETALVULKAN_SHADERVK_H
 #define LEARNMETALVULKAN_SHADERVK_H
 #include "pipeline.h"
-#define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
+#ifndef VULKAN_HPP_NO_CONSTRUCTORS
+    #define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
+#endif
 #include <vulkan/vulkan.hpp>
 namespace backend
 {
@@ -26,7 +28,7 @@ public:
     void setColorBlendAttachment();
     void setRenderPass();
     void build() override;
-    vk::Pipeline handle() const;
+    [[nodiscard]] vk::Pipeline handle() const;
     void setTopology(Topology topology) override;
 
 private:
@@ -49,7 +51,7 @@ private:
     vk::PipelineMultisampleStateCreateInfo m_multisampling;
     vk::PipelineColorBlendAttachmentState m_colorBlendAttachment;
     vk::PipelineColorBlendStateCreateInfo m_colorBlending;
-    vk::PrimitiveTopology m_topology;
+    vk::PrimitiveTopology m_topology{};
 };
 } // namespace backend
 

@@ -17,11 +17,11 @@
 #include <vector>
 
 using namespace backend;
-class QuadMTL : public EffectBase
+class QuadVK : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~QuadMTL() override = default;
+    ~QuadVK() override = default;
 
     void initialize() override
     {
@@ -90,12 +90,12 @@ private:
 
 void quadEboMtl()
 {
-    Device::Info info{ Device::RenderType::Metal, 480, 480, "Metal Example Quad use EBO" };
+    Device::Info info{ Device::RenderType::Metal, 640, 480, "Metal Example Quad use EBO" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);
     Engine engine(rendererMtl);
-    auto effect = std::make_shared<QuadMTL>(&rendererMtl);
+    auto effect = std::make_shared<QuadVK>(&rendererMtl);
     engine.setEffect(effect);
     engine.run();
 }

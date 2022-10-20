@@ -80,7 +80,7 @@ public:
         // bind Texture
         glBindTexture(GL_TEXTURE_2D, m_texture->handle());
         glBindVertexArray(m_vao);
-        glDrawElements(GL_TRIANGLES, g_quadIndices.size(), GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLES, (int32_t)g_quadIndices.size(), GL_UNSIGNED_SHORT, nullptr);
     }
 
 private:

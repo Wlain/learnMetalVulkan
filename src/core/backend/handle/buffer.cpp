@@ -9,6 +9,7 @@ namespace backend
 Buffer::Buffer(backend::Device* device)
 {
 }
+
 Buffer::~Buffer() = default;
 
 void Buffer::create(size_t size, void* data, BufferUsage usage, BufferType type)
