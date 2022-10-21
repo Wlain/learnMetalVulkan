@@ -15,7 +15,10 @@ public:
     ~TextureVK() override;
     bool createWithRGBAData(const char* data, int width, int height) override;
     bool createWithFileName(std::string_view filename, bool premultiplyAlpha) override;
+    bool createDepthTexture(int width, int height, DepthPrecision precision) override;
+    bool createImageView(vk::Format format, vk::ImageAspectFlagBits aspectMask);
     const vk::Image& image() const;
+    vk::Image& image();
     const vk::DeviceMemory& deviceMemory() const;
     const vk::ImageView& imageView() const;
     vk::ImageLayout imageLayout() const;
@@ -28,7 +31,6 @@ private:
                                                        vk::MemoryPropertyFlags properties);
     void transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
     void copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height);
-    vk::ImageView createImageView(vk::Image image, vk::Format format);
     vk::Sampler createSampler();
 
 private:

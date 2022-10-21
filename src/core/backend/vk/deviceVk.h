@@ -9,9 +9,9 @@
 #define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
 #include <optional>
 #include <vulkan/vulkan.hpp>
-
 namespace backend
 {
+class TextureVK;
 struct QueueFamilyIndices
 {
     std::optional<uint32_t> graphicsFamily;
@@ -97,6 +97,7 @@ private:
     vk::SwapchainKHR m_swapChain;
     std::vector<vk::Image> m_swapchainImages;
     std::vector<vk::ImageView> m_swapchainImagesView;
+    std::shared_ptr<TextureVK> m_depthTexture;
     vk::Format m_swapchainImageFormat = vk::Format::eUndefined;
     vk::Extent2D m_swapchainExtent;
 

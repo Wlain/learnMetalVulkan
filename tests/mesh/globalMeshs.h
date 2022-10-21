@@ -8,6 +8,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <vector>
+#define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
+#include "vkCommonDefine.h"
 
 struct alignas(16) TriangleVertex
 {
@@ -96,5 +98,32 @@ static const std::vector<TextureVertex> g_cubeVertex = { /* NOLINT */
                                                          { { -0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
                                                          { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } }
 };
+
+static vk::VertexInputBindingDescription getBindingDescription()
+{
+    auto bindingDescription = vk::VertexInputBindingDescription{
+        .binding = 0,
+        .stride = sizeof(TriangleVertex),
+        .inputRate = vk::VertexInputRate::eVertex
+    };
+    return bindingDescription;
+}
+
+static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions()
+{
+    auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 2>{
+        vk::VertexInputAttributeDescription{
+            .location = 0,
+            .binding = 0,
+            .format = vk::Format::eR32G32B32A32Sfloat,
+            .offset = offsetof(TriangleVertex, position) },
+        vk::VertexInputAttributeDescription{
+            .location = 1,
+            .binding = 0,
+            .format = vk::Format::eR32G32B32A32Sfloat,
+            .offset = offsetof(TriangleVertex, color) },
+    };
+    return attributeDescriptions;
+}
 
 #endif // LEARNMETALVULKAN_GLOBALMESHS_H

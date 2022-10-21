@@ -24,7 +24,7 @@ public:
     void setViewport();
     void setRasterization();
     void setMultisample();
-    void setDepthStencil();
+    void setDepthStencil(vk::PipelineDepthStencilStateCreateInfo info);
     void setColorBlendAttachment();
     void setRenderPass();
     void build() override;
@@ -49,6 +49,7 @@ private:
     vk::PipelineViewportStateCreateInfo m_viewportState;
     vk::PipelineRasterizationStateCreateInfo m_rasterizer;
     vk::PipelineMultisampleStateCreateInfo m_multisampling;
+    vk::PipelineDepthStencilStateCreateInfo m_depthStencilState;
     vk::PipelineColorBlendAttachmentState m_colorBlendAttachment;
     vk::PipelineColorBlendStateCreateInfo m_colorBlending;
     vk::PrimitiveTopology m_topology{};

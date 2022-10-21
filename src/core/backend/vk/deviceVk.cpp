@@ -7,6 +7,8 @@
 #include "commonMacro.h"
 #include "vkCommonDefine.h"
 #define GLFW_INCLUDE_NONE
+#include "textureVk.h"
+
 #include <GLFW/glfw3.h>
 #include <set>
 #include <unordered_set>
@@ -132,6 +134,7 @@ vk::Extent2D DeviceVK::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabi
 
 DeviceVK::~DeviceVK()
 {
+    m_depthTexture = nullptr;
     m_device.destroy(m_swapChain);
     m_device.destroy();
 #ifndef NDEBUG
@@ -473,16 +476,21 @@ void DeviceVK::createImageViews()
 
 void DeviceVK::createFrameBuffers()
 {
-    for (const auto& imageView : swapchainImageViews())
+    std::array<vk::ImageView, 2> attachments;
+    m_depthTexture = MAKE_SHARED(m_depthTexture, this);
+    m_depthTexture->createDepthTexture(width(), height(), Texture::DepthPrecision::F32);
+    attachments[1] = m_depthTexture->imageView();
+    auto framebufferInfo = vk::FramebufferCreateInfo{
+        .renderPass = m_renderPass,
+        .attachmentCount = 2,
+        .pAttachments = attachments.data(),
+        .width = swapchainExtent().width,
+        .height = swapchainExtent().height,
+        .layers = 1
+    };
+    for (const auto& view : swapchainImageViews())
     {
-        auto framebufferInfo = vk::FramebufferCreateInfo{
-            .renderPass = m_renderPass,
-            .attachmentCount = 1,
-            .pAttachments = &imageView,
-            .width = swapchainExtent().width,
-            .height = swapchainExtent().height,
-            .layers = 1
-        };
+        attachments[0] = view;
         m_swapchainFramebuffers.push_back(m_device.createFramebuffer(framebufferInfo));
     }
 }
@@ -507,7 +515,7 @@ void DeviceVK::createSyncObjects()
         m_renderFinishedSemaphores.push_back(m_device.createSemaphore(semaphoreInfo));
         m_inflightFences.push_back(m_device.createFence(fenceInfo));
     }
-    m_imagesInflight.resize(swapchainImages().size(), vk::Fence{ nullptr });
+    m_imagesInflight.resize(swapchainImageViews().size(), vk::Fence{ nullptr });
 }
 
 void DeviceVK::createCommandPool()
@@ -526,8 +534,19 @@ void DeviceVK::cleanupSwapchain()
 
 void DeviceVK::creatRenderPass()
 {
-    auto colorAttachment = vk::AttachmentDescription{
+    std::array<vk::AttachmentDescription, 2> attachments;
+    attachments[0] = vk::AttachmentDescription{
         .format = swapchainImageFormat(),
+        .samples = vk::SampleCountFlagBits::e1,
+        .loadOp = vk::AttachmentLoadOp::eClear,
+        .storeOp = vk::AttachmentStoreOp::eStore,
+        .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
+        .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
+        .initialLayout = vk::ImageLayout::eUndefined,
+        .finalLayout = vk::ImageLayout::ePresentSrcKHR
+    };
+    attachments[1] = vk::AttachmentDescription{
+        .format = vk::Format::eD32Sfloat,
         .samples = vk::SampleCountFlagBits::e1,
         .loadOp = vk::AttachmentLoadOp::eClear,
         .storeOp = vk::AttachmentStoreOp::eStore,
@@ -540,10 +559,15 @@ void DeviceVK::creatRenderPass()
         .attachment = 0,
         .layout = vk::ImageLayout::eColorAttachmentOptimal
     };
+    auto depthAttachmentRef = vk::AttachmentReference{
+        .attachment = 1,
+        .layout = vk::ImageLayout::eDepthStencilAttachmentOptimal
+    };
     auto subpass = vk::SubpassDescription{
         .pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
         .colorAttachmentCount = 1,
-        .pColorAttachments = &colorAttachmentRef
+        .pColorAttachments = &colorAttachmentRef,
+        .pDepthStencilAttachment = &depthAttachmentRef,
     };
     auto dependency = vk::SubpassDependency{
         .srcSubpass = VK_SUBPASS_EXTERNAL,
@@ -553,8 +577,8 @@ void DeviceVK::creatRenderPass()
         .dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite
     };
     auto renderPassInfo = vk::RenderPassCreateInfo{
-        .attachmentCount = 1,
-        .pAttachments = &colorAttachment,
+        .attachmentCount = 2,
+        .pAttachments = attachments.data(),
         .subpassCount = 1,
         .pSubpasses = &subpass,
         .dependencyCount = 1,
@@ -631,5 +655,4 @@ void DeviceVK::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
     m_device.waitIdle();
     m_device.freeCommandBuffers(m_commandPool, 1, &commandBuffer);
 }
-
 } // namespace backend

@@ -20,13 +20,14 @@ TextureVK::TextureVK(Device* device) :
 TextureVK::~TextureVK()
 {
     auto device = m_deviceVk->handle();
-    device.destroy(m_imageView);
-    device.destroy(m_image);
+    if (m_imageView)
+        device.destroy(m_imageView);
+    if (m_image)
+        device.destroy(m_image);
     if (m_sampler)
-    {
         device.destroy(m_sampler);
-    }
-    device.free(m_deviceMemory);
+    if (m_deviceMemory)
+        device.free(m_deviceMemory);
 }
 
 bool TextureVK::createWithRGBAData(const char* data, int width, int height)
@@ -77,8 +78,9 @@ bool TextureVK::createWithFileName(std::string_view filename, bool premultiplyAl
         m_deviceMemory = mappableMemory;
         m_imageLayout = vk::ImageLayout::eTransferDstOptimal;
         transitionImageLayout(m_image, vk::Format::eR8G8B8A8Srgb, vk::ImageLayout::ePreinitialized, vk::ImageLayout::eShaderReadOnlyOptimal);
+        // TODO
     }
-    m_imageView = createImageView(m_image, vk::Format::eR8G8B8A8Srgb);
+    createImageView(vk::Format::eR8G8B8A8Srgb, vk::ImageAspectFlagBits::eColor);
     m_sampler = createSampler();
     return true;
 }
@@ -201,20 +203,25 @@ void TextureVK::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t w
     m_deviceVk->endSingleTimeCommands(commandBuffer);
 }
 
-vk::ImageView TextureVK::createImageView(vk::Image image, vk::Format format)
+bool TextureVK::createImageView(vk::Format format, vk::ImageAspectFlagBits aspectMask)
 {
     auto viewInfo = vk::ImageViewCreateInfo{
-        .image = image,
+        .image = m_image,
         .viewType = vk::ImageViewType::e2D,
         .format = format,
-        .subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor,
+        .components = {
+            .r = vk::ComponentSwizzle::eIdentity,
+            .g = vk::ComponentSwizzle::eIdentity,
+            .b = vk::ComponentSwizzle::eIdentity,
+            .a = vk::ComponentSwizzle::eIdentity },
+        .subresourceRange.aspectMask = aspectMask,
         .subresourceRange.baseMipLevel = 0,
         .subresourceRange.levelCount = 1,
         .subresourceRange.baseArrayLayer = 0,
         .subresourceRange.layerCount = 1
     };
-    auto imageView = m_device.createImageView(viewInfo);
-    return imageView;
+    m_imageView = m_device.createImageView(viewInfo);
+    return true;
 }
 
 vk::Sampler TextureVK::createSampler()
@@ -245,6 +252,11 @@ const vk::Image& TextureVK::image() const
     return m_image;
 }
 
+vk::Image& TextureVK::image()
+{
+    return m_image;
+}
+
 const vk::DeviceMemory& TextureVK::deviceMemory() const
 {
     return m_deviceMemory;
@@ -263,6 +275,40 @@ vk::ImageLayout TextureVK::imageLayout() const
 const vk::Sampler& TextureVK::sampler() const
 {
     return m_sampler;
+}
+
+bool TextureVK::createDepthTexture(int width, int height, Texture::DepthPrecision precision)
+{
+    ASSERT(width >= 0 && width >= 0);
+    m_info.width = width;
+    m_info.height = height;
+    vk::Format format{};
+    switch (precision)
+    {
+    case DepthPrecision::I16:
+        format = vk::Format::eD16Unorm;
+        break;
+    case DepthPrecision::I24:
+        break;
+    case DepthPrecision::I32:
+        break;
+    case DepthPrecision::F32:
+        format = vk::Format::eD32Sfloat;
+        break;
+    case DepthPrecision::I24_STENCIL8:
+        break;
+    case DepthPrecision::F32_STENCIL8:
+        break;
+    case DepthPrecision::STENCIL8:
+        break;
+    case DepthPrecision::None:
+        break;
+    }
+    auto [mappableImage, mappableMemory] = createImage(m_info.width, m_info.height, format, vk::ImageTiling::eOptimal, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    m_image = mappableImage;
+    m_deviceMemory = mappableMemory;
+    createImageView(format, vk::ImageAspectFlagBits::eDepth);
+    return true;
 }
 
 } // namespace backend

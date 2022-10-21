@@ -49,7 +49,7 @@ struct SwapChainSupportDetails
     std::vector<VkPresentModeKHR> presentModes{};
 };
 
-static VkVertexInputBindingDescription getBindingDescription()
+static VkVertexInputBindingDescription getVkBindingDescription()
 {
     VkVertexInputBindingDescription bindingDescription{};
     bindingDescription.binding = 0;                             // specify index of the binding
@@ -59,7 +59,7 @@ static VkVertexInputBindingDescription getBindingDescription()
     return bindingDescription;
 }
 
-static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
+static std::array<VkVertexInputAttributeDescription, 2> getVkAttributeDescriptions()
 {
     std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
     // describes position
@@ -628,8 +628,8 @@ private:
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-        auto bindingDescription = getBindingDescription();
-        auto attributeDescriptions = getAttributeDescriptions();
+        auto bindingDescription = getVkBindingDescription();
+        auto attributeDescriptions = getVkAttributeDescriptions();
 
         vertexInputInfo.vertexBindingDescriptionCount = 1;
         vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;

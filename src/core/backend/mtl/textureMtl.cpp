@@ -65,6 +65,9 @@ MTL::Texture* TextureMTL::handle() const
 
 bool TextureMTL::createDepthTexture(int width, int height, Texture::DepthPrecision precision)
 {
+    ASSERT(width >= 0 && width >= 0);
+    m_info.width = width;
+    m_info.height = height;
     MTL::PixelFormat format;
     switch (precision)
     {

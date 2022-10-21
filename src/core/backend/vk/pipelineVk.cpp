@@ -36,6 +36,7 @@ void PipelineVk::build()
         .pViewportState = &m_viewportState,
         .pRasterizationState = &m_rasterizer,
         .pMultisampleState = &m_multisampling,
+        .pDepthStencilState = &m_depthStencilState,
         .pColorBlendState = &m_colorBlending,
         .layout = m_pipelineLayout,
         .renderPass = m_renderPass,
@@ -131,8 +132,9 @@ void PipelineVk::setMultisample()
     };
 }
 
-void PipelineVk::setDepthStencil()
+void PipelineVk::setDepthStencil(vk::PipelineDepthStencilStateCreateInfo info)
 {
+    m_depthStencilState = info;
 }
 
 void PipelineVk::setColorBlendAttachment()

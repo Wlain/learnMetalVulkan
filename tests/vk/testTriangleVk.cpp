@@ -12,9 +12,6 @@
 
 using namespace backend;
 
-extern vk::VertexInputBindingDescription getBindingDescription();
-extern std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions();
-
 namespace
 {
 class TestTriangleVk : public EffectBase
@@ -61,7 +58,6 @@ public:
         m_pipeline->setViewport();
         m_pipeline->setRasterization();
         m_pipeline->setMultisample();
-        m_pipeline->setDepthStencil();
         m_pipeline->setColorBlendAttachment();
         m_pipeline->setRenderPass();
         m_pipeline->build();

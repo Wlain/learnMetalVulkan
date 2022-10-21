@@ -72,11 +72,6 @@ public:
         g_mvpMatrix.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
     }
 
-    void update(float deltaTime) override
-    {
-        m_duringTime += deltaTime;
-    }
-
     void render() override
     {
         glEnable(GL_DEPTH_TEST);
@@ -100,7 +95,6 @@ private:
     std::shared_ptr<BufferGL> m_vertexBuffer;
     std::shared_ptr<BufferGL> m_uniformBuffer;
     GLuint m_vao{ 0 };
-    float m_duringTime{};
 };
 
 void testCubeGl()

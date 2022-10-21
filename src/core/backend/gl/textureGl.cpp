@@ -98,6 +98,7 @@ bool TextureGL::createWithFileName(std::string_view filename, bool premultiplyAl
 
 bool TextureGL::createDepthTexture(int width, int height, backend::Texture::DepthPrecision precision)
 {
+    ASSERT(width >= 0 && width >= 0);
     m_info.target = GL_TEXTURE_2D;
     GLint internalFormat;
     GLint format = GL_DEPTH_COMPONENT;

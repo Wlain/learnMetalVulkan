@@ -30,9 +30,7 @@ std::pair<vk::Buffer, vk::DeviceMemory> BufferVK::createBuffer(vk::DeviceSize bu
         .usage = usage,
         .sharingMode = vk::SharingMode::eExclusive
     };
-
     auto buffer = device.createBuffer(bufferInfo);
-
     auto memoryRequirements = device.getBufferMemoryRequirements(buffer);
     auto allocInfo = vk::MemoryAllocateInfo{
         .allocationSize = memoryRequirements.size,
@@ -97,7 +95,7 @@ void BufferVK::create(size_t bufferSize, void* data, BufferUsage usage, BufferTy
     auto* pData = (device.mapMemory(stagingBufferMemory, {}, bufferSize, {}));
     memcpy(pData, data, static_cast<std::size_t>(bufferSize));
     device.unmapMemory(stagingBufferMemory);
-    std::tie(m_buffer, m_deviceMemory) = createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | bufferTypeFlags, vk::MemoryPropertyFlagBits::eDeviceLocal);
+    std::tie(m_buffer, m_deviceMemory) = createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | bufferTypeFlags, vk::MemoryPropertyFlagBits::eHostVisible);
     copyBuffer(stagingBuffer, m_buffer, bufferSize);
     device.destroyBuffer(stagingBuffer);
     device.freeMemory(stagingBufferMemory);
@@ -105,6 +103,12 @@ void BufferVK::create(size_t bufferSize, void* data, BufferUsage usage, BufferTy
 
 void BufferVK::update(void* data, size_t size, size_t offset)
 {
+    auto device = m_deviceVk->handle();
+    void* target{};
+    void* pData = device.mapMemory(m_deviceMemory, {}, size, {});
+    target = (uint8_t*)pData + offset;
+    memcpy(target, data, size);
+    device.unmapMemory(m_deviceMemory);
 }
 
 const vk::Buffer& BufferVK::buffer() const

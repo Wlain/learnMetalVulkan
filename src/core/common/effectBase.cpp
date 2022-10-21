@@ -22,6 +22,7 @@ void EffectBase::resize(int width, int height)
 
 void EffectBase::update(float deltaTime)
 {
+    m_duringTime += deltaTime;
 }
 
 void EffectBase::render()

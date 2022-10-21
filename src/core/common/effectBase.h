@@ -26,6 +26,7 @@ public:
 
 protected:
     GLFWRenderer* m_renderer{ nullptr };
+    float m_duringTime{};
 };
 } // namespace backend
 

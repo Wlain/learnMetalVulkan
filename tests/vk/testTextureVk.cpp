@@ -1,8 +1,6 @@
 //
 // Created by william on 2022/9/23.
 //
-#include "textureVk.h"
-
 #include "../mesh/globalMeshs.h"
 #include "bufferVk.h"
 #include "commonHandle.h"
@@ -10,12 +8,10 @@
 #include "engine.h"
 #include "glfwRendererVk.h"
 #include "pipelineVk.h"
+#include "textureVk.h"
 #include "utils.h"
 
 using namespace backend;
-
-extern vk::VertexInputBindingDescription getBindingDescription();
-extern std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions();
 
 namespace
 {
@@ -23,11 +19,17 @@ class TestTextureVk : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestTextureVk() override = default;
+    ~TestTextureVk() override
+    {
+        auto device = m_deviceVk->handle();
+        device.destroy(m_descriptorSetLayout);
+        device.freeDescriptorSets(m_descriptorPool, m_descriptorSets);
+        device.destroy(m_descriptorPool);
+    }
     void initialize() override
     {
         m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
-        m_swapchainSize = (uint32_t)m_deviceVk->swapchainImages().size();
+        m_swapchainSize = (uint32_t)m_deviceVk->swapchainImageViews().size();
         m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
         m_texture = MAKE_SHARED(m_texture, m_deviceVk);
         m_texture->createWithFileName("textures/test.jpg", true);
@@ -83,6 +85,7 @@ public:
             poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
             poolSizes[1].descriptorCount = m_swapchainSize;
             auto poolInfo = vk::DescriptorPoolCreateInfo{
+                .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
                 .maxSets = m_swapchainSize,
                 .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
                 .pPoolSizes = poolSizes.data()
@@ -166,7 +169,7 @@ public:
         m_pipeline->setViewport();
         m_pipeline->setRasterization();
         m_pipeline->setMultisample();
-        m_pipeline->setDepthStencil();
+        //        m_pipeline->setDepthStencil();
         m_pipeline->setColorBlendAttachment();
         m_pipeline->setRenderPass();
         m_pipeline->build();
@@ -183,15 +186,20 @@ public:
             commandBuffers[i].begin(beginInfo);
             static float red{ 0.0f };
             red = red > 1.0f ? 0.0 : red + 0.001f;
-            auto clearValue = vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ red, 0.0f, 0.0f, 1.0f } } };
+            std::array<vk::ClearValue, 2> clearValues = {
+                vk::ClearValue{
+                    .color = { .float32 = std::array<float, 4>{ red, 0.0f, 0.0f, 1.0f } } },
+                vk::ClearValue{
+                    .depthStencil = { 1.0f, 0 } }
+            };
             auto renderPassInfo = vk::RenderPassBeginInfo{
                 .renderPass = m_deviceVk->renderPass(),
                 .framebuffer = framebuffer[i],
                 .renderArea = {
                     .offset = { 0, 0 },
                     .extent = m_deviceVk->swapchainExtent() },
-                .clearValueCount = 1,
-                .pClearValues = &clearValue
+                .clearValueCount = 2,
+                .pClearValues = clearValues.data()
             };
             commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
             commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());

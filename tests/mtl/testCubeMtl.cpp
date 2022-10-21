@@ -42,40 +42,13 @@ public:
     void buildTexture()
     {
         m_texture = MAKE_SHARED(m_texture, m_device);
-        m_texture->createWithFileName("/Users/william/git/learning/learnMetalVulkan/tests/textures/test.jpg", true);
+        m_texture->createWithFileName("textures/test.jpg", true);
     }
 
     void buildPipeline()
     {
-        std::string vertSource = "#version 310 es\n"
-                                 "precision highp float;\n"
-                                 "\n"
-                                 "layout (location = 0) in vec4 aPos;\n"
-                                 "layout (location = 1) in vec4 aTexCoord;\n"
-                                 "layout(location = 0) out vec2 vTexCoord;\n"
-                                 "\n"
-                                 "layout(binding = 2) uniform UniformBufferObject\n"
-                                 "{\n"
-                                 "    mat4 model;\n"
-                                 "    mat4 view;\n"
-                                 "    mat4 proj;\n"
-                                 "} ubo;\n"
-                                 "\n"
-                                 "void main()\n"
-                                 "{\n"
-                                 "    vTexCoord = aTexCoord.xy;\n"
-                                 "    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(aPos.xyz, 1.0);\n"
-                                 "}";
-        std::string fragShader = "#version 310 es\n"
-                                 "precision highp float;\n"
-                                 "layout(location = 0) in vec2 vTexCoord;\n"
-                                 "layout(location = 0) out vec4 fragColor;\n"
-                                 "layout(binding = 1) uniform sampler2D inputTexture;\n"
-                                 "\n"
-                                 "void main()\n"
-                                 "{\n"
-                                 "    fragColor = texture(inputTexture, vTexCoord);\n"
-                                 "}";
+        std::string vertSource = getFileContents("shaders/texture.vert");
+        std::string fragShader = getFileContents("shaders/texture.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_device);
         m_pipeline->setProgram(vertSource, fragShader);
     }
@@ -104,11 +77,6 @@ public:
     void resize(int width, int height) override
     {
         g_mvpMatrix.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
-    }
-
-    void update(float deltaTime) override
-    {
-        m_duringTime += deltaTime;
     }
 
     void render() override
@@ -150,7 +118,6 @@ private:
     std::shared_ptr<TextureMTL> m_depthTexture;
     std::shared_ptr<BufferMTL> m_vertexBuffer;
     MTL::DepthStencilState* m_depthStencilState;
-    float m_duringTime{};
 };
 
 void testCubeMtl()
