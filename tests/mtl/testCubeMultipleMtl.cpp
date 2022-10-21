@@ -1,5 +1,5 @@
 //
-// Created by william on 2022/10/20.
+// Created by william on 2022/10/21.
 //
 
 #include "../mesh/globalMeshs.h"
@@ -19,11 +19,11 @@
 using namespace backend;
 namespace
 {
-class TestTextureMtl : public EffectBase
+class TestCubeMultipleMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestTextureMtl() override
+    ~TestCubeMultipleMtl() override
     {
         m_depthStencilState->release();
     }
@@ -93,16 +93,23 @@ public:
         pass->depthAttachment()->setTexture(m_depthTexture->handle());
         pass->depthAttachment()->setClearDepth(1.0);
         pass->stencilAttachment()->setClearStencil(0);
-        g_mvpMatrix.model = glm::mat4(1.0f);
-        g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
         auto* buffer = m_queue->commandBuffer();
         auto* encoder = buffer->renderCommandEncoder(pass);
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
         encoder->setDepthStencilState(m_depthStencilState);
         encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
-        encoder->setVertexBytes(&g_mvpMatrix, sizeof(g_mvpMatrix), 2); // ubo：小内存，大内存用buffer
         encoder->setFragmentTexture(m_texture->handle(), 1);
-        encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(static_cast<uint32_t>(g_cubeVertex.size())));
+        for (unsigned int i = 0; i < g_cubePositions.size(); i++)
+        {
+            // calculate the model matrix for each object and pass it to shader before drawing
+            g_mvpMatrix.model = glm::mat4(1.0f);
+            g_mvpMatrix.model = glm::translate(g_mvpMatrix.model, g_cubePositions[i]);
+            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
+            float angle = 20.0f * i;
+            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            encoder->setVertexBytes(&g_mvpMatrix, sizeof(g_mvpMatrix), 2); // ubo：小内存，大内存用buffer
+            encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(static_cast<uint32_t>(g_cubeVertex.size())));
+        }
         encoder->endEncoding();
         buffer->presentDrawable(surface);
         buffer->commit();
@@ -122,14 +129,14 @@ private:
 };
 } // namespace
 
-void testCubeMtl()
+void testCubeMultipleMtl()
 {
-    Device::Info info{ Device::RenderType::Metal, 640, 640, "Metal Example Cube" };
+    Device::Info info{ Device::RenderType::Metal, 640, 640, "Metal Example Cube Multiple" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);
     Engine engine(rendererMtl);
-    auto effect = std::make_shared<TestTextureMtl>(&rendererMtl);
+    auto effect = std::make_shared<TestCubeMultipleMtl>(&rendererMtl);
     engine.setEffect(effect);
     engine.run();
 }
