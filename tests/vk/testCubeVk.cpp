@@ -36,7 +36,6 @@ public:
         m_texture = MAKE_SHARED(m_texture, m_deviceVk);
         m_texture->createWithFileName("textures/test.jpg", true);
         buildBuffers();
-        setupDepthStencilTexture();
         buildPipeline();
     }
 
@@ -47,12 +46,6 @@ public:
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_deviceVk);
         g_mvpMatrix.view = glm::translate(g_mvpMatrix.view, glm::vec3(0.0f, 0.0f, -3.0f));
         m_uniformBuffer->create(sizeof(g_mvpMatrix), (void*)&g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
-    }
-
-    void setupDepthStencilTexture()
-    {
-        //        m_depthTexture = MAKE_SHARED(m_depthTexture, m_deviceVk);
-        //        m_depthTexture->createDepthTexture(m_deviceVk->width(), m_deviceVk->height(), Texture::DepthPrecision::F32);
     }
 
     void resize(int width, int height) override

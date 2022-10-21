@@ -17,6 +17,8 @@
 #include <vector>
 
 using namespace backend;
+namespace
+{
 class TestTextureMtl : public EffectBase
 {
 public:
@@ -87,6 +89,7 @@ private:
     std::shared_ptr<BufferMTL> m_vertexBuffer;
     std::shared_ptr<BufferMTL> m_indexBuffer;
 };
+} // namespace
 
 void testTextureMtl()
 {

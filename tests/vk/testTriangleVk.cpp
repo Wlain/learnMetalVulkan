@@ -74,15 +74,20 @@ public:
             commandBuffers[i].begin(beginInfo);
             static float red{ 0.0f };
             red = red > 1.0f ? 0.0 : red + 0.001f;
-            auto clearValue = vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ red, 0.0f, 0.0f, 1.0f } } };
+            std::array<vk::ClearValue, 2> clearValues = {
+                vk::ClearValue{
+                    .color = { .float32 = std::array<float, 4>{ red, 0.0f, 0.0f, 1.0f } } },
+                vk::ClearValue{
+                    .depthStencil = { 1.0f, 0 } }
+            };
             auto renderPassInfo = vk::RenderPassBeginInfo{
                 .renderPass = m_deviceVk->renderPass(),
                 .framebuffer = framebuffer[i],
                 .renderArea = {
                     .offset = { 0, 0 },
                     .extent = m_deviceVk->swapchainExtent() },
-                .clearValueCount = 1,
-                .pClearValues = &clearValue
+                .clearValueCount = 2,
+                .pClearValues = clearValues.data()
             };
             commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
             commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
