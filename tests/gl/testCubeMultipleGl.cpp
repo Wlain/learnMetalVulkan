@@ -1,4 +1,8 @@
 //
+// Created by william on 2022/10/21.
+//
+
+//
 // Created by william on 2022/10/20.
 //
 #include "../mesh/globalMeshs.h"
@@ -15,11 +19,11 @@
 using namespace backend;
 namespace
 {
-class TestCubeGl : public EffectBase
+class TestCubeMultipleGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestCubeGl() override
+    ~TestCubeMultipleGl() override
     {
         glDeleteVertexArrays(1, &m_vao);
     }
@@ -80,13 +84,20 @@ public:
         glClearColor(red, 0.0f, 0.0f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_render->setPipeline(m_pipeline);
-        g_mvpMatrix.model = glm::mat4(1.0f);
-        g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
-        m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), 0);
         // bind Texture
         glBindTexture(GL_TEXTURE_2D, m_texture->handle());
         glBindVertexArray(m_vao);
-        glDrawArrays(GL_TRIANGLES, 0, static_cast<uint32_t>(g_cubeVertex.size()));
+        for (unsigned int i = 0; i < g_cubePositions.size(); i++)
+        {
+            // calculate the model matrix for each object and pass it to shader before drawing
+            g_mvpMatrix.model = glm::mat4(1.0f);
+            g_mvpMatrix.model = glm::translate(g_mvpMatrix.model, g_cubePositions[i]);
+            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
+            float angle = 20.0f * i;
+            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), 0);
+            glDrawArrays(GL_TRIANGLES, 0, static_cast<uint32_t>(g_cubeVertex.size()));
+        }
     }
 
 private:
@@ -99,14 +110,14 @@ private:
 };
 } // namespace
 
-void testCubeGl()
+void testCubeMultipleGl()
 {
-    Device::Info info{ Device::RenderType::OpenGL, 800, 600, "OpenGL Example Cube" };
+    Device::Info info{ Device::RenderType::OpenGL, 800, 600, "OpenGL Example Cube Multiple" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
     Engine engine(rendererGl);
-    auto effect = std::make_shared<TestCubeGl>(&rendererGl);
+    auto effect = std::make_shared<TestCubeMultipleGl>(&rendererGl);
     engine.setEffect(effect);
     engine.run();
 }

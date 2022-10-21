@@ -26,8 +26,12 @@ extern void testCubeGl();
 extern void testCubeVk();
 extern void testCubeMtl();
 
+extern void testCubeMultipleGl();
+extern void testCubeMultipleVk();
+extern void testCubeMultipleMtl();
+
 int main()
 {
-    testTextureMtl();
+    testCubeMultipleGl();
     return 0;
 }
