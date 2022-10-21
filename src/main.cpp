@@ -32,6 +32,6 @@ extern void testCubeMultipleMtl();
 
 int main()
 {
-    testCubeMultipleGl();
+    testCubeMultipleVk();
     return 0;
 }
