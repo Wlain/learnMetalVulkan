@@ -37,6 +37,6 @@ extern void testCameraMtl();
 
 int main()
 {
-    testCameraGl();
+    testCameraMtl();
     return 0;
 }
