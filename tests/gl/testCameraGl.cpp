@@ -94,7 +94,7 @@ public:
             float angle = 20.0f * (float)i;
             g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
             m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), 0);
-            glDrawArrays(GL_TRIANGLES, 0, static_cast<uint32_t>(g_cubeVertex.size()));
+            glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_cubeVertex.size()));
         }
     }
 
