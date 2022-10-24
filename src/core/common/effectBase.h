@@ -5,6 +5,7 @@
 #ifndef LEARNMETALVULKAN_EFFECT_BASE_H
 #define LEARNMETALVULKAN_EFFECT_BASE_H
 
+#include "camera.h"
 #include "glfwRenderer.h"
 namespace backend
 {
@@ -23,10 +24,17 @@ public:
     // button: left or right, action:pressed or released
     virtual void mouseButtonEvent(int button, int action, int mods);
     virtual void dropEvent(int count, const char** paths);
+    virtual void keyEvent(int key, int scancode, int action, int mods);
+    virtual void scrollEvent(double xoffset, double yoffset);
 
 protected:
     GLFWRenderer* m_renderer{ nullptr };
+    Camera m_camera{ glm::vec3{ 0.0f, 0.0f, 3.0f } };
     float m_duringTime{};
+    float m_deltaTime{};
+    float m_lastPosX{};
+    float m_lastPosY{};
+    bool m_isFirstMouse{ false };
 };
 } // namespace backend
 

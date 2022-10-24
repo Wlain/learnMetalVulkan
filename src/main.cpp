@@ -30,8 +30,13 @@ extern void testCubeMultipleGl();
 extern void testCubeMultipleVk();
 extern void testCubeMultipleMtl();
 
+extern void testCameraGl();
+extern void testCameraVk();
+extern void testCameraMtl();
+
+
 int main()
 {
-    testCubeMultipleVk();
+    testCameraGl();
     return 0;
 }

@@ -21,7 +21,7 @@ public:
     };
 
 public:
-    Camera(const glm::vec3& position = { 0.0f, 0.0f, 0.0f }, const glm::vec3& up = { 0.0f, 1.0f, 0.0f }, float yaw = s_yaw, float pitch = s_pitch);
+    Camera(glm::vec3 position = { 0.0f, 0.0f, 0.0f }, glm::vec3 up = { 0.0f, 1.0f, 0.0f }, float yaw = s_yaw, float pitch = s_pitch);
     ~Camera();
     void processKeyboard(MovementType direction, float deltaTime);
     void processMouseMovement(float xoffset, float yoffset, bool constrainPitch = true);

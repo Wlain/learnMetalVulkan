@@ -118,7 +118,7 @@ private:
     std::shared_ptr<TextureMTL> m_texture;
     std::shared_ptr<TextureMTL> m_depthTexture;
     std::shared_ptr<BufferMTL> m_vertexBuffer;
-    MTL::DepthStencilState* m_depthStencilState;
+    MTL::DepthStencilState* m_depthStencilState{};
 };
 } // namespace
 

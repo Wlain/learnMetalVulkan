@@ -58,4 +58,14 @@ void CommonHandle::setEffect(const std::shared_ptr<EffectBase>& effect)
 {
     m_effects = effect;
 }
+
+void CommonHandle::keyEvent(int key, int scancode, int action, int mods)
+{
+    m_effects->keyEvent(key, scancode, action, mods);
+}
+
+void CommonHandle::scrollEvent(double xoffset, double yoffset)
+{
+    m_effects->scrollEvent(xoffset, yoffset);
+}
 } // namespace backend

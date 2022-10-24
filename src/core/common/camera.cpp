@@ -6,7 +6,7 @@
 
 namespace backend
 {
-Camera::Camera(const glm::vec3& _position, const glm::vec3& _up, float _yaw, float _pitch) :
+Camera::Camera(glm::vec3 _position, glm::vec3 _up, float _yaw, float _pitch) :
     front({ 0.0f, 0.0f, -1.0f }), movementSpeed(s_speed), mouseSensitivity(s_sensitivity), zoom(s_zoom)
 {
     position = _position;
