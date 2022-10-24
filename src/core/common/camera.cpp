@@ -13,6 +13,7 @@ Camera::Camera(glm::vec3 _position, glm::vec3 _up, float _yaw, float _pitch) :
     worldUp = _up;
     yaw = _yaw;
     pitch = _pitch;
+    updateCameraVectors();
 }
 
 Camera::~Camera() = default;

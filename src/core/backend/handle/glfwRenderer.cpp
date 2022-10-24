@@ -52,10 +52,6 @@ void GLFWRenderer::init()
             auto* app = reinterpret_cast<GLFWRenderer*>(glfwGetWindowUserPointer(window));
             app->m_dropEvent(count, paths);
         });
-        glfwSetKeyCallback(m_window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-            auto* app = reinterpret_cast<GLFWRenderer*>(glfwGetWindowUserPointer(window));
-            app->m_keyEvent(key, scancode, action, mods);
-        });
         if (m_window == nullptr)
         {
             glfwTerminate();

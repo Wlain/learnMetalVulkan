@@ -39,7 +39,6 @@ public:
     std::function<void(double xPos, double yPos)> m_cursorPosEvent;
     std::function<void(int button, int action, int mods)> m_mouseButtonEvent;
     std::function<void(double xoffset, double yoffset)> m_scrollEvent;
-    std::function<void(int key, int scancode, int action, int mods)> m_keyEvent;
     std::function<void(int count, const char** paths)> m_dropEvent;
     std::function<void(float deltaTimeSec)> m_frameUpdate;
     std::function<void()> m_frameRender;

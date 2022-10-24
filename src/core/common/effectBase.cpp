@@ -27,6 +27,14 @@ void EffectBase::update(float deltaTime)
 {
     m_deltaTime = deltaTime;
     m_duringTime += deltaTime;
+    if (glfwGetKey(m_renderer->glfwWindow(), GLFW_KEY_W) == GLFW_PRESS)
+        m_camera.processKeyboard(Camera::MovementType::Forward, deltaTime);
+    if (glfwGetKey(m_renderer->glfwWindow(), GLFW_KEY_S) == GLFW_PRESS)
+        m_camera.processKeyboard(Camera::MovementType::BackWard, deltaTime);
+    if (glfwGetKey(m_renderer->glfwWindow(), GLFW_KEY_A) == GLFW_PRESS)
+        m_camera.processKeyboard(Camera::MovementType::Left, deltaTime);
+    if (glfwGetKey(m_renderer->glfwWindow(), GLFW_KEY_D) == GLFW_PRESS)
+        m_camera.processKeyboard(Camera::MovementType::Right, deltaTime);
 }
 
 void EffectBase::render()
@@ -52,20 +60,6 @@ void EffectBase::mouseButtonEvent(int button, int action, int mods)
 
 void EffectBase::dropEvent(int count, const char** paths)
 {
-}
-
-void EffectBase::keyEvent(int key, int scancode, int action, int mods)
-{
-    Camera::MovementType moveMode{};
-    if (key == GLFW_KEY_W && action == GLFW_PRESS)
-        moveMode = Camera::MovementType::Forward;
-    if (key == GLFW_KEY_S && action == GLFW_PRESS)
-        moveMode = Camera::MovementType::BackWard;
-    if (key == GLFW_KEY_A && action == GLFW_PRESS)
-        moveMode = Camera::MovementType::Left;
-    if (key == GLFW_KEY_D && action == GLFW_PRESS)
-        moveMode = Camera::MovementType::Right;
-    m_camera.processKeyboard(moveMode, m_deltaTime);
 }
 
 void EffectBase::scrollEvent(double xoffset, double yoffset)

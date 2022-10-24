@@ -24,7 +24,6 @@ public:
     // button: left or right, action:pressed or released
     virtual void mouseButtonEvent(int button, int action, int mods);
     virtual void scrollEvent(double xoffset, double yoffset);
-    virtual void keyEvent( int key, int scancode, int action, int mods);
     virtual void dropEvent(int count, const char** paths);
     void setEffect(const std::shared_ptr<EffectBase>& effect);
 
