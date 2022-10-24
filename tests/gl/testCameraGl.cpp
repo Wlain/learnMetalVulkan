@@ -68,15 +68,11 @@ public:
         m_texture->createWithFileName("textures/test.jpg", true);
     }
 
-    void resize(int width, int height) override
-    {
-        g_mvpMatrix.proj = glm::perspective(Camera::s_zoom, (float)width / (float)height, 0.1f, 100.0f);
-    }
-
     void update(float deltaTime) override
     {
         EffectBase::update(deltaTime);
         g_mvpMatrix.view = m_camera.viewMatrix();
+        g_mvpMatrix.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
     }
 
     void render() override

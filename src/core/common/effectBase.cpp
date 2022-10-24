@@ -21,6 +21,8 @@ void EffectBase::initialize()
 
 void EffectBase::resize(int width, int height)
 {
+    m_width = width;
+    m_height = height;
 }
 
 void EffectBase::update(float deltaTime)
@@ -49,9 +51,21 @@ void EffectBase::setTitle()
 {
 }
 
-void EffectBase::cursorPosEvent(double xPos, double yPos)
+void EffectBase::cursorPosEvent(double posx, double posy)
 {
-    m_camera.processMouseScroll(static_cast<float>(yPos));
+    auto xpos = static_cast<float>(posx);
+    auto ypos = static_cast<float>(posy);
+    if (!m_isFirstMouse)
+    {
+        m_isFirstMouse = true;
+        m_lastPosX = xpos;
+        m_lastPosY = ypos;
+    }
+    // // reversed since y-coordinates go from bottom to top
+    glm::vec2 offset{ xpos - m_lastPosX, m_lastPosY - ypos };
+    m_lastPosX = xpos;
+    m_lastPosY = ypos;
+    m_camera.processMouseMovement(offset.x, offset.y);
 }
 
 void EffectBase::mouseButtonEvent(int button, int action, int mods)
@@ -64,18 +78,6 @@ void EffectBase::dropEvent(int count, const char** paths)
 
 void EffectBase::scrollEvent(double xoffset, double yoffset)
 {
-    auto xpos = static_cast<float>(xoffset);
-    auto ypos = static_cast<float>(yoffset);
-    if (!m_isFirstMouse)
-    {
-        m_isFirstMouse = true;
-        m_lastPosX = xpos;
-        m_lastPosY = ypos;
-    }
-    // // reversed since y-coordinates go from bottom to top
-    glm::vec2 offset{ xpos - m_lastPosX, m_lastPosY - ypos };
-    m_lastPosX = xpos;
-    m_lastPosY = ypos;
-    m_camera.processMouseMovement(offset.x, offset.y);
+    m_camera.processMouseScroll(static_cast<float>(yoffset));
 }
 } // namespace backend

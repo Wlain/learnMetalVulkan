@@ -29,6 +29,8 @@ public:
 protected:
     GLFWRenderer* m_renderer{ nullptr };
     Camera m_camera{ glm::vec3{ 0.0f, 0.0f, 3.0f } };
+    uint32_t m_width{};
+    uint32_t m_height{};
     float m_duringTime{};
     float m_deltaTime{};
     float m_lastPosX{};
