@@ -1,5 +1,5 @@
 //
-// Created by william on 2022/10/21.
+// Created by william on 2022/10/25.
 //
 
 #include "../mesh/globalMeshs.h"
@@ -17,11 +17,11 @@ using namespace backend;
 
 namespace
 {
-class TestCubeMultipleVk : public EffectBase
+class TestCameraVk : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestCubeMultipleVk() override
+    ~TestCameraVk() override
     {
         auto device = m_deviceVk->handle();
         device.destroy(m_descriptorSetLayout);
@@ -44,13 +44,15 @@ public:
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_deviceVk);
         m_vertexBuffer->create(g_cubeVertex.size() * sizeof(g_cubeVertex[0]), (void*)g_cubeVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_deviceVk);
-        g_mvpMatrix.view = glm::translate(g_mvpMatrix.view, glm::vec3(0.0f, 0.0f, -3.0f));
         m_uniformBuffer->create(sizeof(g_mvpMatrix), (void*)&g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
     }
 
-    void resize(int width, int height) override
+    void update(float deltaTime) override
     {
-        g_mvpMatrix.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+        EffectBase::update(deltaTime);
+        EffectBase::update(deltaTime);
+        g_mvpMatrix.view = m_camera.viewMatrix();
+        g_mvpMatrix.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
     }
 
     vk::DescriptorSetLayout& createDescriptorSetLayout()
@@ -266,14 +268,14 @@ private:
 };
 } // namespace
 
-void testCubeMultipleVk()
+void testCameraVk()
 {
-    Device::Info info{ Device::RenderType::Vulkan, 800, 640, "Vulkan Example Cube Multiple" };
+    Device::Info info{ Device::RenderType::Vulkan, 800, 640, "Vulkan Example Camera" };
     DeviceVK handle(info);
     handle.init();
     GLFWRendererVK renderer(&handle);
     Engine engine(renderer);
-    auto effect = std::make_shared<TestCubeMultipleVk>(&renderer);
+    auto effect = std::make_shared<TestCameraVk>(&renderer);
     engine.setEffect(effect);
     engine.run();
 }
