@@ -21,13 +21,15 @@ public:
     const vk::Buffer& buffer() const;
     const vk::DeviceMemory& deviceMemory() const;
 
-private:
+protected:
+    vk::BufferUsageFlags getBufferType(Buffer::BufferType type);
     std::pair<vk::Buffer, vk::DeviceMemory> createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties);
-    vk::BufferUsageFlags getUsageFlag(BufferUsage usage);
-    vk::BufferUsageFlags getBufferType(BufferType BufferType);
     void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 
 private:
+    vk::BufferUsageFlags getUsageFlag(BufferUsage usage);
+
+protected:
     DeviceVK* m_deviceVk{ nullptr };
     vk::Buffer m_buffer;
     vk::DeviceMemory m_deviceMemory;

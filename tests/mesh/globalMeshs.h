@@ -32,9 +32,9 @@ struct alignas(16) TextureVertex
 
 struct alignas(16) UniformBufferObject
 {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
+    glm::mat4 model{1.0f};
+    glm::mat4 view{1.0f};
+    glm::mat4 proj{1.0f};
 };
 
 static UniformBufferObject g_mvpMatrix = { glm::eulerAngleZ(glm::radians(30.0f)), glm::mat4(1.0f), glm::mat4(1.0f) }; /* NOLINT */
