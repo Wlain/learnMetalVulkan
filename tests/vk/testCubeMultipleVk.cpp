@@ -44,8 +44,16 @@ public:
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_deviceVk);
         m_vertexBuffer->create(g_cubeVertex.size() * sizeof(g_cubeVertex[0]), (void*)g_cubeVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_deviceVk);
+        m_dynamicAlignment = sizeof(UniformBufferObject);
+        // 字节对齐
+        size_t minUboAlignment = m_deviceVk->gpu().getProperties().limits.minUniformBufferOffsetAlignment;
+        if (minUboAlignment > 0)
+        {
+            m_dynamicAlignment = (m_dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+        }
+        size_t bufferSize = g_cubePositions.size() * m_dynamicAlignment;
         g_mvpMatrix.view = glm::translate(g_mvpMatrix.view, glm::vec3(0.0f, 0.0f, -3.0f));
-        m_uniformBuffer->create(sizeof(g_mvpMatrix), (void*)&g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
+        m_uniformBuffer->create(bufferSize, (void*)&g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
     }
 
     void resize(int width, int height) override
@@ -59,7 +67,7 @@ public:
         {
             auto uboLayoutBinding = vk::DescriptorSetLayoutBinding{
                 .binding = 2,
-                .descriptorType = vk::DescriptorType::eUniformBuffer,
+                .descriptorType = vk::DescriptorType::eUniformBufferDynamic,
                 .descriptorCount = 1,
                 .stageFlags = vk::ShaderStageFlagBits::eVertex,
                 .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
@@ -86,7 +94,7 @@ public:
         if (!m_descriptorPool)
         {
             std::array<vk::DescriptorPoolSize, 2> poolSizes{};
-            poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
+            poolSizes[0].type = vk::DescriptorType::eUniformBufferDynamic;
             poolSizes[0].descriptorCount = m_swapchainSize;
             poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
             poolSizes[1].descriptorCount = m_swapchainSize;
@@ -119,7 +127,7 @@ public:
                 auto bufferInfo = vk::DescriptorBufferInfo{
                     .buffer = m_uniformBuffer->buffer(),
                     .offset = 0,
-                    .range = sizeof(UniformBufferObject)
+                    .range = m_dynamicAlignment
                 };
                 auto imageInfo = vk::DescriptorImageInfo{
                     .sampler = m_texture->sampler(),
@@ -132,7 +140,7 @@ public:
                         .dstBinding = 2,
                         .dstArrayElement = 0,
                         .descriptorCount = 1,
-                        .descriptorType = vk::DescriptorType::eUniformBuffer,
+                        .descriptorType = vk::DescriptorType::eUniformBufferDynamic,
                         .pBufferInfo = &bufferInfo },
                     vk::WriteDescriptorSet{
                         .dstSet = createDescriptorSets()[i],
@@ -230,13 +238,14 @@ public:
             for (unsigned int j = 0; j < g_cubePositions.size(); j++)
             {
                 // calculate the model matrix for each object and pass it to shader before drawing
+                uint32_t dynamicOffset = j * static_cast<uint32_t>(m_dynamicAlignment);
                 g_mvpMatrix.model = glm::mat4(1.0f);
                 g_mvpMatrix.model = glm::translate(g_mvpMatrix.model, g_cubePositions[j]);
                 g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
                 float angle = 20.0f * j;
                 g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-                m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), 0);
-                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, 1, &createDescriptorSets()[i], 0, nullptr);
+                m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), dynamicOffset);
+                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, createDescriptorSets()[i], dynamicOffset);
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertex.size()), 1, 0, 0);
             }
             commandBuffers[i].endRenderPass();
@@ -263,6 +272,7 @@ private:
     std::vector<vk::DescriptorSet> m_descriptorSets;
     std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribute;
     uint32_t m_swapchainSize{};
+    uint32_t m_dynamicAlignment{};
 };
 } // namespace
 
