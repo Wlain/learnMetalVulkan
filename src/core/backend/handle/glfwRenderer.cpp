@@ -38,11 +38,16 @@ void GLFWRenderer::init()
             auto* app = reinterpret_cast<GLFWRenderer*>(glfwGetWindowUserPointer(window));
             app->m_cursorPosEvent(xPos, yPos);
         });
+        // 鼠标回调
         glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods) {
             auto* app = reinterpret_cast<GLFWRenderer*>(glfwGetWindowUserPointer(window));
             app->m_mouseButtonEvent(button, action, mods);
         });
-
+        // 鼠标滚轮回调
+        glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset) {
+            auto* app = reinterpret_cast<GLFWRenderer*>(glfwGetWindowUserPointer(window));
+            app->m_scrollEvent(xoffset, yoffset);
+        });
         glfwSetDropCallback(m_window, [](GLFWwindow* window, int count, const char** paths) {
             auto* app = reinterpret_cast<GLFWRenderer*>(glfwGetWindowUserPointer(window));
             app->m_dropEvent(count, paths);

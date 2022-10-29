@@ -59,16 +59,12 @@ void GLFWRendererVK::swapBuffers()
         LOG_ERROR("waitForFences failed");
     }
     uint32_t imageIndex;
-    result = m_device.acquireNextImageKHR(
-        m_swapChain,
-        std::numeric_limits<uint64_t>::max(),
-        m_imageAvailableSemaphores[m_currentFrame],
-        nullptr,
-        &imageIndex);
-
+    /// 从交换链获取图像
+    // std::numeric_limits<uint64_t>::max()：用于禁用图像获取超时
+    result = m_device.acquireNextImageKHR(m_swapChain, std::numeric_limits<uint64_t>::max(), m_imageAvailableSemaphores[m_currentFrame], nullptr, &imageIndex);
     if (result == vk::Result::eErrorOutOfDateKHR)
     {
-        //        recreateSwapchain();
+        // 需要重新创建交换链
         return;
     }
     else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR)
@@ -104,6 +100,7 @@ void GLFWRendererVK::swapBuffers()
     {
         LOG_ERROR("resetFences failed");
     }
+    /// 提交命令队列
     m_deviceVk->graphicsQueue().submit(submitInfo, m_inflightFences[m_currentFrame]);
 
     auto presentInfo = vk::PresentInfoKHR{
@@ -113,7 +110,7 @@ void GLFWRendererVK::swapBuffers()
         .pSwapchains = &m_swapChain,
         .pImageIndices = &imageIndex
     };
-
+    /// 呈现
     result = m_deviceVk->presentQueue().presentKHR(presentInfo);
     if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || m_framebufferResized)
     {
@@ -126,6 +123,7 @@ void GLFWRendererVK::swapBuffers()
     }
 
     m_currentFrame = (m_currentFrame + 1) % DeviceVK::MAX_FRAMES_IN_FLIGHT;
+    /// 等待逻辑设备的操作结束执行才能销毁窗口
     m_device.waitIdle();
 }
 

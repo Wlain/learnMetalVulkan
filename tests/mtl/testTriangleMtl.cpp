@@ -16,6 +16,8 @@
 #include <glm/glm.hpp>
 #include <vector>
 using namespace backend;
+namespace
+{
 class TestTriangleMtl : public EffectBase
 {
 public:
@@ -72,6 +74,7 @@ private:
     std::shared_ptr<BufferMTL> m_vertexBuffer;
     std::shared_ptr<PipelineMtl> m_pipeline;
 };
+} // namespace
 
 void testTriangleMtl()
 {

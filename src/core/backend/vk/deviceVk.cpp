@@ -113,23 +113,24 @@ namespace backend
 {
 vk::Extent2D DeviceVK::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities)
 {
-    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-    {
-        return capabilities.currentExtent;
-    }
-    else
-    {
-        auto actualExtent = vk::Extent2D{ static_cast<uint32_t>(m_info.width), static_cast<uint32_t>(m_info.height) };
-        actualExtent.width = std::clamp(
-            actualExtent.width,
-            capabilities.minImageExtent.width,
-            capabilities.maxImageExtent.width);
-        actualExtent.height = std::clamp(
-            actualExtent.height,
-            capabilities.minImageExtent.height,
-            capabilities.maxImageExtent.height);
-        return actualExtent;
-    }
+    return vk::Extent2D{ static_cast<uint32_t>(m_info.width), static_cast<uint32_t>(m_info.height) };
+//    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+//    {
+//        return capabilities.currentExtent;
+//    }
+//    else
+//    {
+//        auto actualExtent = vk::Extent2D{ static_cast<uint32_t>(m_info.width), static_cast<uint32_t>(m_info.height) };
+//        actualExtent.width = std::clamp(
+//            actualExtent.width,
+//            capabilities.minImageExtent.width,
+//            capabilities.maxImageExtent.width);
+//        actualExtent.height = std::clamp(
+//            actualExtent.height,
+//            capabilities.minImageExtent.height,
+//            capabilities.maxImageExtent.height);
+//        return actualExtent;
+//    }
 }
 
 DeviceVK::~DeviceVK()

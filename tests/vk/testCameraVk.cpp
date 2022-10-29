@@ -1,5 +1,5 @@
 //
-// Created by william on 2022/10/20.
+// Created by william on 2022/10/25.
 //
 
 #include "../mesh/globalMeshs.h"
@@ -17,11 +17,11 @@ using namespace backend;
 
 namespace
 {
-class TestCubeVk : public EffectBase
+class TestCameraVk : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestCubeVk() override
+    ~TestCameraVk() override
     {
         auto device = m_deviceVk->handle();
         device.destroy(m_descriptorSetLayout);
@@ -44,13 +44,23 @@ public:
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_deviceVk);
         m_vertexBuffer->create(g_cubeVertex.size() * sizeof(g_cubeVertex[0]), (void*)g_cubeVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_deviceVk);
-        g_mvpMatrix.view = glm::translate(g_mvpMatrix.view, glm::vec3(0.0f, 0.0f, -3.0f));
-        m_uniformBuffer->create(sizeof(g_mvpMatrix), (void*)&g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
+        m_dynamicAlignment = sizeof(UniformBufferObject);
+        // 字节对齐
+        size_t minUboAlignment = m_deviceVk->gpu().getProperties().limits.minUniformBufferOffsetAlignment;
+        if (minUboAlignment > 0)
+        {
+            m_dynamicAlignment = (m_dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+        }
+        size_t bufferSize = g_cubePositions.size() * m_dynamicAlignment;
+        m_uniformBuffer->create(bufferSize, (void*)&g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
     }
 
-    void resize(int width, int height) override
+    void update(float deltaTime) override
     {
-        g_mvpMatrix.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+        EffectBase::update(deltaTime);
+        EffectBase::update(deltaTime);
+        g_mvpMatrix.view = m_camera.viewMatrix();
+        g_mvpMatrix.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
     }
 
     vk::DescriptorSetLayout& createDescriptorSetLayout()
@@ -59,7 +69,7 @@ public:
         {
             auto uboLayoutBinding = vk::DescriptorSetLayoutBinding{
                 .binding = 2,
-                .descriptorType = vk::DescriptorType::eUniformBuffer,
+                .descriptorType = vk::DescriptorType::eUniformBufferDynamic,
                 .descriptorCount = 1,
                 .stageFlags = vk::ShaderStageFlagBits::eVertex,
                 .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
@@ -86,7 +96,7 @@ public:
         if (!m_descriptorPool)
         {
             std::array<vk::DescriptorPoolSize, 2> poolSizes{};
-            poolSizes[0].type = vk::DescriptorType::eUniformBuffer;
+            poolSizes[0].type = vk::DescriptorType::eUniformBufferDynamic;
             poolSizes[0].descriptorCount = m_swapchainSize;
             poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
             poolSizes[1].descriptorCount = m_swapchainSize;
@@ -119,7 +129,7 @@ public:
                 auto bufferInfo = vk::DescriptorBufferInfo{
                     .buffer = m_uniformBuffer->buffer(),
                     .offset = 0,
-                    .range = sizeof(UniformBufferObject)
+                    .range = m_dynamicAlignment
                 };
                 auto imageInfo = vk::DescriptorImageInfo{
                     .sampler = m_texture->sampler(),
@@ -132,7 +142,7 @@ public:
                         .dstBinding = 2,
                         .dstArrayElement = 0,
                         .descriptorCount = 1,
-                        .descriptorType = vk::DescriptorType::eUniformBuffer,
+                        .descriptorType = vk::DescriptorType::eUniformBufferDynamic,
                         .pBufferInfo = &bufferInfo },
                     vk::WriteDescriptorSet{
                         .dstSet = createDescriptorSets()[i],
@@ -197,18 +207,15 @@ public:
 
     void render() override
     {
-        g_mvpMatrix.model = glm::mat4(1.0f);
-        g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
-        m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), 0);
         auto& commandBuffers = m_deviceVk->commandBuffers();
         auto& framebuffer = m_deviceVk->swapchainFramebuffers();
-
         for (std::size_t i = 0; i < commandBuffers.size(); ++i)
         {
             auto beginInfo = vk::CommandBufferBeginInfo{};
             commandBuffers[i].begin(beginInfo);
-            static float red{ 0.0f };
-            red = red > 1.0f ? 0.0 : red + 0.001f;
+
+            static float red{ 1.0f };
+            //                red = red > 1.0f ? 0.0 : red + 0.001f;
             std::array<vk::ClearValue, 2> clearValues = {
                 vk::ClearValue{
                     .color = { .float32 = std::array<float, 4>{ red, 0.0f, 0.0f, 1.0f } } },
@@ -224,13 +231,25 @@ public:
                 .clearValueCount = 2,
                 .pClearValues = clearValues.data(),
             };
+
             commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
             commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
             auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer->buffer() };
             auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
             commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
-            commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, 1, &createDescriptorSets()[i], 0, nullptr);
-            commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertex.size()), 1, 0, 0);
+            for (unsigned int j = 0; j < g_cubePositions.size(); j++)
+            {
+                // calculate the model matrix for each object and pass it to shader before drawing
+                uint32_t dynamicOffset = j * static_cast<uint32_t>(m_dynamicAlignment);
+                g_mvpMatrix.model = glm::mat4(1.0f);
+                g_mvpMatrix.model = glm::translate(g_mvpMatrix.model, g_cubePositions[j]);
+                g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
+                float angle = 20.0f * j;
+                g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+                m_uniformBuffer->update(&g_mvpMatrix, m_dynamicAlignment, dynamicOffset);
+                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, createDescriptorSets()[i], dynamicOffset);
+                commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertex.size()), 1, 0, 0);
+            }
             commandBuffers[i].endRenderPass();
             commandBuffers[i].end();
         }
@@ -254,17 +273,18 @@ private:
     std::vector<vk::DescriptorSet> m_descriptorSets;
     std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribute;
     uint32_t m_swapchainSize{};
+    uint32_t m_dynamicAlignment{};
 };
 } // namespace
 
-void testCubeVk()
+void testCameraVk()
 {
-    Device::Info info{ Device::RenderType::Vulkan, 800, 640, "Vulkan Example Cube" };
+    Device::Info info{ Device::RenderType::Vulkan, 800, 640, "Vulkan Example Camera" };
     DeviceVK handle(info);
     handle.init();
     GLFWRendererVK renderer(&handle);
     Engine engine(renderer);
-    auto effect = std::make_shared<TestCubeVk>(&renderer);
+    auto effect = std::make_shared<TestCameraVk>(&renderer);
     engine.setEffect(effect);
     engine.run();
 }

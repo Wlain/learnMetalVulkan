@@ -152,6 +152,7 @@ bool TextureGL::createDepthTexture(int width, int height, backend::Texture::Dept
     glTexImage2D(m_info.target, 0, internalFormat, width, height, border, format, type, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+    return true;
 }
 
 GLuint TextureGL::handle() const

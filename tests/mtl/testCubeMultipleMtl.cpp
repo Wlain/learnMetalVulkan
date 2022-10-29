@@ -1,5 +1,5 @@
 //
-// Created by cwb on 2022/9/22.
+// Created by william on 2022/10/21.
 //
 
 #include "../mesh/globalMeshs.h"
@@ -19,11 +19,14 @@
 using namespace backend;
 namespace
 {
-class TestTextureMtl : public EffectBase
+class TestCubeMultipleMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestTextureMtl() override = default;
+    ~TestCubeMultipleMtl() override
+    {
+        m_depthStencilState->release();
+    }
     void initialize() override
     {
         m_device = dynamic_cast<DeviceMtl*>(m_renderer->device());
@@ -32,7 +35,10 @@ public:
         m_gpu = m_device->gpu();
         buildPipeline();
         buildBuffers();
+        buildDepthStencilStates();
+        setupDepthStencilTexture();
         buildTexture();
+        g_mvpMatrix.view = glm::translate(g_mvpMatrix.view, glm::vec3(0.0f, 0.0f, -3.0f));
     }
 
     void buildTexture()
@@ -52,9 +58,27 @@ public:
     void buildBuffers()
     {
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_device);
-        m_vertexBuffer->create(sizeof(g_quadVertex[0]) * g_quadVertex.size(), (void*)g_quadVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
-        m_indexBuffer = MAKE_SHARED(m_indexBuffer, m_device);
-        m_indexBuffer->create(g_quadIndices.size() * sizeof(g_quadIndices[0]), (void*)g_quadIndices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::IndexBuffer);
+        m_vertexBuffer->create(sizeof(g_cubeVertex[0]) * g_cubeVertex.size(), (void*)g_cubeVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+    }
+
+    void setupDepthStencilTexture()
+    {
+        m_depthTexture = MAKE_SHARED(m_depthTexture, m_device);
+        m_depthTexture->createDepthTexture(m_device->width(), m_device->height(), Texture::DepthPrecision::F32);
+    }
+
+    void buildDepthStencilStates()
+    {
+        MTL::DepthStencilDescriptor* pDsDesc = MTL::DepthStencilDescriptor::alloc()->init();
+        pDsDesc->setDepthCompareFunction(MTL::CompareFunction::CompareFunctionLess);
+        pDsDesc->setDepthWriteEnabled(true);
+        m_depthStencilState = m_gpu->newDepthStencilState(pDsDesc);
+        pDsDesc->release();
+    }
+
+    void resize(int width, int height) override
+    {
+        g_mvpMatrix.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
     }
 
     void render() override
@@ -66,13 +90,26 @@ public:
         pass->colorAttachments()->object(0)->setLoadAction(MTL::LoadActionClear);
         pass->colorAttachments()->object(0)->setStoreAction(MTL::StoreActionStore);
         pass->colorAttachments()->object(0)->setTexture(surface->texture());
+        pass->depthAttachment()->setTexture(m_depthTexture->handle());
+        pass->depthAttachment()->setClearDepth(1.0);
+        pass->stencilAttachment()->setClearStencil(0);
         auto* buffer = m_queue->commandBuffer();
         auto* encoder = buffer->renderCommandEncoder(pass);
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
+        encoder->setDepthStencilState(m_depthStencilState);
         encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
-        encoder->setVertexBytes(&g_mvpMatrix, sizeof(g_mvpMatrix), 2); // ubo：小内存，大内存用buffer
         encoder->setFragmentTexture(m_texture->handle(), 1);
-        encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, g_quadIndices.size(), MTL::IndexType::IndexTypeUInt16, m_indexBuffer->buffer(), 0, 0);
+        for (unsigned int i = 0; i < g_cubePositions.size(); i++)
+        {
+            // calculate the model matrix for each object and pass it to shader before drawing
+            g_mvpMatrix.model = glm::mat4(1.0f);
+            g_mvpMatrix.model = glm::translate(g_mvpMatrix.model, g_cubePositions[i]);
+            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
+            float angle = 20.0f * i;
+            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            encoder->setVertexBytes(&g_mvpMatrix, sizeof(g_mvpMatrix), 2); // ubo：小内存，大内存用buffer
+            encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(static_cast<uint32_t>(g_cubeVertex.size())));
+        }
         encoder->endEncoding();
         buffer->presentDrawable(surface);
         buffer->commit();
@@ -86,19 +123,20 @@ private:
     MTL::Device* m_gpu{ nullptr };
     std::shared_ptr<PipelineMtl> m_pipeline;
     std::shared_ptr<TextureMTL> m_texture;
+    std::shared_ptr<TextureMTL> m_depthTexture;
     std::shared_ptr<BufferMTL> m_vertexBuffer;
-    std::shared_ptr<BufferMTL> m_indexBuffer;
+    MTL::DepthStencilState* m_depthStencilState;
 };
 } // namespace
 
-void testTextureMtl()
+void testCubeMultipleMtl()
 {
-    Device::Info info{ Device::RenderType::Metal, 640, 640, "Metal Example texture" };
+    Device::Info info{ Device::RenderType::Metal, 640, 640, "Metal Example Cube Multiple" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);
     Engine engine(rendererMtl);
-    auto effect = std::make_shared<TestTextureMtl>(&rendererMtl);
+    auto effect = std::make_shared<TestCubeMultipleMtl>(&rendererMtl);
     engine.setEffect(effect);
     engine.run();
 }

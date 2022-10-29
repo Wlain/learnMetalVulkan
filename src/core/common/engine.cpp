@@ -36,6 +36,9 @@ void Engine::run()
     m_renderer.m_dropEvent = [&](int count, const char** paths) {
         m_handle->dropEvent(count, paths);
     };
+    m_renderer.m_scrollEvent = [&](double xoffset, double yoffset) {
+        m_handle->scrollEvent(xoffset, yoffset);
+    };
     m_renderer.m_frameRender = [&]() {
         m_handle->render();
     };

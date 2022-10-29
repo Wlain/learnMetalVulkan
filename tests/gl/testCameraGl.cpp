@@ -1,6 +1,7 @@
 //
-// Created by william on 2022/10/20.
+// Created by william on 2022/10/24.
 //
+
 #include "../mesh/globalMeshs.h"
 #include "bufferGL.h"
 #include "deviceGL.h"
@@ -15,11 +16,11 @@
 using namespace backend;
 namespace
 {
-class TestCubeGl : public EffectBase
+class TestCameraGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestCubeGl() override
+    ~TestCameraGl() override
     {
         glDeleteVertexArrays(1, &m_vao);
     }
@@ -43,7 +44,6 @@ public:
         auto uboIndex = glGetUniformBlockIndex(program, "UniformBufferObject");
         glUniformBlockBinding(program, uboIndex, 0);
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_render->device());
-        g_mvpMatrix.view = glm::translate(g_mvpMatrix.view, glm::vec3(0.0f, 0.0f, -3.0f));
         m_uniformBuffer->create(sizeof(UniformBufferObject), &g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
         // define the range of the buffer that links to a uniform binding point
         glBindBufferRange(m_uniformBuffer->bufferType(), uboIndex, m_uniformBuffer->buffer(), 0, sizeof(UniformBufferObject));
@@ -68,9 +68,11 @@ public:
         m_texture->createWithFileName("textures/test.jpg", true);
     }
 
-    void resize(int width, int height) override
+    void update(float deltaTime) override
     {
-        g_mvpMatrix.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+        EffectBase::update(deltaTime);
+        g_mvpMatrix.view = m_camera.viewMatrix();
+        g_mvpMatrix.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
     }
 
     void render() override
@@ -80,13 +82,20 @@ public:
         glClearColor(red, 0.0f, 0.0f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_render->setPipeline(m_pipeline);
-        g_mvpMatrix.model = glm::mat4(1.0f);
-        g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
-        m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), 0);
         // bind Texture
         glBindTexture(GL_TEXTURE_2D, m_texture->handle());
         glBindVertexArray(m_vao);
-        glDrawArrays(GL_TRIANGLES, 0, static_cast<uint32_t>(g_cubeVertex.size()));
+        for (unsigned int i = 0; i < g_cubePositions.size(); i++)
+        {
+            // calculate the model matrix for each object and pass it to shader before drawing
+            g_mvpMatrix.model = glm::mat4(1.0f);
+            g_mvpMatrix.model = glm::translate(g_mvpMatrix.model, g_cubePositions[i]);
+            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
+            float angle = 20.0f * (float)i;
+            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), 0);
+            glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_cubeVertex.size()));
+        }
     }
 
 private:
@@ -99,14 +108,14 @@ private:
 };
 } // namespace
 
-void testCubeGl()
+void testCameraGl()
 {
-    Device::Info info{ Device::RenderType::OpenGL, 800, 600, "OpenGL Example Cube" };
+    Device::Info info{ Device::RenderType::OpenGL, 800, 600, "OpenGL Example Camera" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
     Engine engine(rendererGl);
-    auto effect = std::make_shared<TestCubeGl>(&rendererGl);
+    auto effect = std::make_shared<TestCameraGl>(&rendererGl);
     engine.setEffect(effect);
     engine.run();
 }

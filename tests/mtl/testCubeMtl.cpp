@@ -17,6 +17,8 @@
 #include <vector>
 
 using namespace backend;
+namespace
+{
 class TestTextureMtl : public EffectBase
 {
 public:
@@ -97,7 +99,6 @@ public:
         auto* encoder = buffer->renderCommandEncoder(pass);
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
         encoder->setDepthStencilState(m_depthStencilState);
-
         encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
         encoder->setVertexBytes(&g_mvpMatrix, sizeof(g_mvpMatrix), 2); // ubo：小内存，大内存用buffer
         encoder->setFragmentTexture(m_texture->handle(), 1);
@@ -117,8 +118,9 @@ private:
     std::shared_ptr<TextureMTL> m_texture;
     std::shared_ptr<TextureMTL> m_depthTexture;
     std::shared_ptr<BufferMTL> m_vertexBuffer;
-    MTL::DepthStencilState* m_depthStencilState;
+    MTL::DepthStencilState* m_depthStencilState{};
 };
+} // namespace
 
 void testCubeMtl()
 {

@@ -26,8 +26,16 @@ extern void testCubeGl();
 extern void testCubeVk();
 extern void testCubeMtl();
 
+extern void testCubeMultipleGl();
+extern void testCubeMultipleVk();
+extern void testCubeMultipleMtl();
+
+extern void testCameraGl();
+extern void testCameraVk();
+extern void testCameraMtl();
+
 int main()
 {
-    testCubeVk();
+    testCameraMtl();
     return 0;
 }
