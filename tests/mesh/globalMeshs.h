@@ -32,22 +32,21 @@ struct alignas(16) TextureVertex
 
 struct alignas(16) UniformBufferObject
 {
-    glm::mat4 model{1.0f};
-    glm::mat4 view{1.0f};
-    glm::mat4 proj{1.0f};
+    glm::mat4 model{ 1.0f };
+    glm::mat4 view{ 1.0f };
+    glm::mat4 proj{ 1.0f };
 };
 
 static UniformBufferObject g_mvpMatrix = { glm::eulerAngleZ(glm::radians(30.0f)), glm::mat4(1.0f), glm::mat4(1.0f) }; /* NOLINT */
 
-// clang-format off
-static const std::vector<TextureVertex> g_quadVertex = {    /* NOLINT */
+static const std::vector<TextureVertex> g_quadVertex = {
+    /* NOLINT */
     // positions                  // texture coords
     { { -0.5f, 0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },  // top left
     { { 0.5f, 0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },   // top right
     { { -0.5f, -0.5f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } }, // bottom left
     { { 0.5f, -0.5f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } }   // bottom right
 };
-// clang-format on
 
 static const std::vector<uint16_t> g_quadIndices = { /* NOLINT */
                                                      1, 3, 0,
@@ -97,6 +96,50 @@ static const std::vector<TextureVertex> g_cubeVertex = { /* NOLINT */
                                                          { { 0.5f, 0.5f, 0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
                                                          { { -0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
                                                          { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } }
+};
+
+static const std::vector<glm::vec4> g_cubeVertices = {
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, 0.5f, -0.5f, 1.0f },
+    { 0.5f, 0.5f, -0.5f, 1.0f },
+    { -0.5f, 0.5f, -0.5f, 1.0f },
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+
+    { -0.5f, -0.5f, 0.5f, 1.0f },
+    { 0.5f, -0.5f, 0.5f, 1.0f },
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+    { -0.5f, 0.5f, 0.5f, 1.0f },
+    { -0.5f, -0.5f, 0.5f, 1.0f },
+
+    { -0.5f, 0.5f, 0.5f, 1.0f },
+    { -0.5f, 0.5f, -0.5f, 1.0f },
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+    { -0.5f, -0.5f, 0.5f, 1.0f },
+    { -0.5f, 0.5f, 0.5f, 1.0f },
+
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+    { 0.5f, 0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, 0.5f, 1.0f },
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, 0.5f, 1.0f },
+    { 0.5f, -0.5f, 0.5f, 1.0f },
+    { -0.5f, -0.5f, 0.5f, 1.0f },
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+
+    { -0.5f, 0.5f, -0.5f, 1.0f },
+    { 0.5f, 0.5f, -0.5f, 1.0f },
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+    { -0.5f, 0.5f, 0.5f, 1.0f },
+    { -0.5f, 0.5f, -0.5f, 1.0f }
 };
 
 // world space positions of our cubes

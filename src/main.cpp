@@ -34,8 +34,12 @@ extern void testCameraGl();
 extern void testCameraVk();
 extern void testCameraMtl();
 
+extern void testLightingColorsGl();
+extern void testLightingColorsVk();
+extern void testLightingColorsMtl();
+
 int main()
 {
-    testCameraMtl();
+    testLightingColorsGl();
     return 0;
 }
