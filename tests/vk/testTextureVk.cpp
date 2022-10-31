@@ -44,7 +44,7 @@ public:
         m_indexBuffer = MAKE_SHARED(m_indexBuffer, m_deviceVk);
         m_indexBuffer->create(g_quadIndices.size() * sizeof(g_quadIndices[0]), (void*)g_quadIndices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::IndexBuffer);
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_deviceVk);
-        m_uniformBuffer->create(sizeof(g_mvpMatrix), (void*)&g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
+        m_uniformBuffer->create(sizeof(g_mvpMatrixUbo), (void*)&g_mvpMatrixUbo, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
     }
 
     vk::DescriptorSetLayout& createDescriptorSetLayout()
@@ -52,14 +52,14 @@ public:
         if (!m_descriptorSetLayout)
         {
             auto uboLayoutBinding = vk::DescriptorSetLayoutBinding{
-                .binding = 2,
+                .binding = g_mvpMatrixUboBinding,
                 .descriptorType = vk::DescriptorType::eUniformBuffer,
                 .descriptorCount = 1,
                 .stageFlags = vk::ShaderStageFlagBits::eVertex,
                 .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
             };
             auto samplerLayoutBinding = vk::DescriptorSetLayoutBinding{
-                .binding = 1,
+                .binding = g_textureBinding,
                 .descriptorType = vk::DescriptorType::eCombinedImageSampler,
                 .descriptorCount = 1,
                 .stageFlags = vk::ShaderStageFlagBits::eFragment,
@@ -113,7 +113,7 @@ public:
                 auto bufferInfo = vk::DescriptorBufferInfo{
                     .buffer = m_uniformBuffer->buffer(),
                     .offset = 0,
-                    .range = sizeof(UniformBufferObject)
+                    .range = sizeof(VertMVPMatrixUBO)
                 };
                 auto imageInfo = vk::DescriptorImageInfo{
                     .sampler = m_texture->sampler(),
@@ -123,14 +123,14 @@ public:
                 std::array descriptorWrites = {
                     vk::WriteDescriptorSet{
                         .dstSet = createDescriptorSets()[i],
-                        .dstBinding = 2,
+                        .dstBinding = g_mvpMatrixUboBinding,
                         .dstArrayElement = 0,
                         .descriptorCount = 1,
                         .descriptorType = vk::DescriptorType::eUniformBuffer,
                         .pBufferInfo = &bufferInfo },
                     vk::WriteDescriptorSet{
                         .dstSet = createDescriptorSets()[i],
-                        .dstBinding = 1,
+                        .dstBinding = g_textureBinding,
                         .dstArrayElement = 0,
                         .descriptorCount = 1,
                         .descriptorType = vk::DescriptorType::eCombinedImageSampler,

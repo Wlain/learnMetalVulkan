@@ -574,14 +574,14 @@ private:
     void createDescriptorSetLayout()
     {
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
-        uboLayoutBinding.binding = 2;
+        uboLayoutBinding.binding = g_mvpMatrixUboBinding;
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         uboLayoutBinding.descriptorCount = 1;
         uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         uboLayoutBinding.pImmutableSamplers = nullptr; // optional (only relevant to Image Sampling;
 
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-        samplerLayoutBinding.binding = 1;
+        samplerLayoutBinding.binding = g_textureBinding;
         samplerLayoutBinding.descriptorCount = 1;
         samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         samplerLayoutBinding.pImmutableSamplers = nullptr;
@@ -1062,7 +1062,7 @@ private:
 
     void createUniformBuffers()
     {
-        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+        VkDeviceSize bufferSize = sizeof(VertMVPMatrixUBO);
 
         uniformBuffers.resize(swapChainImages.size());
         uniformBuffersMemory.resize(swapChainImages.size());
@@ -1115,7 +1115,7 @@ private:
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = uniformBuffers[i];
             bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
+            bufferInfo.range = sizeof(VertMVPMatrixUBO);
 
             VkDescriptorImageInfo imageInfo{};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1125,7 +1125,7 @@ private:
             std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet = descriptorSets[i];
-            descriptorWrites[0].dstBinding = 2;
+            descriptorWrites[0].dstBinding = g_mvpMatrixUboBinding;
             descriptorWrites[0].dstArrayElement = 0;
             descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             descriptorWrites[0].descriptorCount = 1;
@@ -1133,7 +1133,7 @@ private:
 
             descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[1].dstSet = descriptorSets[i];
-            descriptorWrites[1].dstBinding = 1;
+            descriptorWrites[1].dstBinding = g_textureBinding;
             descriptorWrites[1].dstArrayElement = 0;
             descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             descriptorWrites[1].descriptorCount = 1;
@@ -1340,8 +1340,8 @@ private:
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         void* data;
-        vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(g_mvpMatrix), 0, &data);
-        memcpy(data, &g_mvpMatrix, sizeof(g_mvpMatrix));
+        vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(g_mvpMatrixUbo), 0, &data);
+        memcpy(data, &g_mvpMatrixUbo, sizeof(g_mvpMatrixUbo));
         vkUnmapMemory(device, uniformBuffersMemory[currentImage]);
     }
 

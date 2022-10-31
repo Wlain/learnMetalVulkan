@@ -41,12 +41,12 @@ public:
     void buildBuffers()
     {
         auto program = m_pipeline->program();
-        auto uboIndex = glGetUniformBlockIndex(program, "UniformBufferObject");
-        glUniformBlockBinding(program, uboIndex, 0);
+        auto uboIndex = glGetUniformBlockIndex(program, "VertMVPMatrixUBO");
+        glUniformBlockBinding(program, uboIndex, g_mvpMatrixUboBinding);
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_render->device());
-        m_uniformBuffer->create(sizeof(UniformBufferObject), &g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
+        m_uniformBuffer->create(sizeof(VertMVPMatrixUBO), &g_mvpMatrixUbo, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
         // define the range of the buffer that links to a uniform binding point
-        glBindBufferRange(m_uniformBuffer->bufferType(), uboIndex, m_uniformBuffer->buffer(), 0, sizeof(UniformBufferObject));
+        glBindBufferRange(m_uniformBuffer->bufferType(), g_mvpMatrixUboBinding, m_uniformBuffer->buffer(), 0, sizeof(VertMVPMatrixUBO));
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
         glGenVertexArrays(1, &m_vao);
@@ -95,7 +95,7 @@ private:
 
 void testTextureGl()
 {
-    Device::Info info{ Device::RenderType::OpenGL, 480, 480, "OpenGL Example texture" };
+    Device::Info info{ Device::RenderType::OpenGL, 640, 640, "OpenGL Example texture" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);

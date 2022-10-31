@@ -41,13 +41,13 @@ public:
     void buildBuffers()
     {
         auto program = m_pipeline->program();
-        auto uboIndex = glGetUniformBlockIndex(program, "UniformBufferObject");
-        glUniformBlockBinding(program, uboIndex, 0);
+        auto uboIndex = glGetUniformBlockIndex(program, "VertMVPMatrixUBO");
+        glUniformBlockBinding(program, uboIndex, g_mvpMatrixUboBinding);
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_render->device());
-        g_mvpMatrix.view = glm::translate(g_mvpMatrix.view, glm::vec3(0.0f, 0.0f, -3.0f));
-        m_uniformBuffer->create(sizeof(UniformBufferObject), &g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
+        g_mvpMatrixUbo.view = glm::translate(g_mvpMatrixUbo.view, glm::vec3(0.0f, 0.0f, -3.0f));
+        m_uniformBuffer->create(sizeof(VertMVPMatrixUBO), &g_mvpMatrixUbo, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
         // define the range of the buffer that links to a uniform binding point
-        glBindBufferRange(m_uniformBuffer->bufferType(), uboIndex, m_uniformBuffer->buffer(), 0, sizeof(UniformBufferObject));
+        glBindBufferRange(m_uniformBuffer->bufferType(), g_mvpMatrixUboBinding, m_uniformBuffer->buffer(), 0, sizeof(VertMVPMatrixUBO));
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
         glGenVertexArrays(1, &m_vao);
@@ -71,7 +71,7 @@ public:
 
     void resize(int width, int height) override
     {
-        g_mvpMatrix.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+        g_mvpMatrixUbo.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
     }
 
     void render() override
@@ -87,12 +87,12 @@ public:
         for (unsigned int i = 0; i < g_cubePositions.size(); i++)
         {
             // calculate the model matrix for each object and pass it to shader before drawing
-            g_mvpMatrix.model = glm::mat4(1.0f);
-            g_mvpMatrix.model = glm::translate(g_mvpMatrix.model, g_cubePositions[i]);
-            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
+            g_mvpMatrixUbo.model = glm::mat4(1.0f);
+            g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_cubePositions[i]);
+            g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
             float angle = 20.0f * i;
-            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), 0);
+            g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            m_uniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
             glDrawArrays(GL_TRIANGLES, 0, static_cast<uint32_t>(g_cubeVertex.size()));
         }
     }

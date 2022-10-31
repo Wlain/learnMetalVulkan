@@ -38,30 +38,28 @@ public:
         m_pipelineLightCube = MAKE_SHARED(m_pipelineLightCube, m_render->device());
         m_pipelineLightCube->setProgram(vertSource, fragShader);
         // color
-        vertSource = getFileContents("shaders/color.vert");
-        fragShader = getFileContents("shaders/color.frag");
+        vertSource = getFileContents("shaders/colors.vert");
+        fragShader = getFileContents("shaders/colors.frag");
         m_pipelineColor = MAKE_SHARED(m_pipelineColor, m_render->device());
         m_pipelineColor->setProgram(vertSource, fragShader);
     }
     void buildBuffers()
     {
         m_vertUniformBuffer = MAKE_SHARED(m_vertUniformBuffer, m_render->device());
-        m_vertUniformBuffer->create(sizeof(UniformBufferObject), &m_vertUbo, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
-        auto program = m_pipelineLightCube->program();
-        glUseProgram(program);
-        auto uboIndex = glGetUniformBlockIndex(program, "UniformBufferObject");
-        glUniformBlockBinding(program, uboIndex, 0);
+        m_vertUniformBuffer->create(sizeof(VertMVPMatrixUBO), &g_mvpMatrixUbo, Buffer::BufferUsage::DynamicDraw, Buffer::BufferType::UniformBuffer);
+        m_fragUniformBuffer = MAKE_SHARED(m_fragUniformBuffer, m_render->device());
+        m_fragUniformBuffer->create(sizeof(FragLightingColorUBO), &g_lightingColorUbo, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
+        auto lightCubeProgram = m_pipelineLightCube->program();
+        auto colorProgram = m_pipelineColor->program();
+        auto lightCubeVertUboIndex = glGetUniformBlockIndex(lightCubeProgram, "VertMVPMatrixUBO");
+        auto colorVertUboIndex = glGetUniformBlockIndex(colorProgram, "VertMVPMatrixUBO");
+        auto colorFragUboIndex = glGetUniformBlockIndex(colorProgram, "FragUniformBufferObject");
+        glUniformBlockBinding(lightCubeProgram, lightCubeVertUboIndex, g_mvpMatrixUboBinding);
+        glUniformBlockBinding(colorProgram, colorVertUboIndex, g_mvpMatrixUboBinding);
+        glUniformBlockBinding(colorProgram, colorFragUboIndex, g_lightingColorUboBinding);
         // define the range of the buffer that links to a uniform binding point
-        glBindBufferRange(m_vertUniformBuffer->bufferType(), uboIndex, m_vertUniformBuffer->buffer(), 0, sizeof(UniformBufferObject));
-
-        program = m_pipelineColor->program();
-        glUseProgram(program);
-        uboIndex = glGetUniformBlockIndex(program, "VertUniformBufferObject");
-        glUniformBlockBinding(program, uboIndex, 0);
-        // define the range of the buffer that links to a uniform binding point
-        glBindBufferRange(m_vertUniformBuffer->bufferType(), uboIndex, m_vertUniformBuffer->buffer(), 0, sizeof(UniformBufferObject));
-        uboIndex = glGetUniformBlockIndex(program, "FragUniformBufferObject");
-        glUniformBlockBinding(program, uboIndex, 0);
+        glBindBufferRange(m_vertUniformBuffer->bufferType(), g_mvpMatrixUboBinding, m_vertUniformBuffer->buffer(), 0, sizeof(VertMVPMatrixUBO));
+        glBindBufferRange(m_fragUniformBuffer->bufferType(), g_lightingColorUboBinding, m_fragUniformBuffer->buffer(), 0, sizeof(FragLightingColorUBO));
 
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
@@ -78,8 +76,8 @@ public:
     void update(float deltaTime) override
     {
         EffectBase::update(deltaTime);
-        m_vertUbo.view = m_camera.viewMatrix();
-        m_vertUbo.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
+        g_mvpMatrixUbo.view = m_camera.viewMatrix();
+        g_mvpMatrixUbo.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
     }
 
     void render() override
@@ -91,17 +89,17 @@ public:
         m_render->setPipeline(m_pipelineLightCube);
         glBindVertexArray(m_vao);
         // calculate the model matrix for each object and pass it to shader before drawing
-        m_vertUbo.model = glm::mat4(1.0f);
-        m_vertUbo.model = glm::translate(m_vertUbo.model, s_lightPos);
-        m_vertUbo.model = glm::scale(m_vertUbo.model, glm::vec3(0.2f)); // a smaller cube
-        m_vertUniformBuffer->update(&m_vertUbo, sizeof(UniformBufferObject), 0);
+        g_mvpMatrixUbo.model = glm::mat4(1.0f);
+        g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, s_lightPos);
+        g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.2f)); // a smaller cube
+        m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
         glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_cubeVertices.size()));
 
         // draw lightCube
         m_render->setPipeline(m_pipelineColor);
-        // calculate the model matrix for each object and pass it to shader before drawing
-        m_vertUbo.model = glm::mat4(1.0f);
-        m_vertUniformBuffer->update(&m_vertUbo, sizeof(UniformBufferObject), 0);
+        // calculate the model matrix for each object and pmass it to shader before drawing
+        g_mvpMatrixUbo.model = glm::mat4(1.0f);
+        m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
         glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_cubeVertices.size()));
     }
 
@@ -116,7 +114,6 @@ private:
     std::shared_ptr<BufferGL> m_vertexBuffer;
     std::shared_ptr<BufferGL> m_vertUniformBuffer;
     std::shared_ptr<BufferGL> m_fragUniformBuffer;
-    UniformBufferObject m_vertUbo;
     GLuint m_vao{ 0 };
 };
 } // namespace

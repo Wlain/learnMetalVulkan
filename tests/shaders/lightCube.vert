@@ -2,10 +2,8 @@
 precision highp float;
 
 layout (location = 0) in vec4 aPos;
-layout (location = 1) in vec4 aTexCoord;
-layout(location = 0) out vec2 vTexCoord;
 
-layout(binding = 2) uniform UniformBufferObject
+layout(binding = 2) uniform VertMVPMatrixUBO
 {
     mat4 model;
     mat4 view;

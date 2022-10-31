@@ -77,3 +77,16 @@ metal_Position.z = mtlNdc.z / metal_Position.w;
                  = ((gl_Position.z / gl_Position.w + 1) * 0.5) * gl_Position.w;
                  = (gl_Position.z + gl_Position.w) * 0.5;
 ```
+Q10 metal （UBO）不区分binding 和 location, 如果重了会冲突，比如
+```C++
+layout (location = 0) in vec4 aPos;
+
+/// 此处 binding = 0, 是不可以的，因为会跟location冲突
+layout(binding = 1) uniform VertUniformBufferObject 
+{
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+} ubo;
+```
+

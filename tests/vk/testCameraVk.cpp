@@ -42,9 +42,9 @@ public:
     void buildBuffers()
     {
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_deviceVk);
-        m_vertexBuffer->create(g_cubeVertex.size() * sizeof(g_cubeVertex[0]), (void*)g_cubeVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_vertexBuffer->create(g_cubeVertex.size() * sizeof(g_cubeVertex[0]), (void*)g_cubeVertex.data(), Buffer::BufferUsage::DynamicDraw, Buffer::BufferType::VertexBuffer);
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_deviceVk);
-        m_dynamicAlignment = sizeof(UniformBufferObject);
+        m_dynamicAlignment = sizeof(VertMVPMatrixUBO);
         // 字节对齐
         size_t minUboAlignment = m_deviceVk->gpu().getProperties().limits.minUniformBufferOffsetAlignment;
         if (minUboAlignment > 0)
@@ -52,15 +52,15 @@ public:
             m_dynamicAlignment = (m_dynamicAlignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
         }
         size_t bufferSize = g_cubePositions.size() * m_dynamicAlignment;
-        m_uniformBuffer->create(bufferSize, (void*)&g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
+        m_uniformBuffer->create(bufferSize, (void*)&g_mvpMatrixUbo, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
     }
 
     void update(float deltaTime) override
     {
         EffectBase::update(deltaTime);
         EffectBase::update(deltaTime);
-        g_mvpMatrix.view = m_camera.viewMatrix();
-        g_mvpMatrix.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
+        g_mvpMatrixUbo.view = m_camera.viewMatrix();
+        g_mvpMatrixUbo.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
     }
 
     vk::DescriptorSetLayout& createDescriptorSetLayout()
@@ -68,14 +68,14 @@ public:
         if (!m_descriptorSetLayout)
         {
             auto uboLayoutBinding = vk::DescriptorSetLayoutBinding{
-                .binding = 2,
+                .binding = g_mvpMatrixUboBinding,
                 .descriptorType = vk::DescriptorType::eUniformBufferDynamic,
                 .descriptorCount = 1,
                 .stageFlags = vk::ShaderStageFlagBits::eVertex,
                 .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
             };
             auto samplerLayoutBinding = vk::DescriptorSetLayoutBinding{
-                .binding = 1,
+                .binding = g_textureBinding,
                 .descriptorType = vk::DescriptorType::eCombinedImageSampler,
                 .descriptorCount = 1,
                 .stageFlags = vk::ShaderStageFlagBits::eFragment,
@@ -139,14 +139,14 @@ public:
                 std::array descriptorWrites = {
                     vk::WriteDescriptorSet{
                         .dstSet = createDescriptorSets()[i],
-                        .dstBinding = 2,
+                        .dstBinding = g_mvpMatrixUboBinding,
                         .dstArrayElement = 0,
                         .descriptorCount = 1,
                         .descriptorType = vk::DescriptorType::eUniformBufferDynamic,
                         .pBufferInfo = &bufferInfo },
                     vk::WriteDescriptorSet{
                         .dstSet = createDescriptorSets()[i],
-                        .dstBinding = 1,
+                        .dstBinding = g_textureBinding,
                         .dstArrayElement = 0,
                         .descriptorCount = 1,
                         .descriptorType = vk::DescriptorType::eCombinedImageSampler,
@@ -241,12 +241,12 @@ public:
             {
                 // calculate the model matrix for each object and pass it to shader before drawing
                 uint32_t dynamicOffset = j * static_cast<uint32_t>(m_dynamicAlignment);
-                g_mvpMatrix.model = glm::mat4(1.0f);
-                g_mvpMatrix.model = glm::translate(g_mvpMatrix.model, g_cubePositions[j]);
-                g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
+                g_mvpMatrixUbo.model = glm::mat4(1.0f);
+                g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_cubePositions[j]);
+                g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
                 float angle = 20.0f * j;
-                g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-                m_uniformBuffer->update(&g_mvpMatrix, m_dynamicAlignment, dynamicOffset);
+                g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+                m_uniformBuffer->update(&g_mvpMatrixUbo, m_dynamicAlignment, dynamicOffset);
                 commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, createDescriptorSets()[i], dynamicOffset);
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertex.size()), 1, 0, 0);
             }

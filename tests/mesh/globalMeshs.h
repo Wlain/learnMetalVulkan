@@ -30,14 +30,28 @@ struct alignas(16) TextureVertex
     glm::vec4 texCoord;
 };
 
-struct alignas(16) UniformBufferObject
+struct alignas(16) VertMVPMatrixUBO
 {
     glm::mat4 model{ 1.0f };
     glm::mat4 view{ 1.0f };
     glm::mat4 proj{ 1.0f };
 };
 
-static UniformBufferObject g_mvpMatrix = { glm::eulerAngleZ(glm::radians(30.0f)), glm::mat4(1.0f), glm::mat4(1.0f) }; /* NOLINT */
+struct alignas(16) FragLightingColorUBO
+{
+    glm::vec4 lightColor{ 1.0f };
+    glm::vec4 objectColor{ 1.0f };
+};
+
+static constexpr uint32_t g_mvpMatrixUboBinding = 2;
+static VertMVPMatrixUBO g_mvpMatrixUbo = { glm::eulerAngleZ(glm::radians(30.0f)), glm::mat4(1.0f), glm::mat4(1.0f) }; /* NOLINT */
+
+static constexpr uint32_t g_lightingColorUboBinding = 3;
+static FragLightingColorUBO g_lightingColorUbo = { glm::vec4(1.0f, 1.0f, 1.0f, 1.0), glm::vec4(1.0f, 0.5f, 0.31f, 1.0) }; /* NOLINT */
+
+static constexpr uint32_t g_textureBinding = 1;
+
+static glm::vec3 g_lightPos{ 1.2f, 1.0f, 2.0f };
 
 static const std::vector<TextureVertex> g_quadVertex = {
     /* NOLINT */

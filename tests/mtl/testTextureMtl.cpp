@@ -70,8 +70,8 @@ public:
         auto* encoder = buffer->renderCommandEncoder(pass);
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
         encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
-        encoder->setVertexBytes(&g_mvpMatrix, sizeof(g_mvpMatrix), 2); // ubo：小内存，大内存用buffer
-        encoder->setFragmentTexture(m_texture->handle(), 1);
+        encoder->setVertexBytes(&g_mvpMatrixUbo, sizeof(g_mvpMatrixUbo), g_mvpMatrixUboBinding); // ubo：小内存，大内存用buffer
+        encoder->setFragmentTexture(m_texture->handle(), g_textureBinding);
         encoder->drawIndexedPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, g_quadIndices.size(), MTL::IndexType::IndexTypeUInt16, m_indexBuffer->buffer(), 0, 0);
         encoder->endEncoding();
         buffer->presentDrawable(surface);

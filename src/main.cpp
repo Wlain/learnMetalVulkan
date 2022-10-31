@@ -40,6 +40,6 @@ extern void testLightingColorsMtl();
 
 int main()
 {
-    testLightingColorsGl();
+    testCameraMtl();
     return 0;
 }
