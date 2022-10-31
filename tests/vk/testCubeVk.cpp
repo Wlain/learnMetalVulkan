@@ -128,14 +128,14 @@ public:
                 };
                 std::array descriptorWrites = {
                     vk::WriteDescriptorSet{
-                        .dstSet = createDescriptorSets()[i],
+                        .dstSet = m_descriptorSets[i],
                         .dstBinding = g_mvpMatrixUboBinding,
                         .dstArrayElement = 0,
                         .descriptorCount = 1,
                         .descriptorType = vk::DescriptorType::eUniformBuffer,
                         .pBufferInfo = &bufferInfo },
                     vk::WriteDescriptorSet{
-                        .dstSet = createDescriptorSets()[i],
+                        .dstSet = m_descriptorSets[i],
                         .dstBinding = g_textureBinding,
                         .dstArrayElement = 0,
                         .descriptorCount = 1,
@@ -154,7 +154,7 @@ public:
         std::string fragShader = getFileContents("shaders/texture.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_deviceVk);
         m_pipeline->setProgram(vertSource, fragShader);
-        m_bindingDescription = getBindingDescription();
+        m_bindingDescription = getPosTexCoordBindingDescription();
         m_attributeDescriptions = getPosTexCoordAttributeDescriptions();
         m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
             .vertexBindingDescriptionCount = 1,
@@ -243,7 +243,6 @@ private:
     std::shared_ptr<BufferVK> m_vertexBuffer;
     std::shared_ptr<BufferVK> m_uniformBuffer;
     std::shared_ptr<TextureVK> m_texture;
-    //    std::shared_ptr<TextureVK> m_depthTexture;
     vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
     vk::PipelineDepthStencilStateCreateInfo m_depthStencilState;
     std::array<vk::VertexInputAttributeDescription, 2> m_attributeDescriptions;
@@ -252,7 +251,6 @@ private:
     vk::DescriptorSetLayout m_descriptorSetLayout;
     vk::DescriptorPool m_descriptorPool;
     std::vector<vk::DescriptorSet> m_descriptorSets;
-    std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribute;
     uint32_t m_swapchainSize{};
 };
 } // namespace

@@ -148,7 +148,7 @@ public:
         std::string fragShader = getFileContents("shaders/texture.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_deviceVk);
         m_pipeline->setProgram(vertSource, fragShader);
-        m_bindingDescription = getBindingDescription();
+        m_bindingDescription = getPosTexCoordBindingDescription();
         m_attributeDescriptions = getPosTexCoordAttributeDescriptions();
         m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
             .vertexBindingDescriptionCount = 1,

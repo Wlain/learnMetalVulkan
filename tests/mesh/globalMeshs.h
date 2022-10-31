@@ -171,7 +171,7 @@ static const std::vector<glm::vec3> g_cubePositions = {
     glm::vec3(-1.3f, 1.0f, -1.5f)
 };
 
-static vk::VertexInputBindingDescription getBindingDescription()
+static vk::VertexInputBindingDescription getPosTexCoordBindingDescription()
 {
     auto bindingDescription = vk::VertexInputBindingDescription{
         .binding = 0,
@@ -198,14 +198,24 @@ static std::array<vk::VertexInputAttributeDescription, 2> getPosTexCoordAttribut
     return attributeDescriptions;
 }
 
-static std::array<vk::VertexInputAttributeDescription, 2> getPosAttributeDescriptions()
+static vk::VertexInputBindingDescription getPosBindingDescription()
 {
-    auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 2>{
+    auto bindingDescription = vk::VertexInputBindingDescription{
+        .binding = 0,
+        .stride = sizeof(glm::vec4),
+        .inputRate = vk::VertexInputRate::eVertex
+    };
+    return bindingDescription;
+}
+
+static std::array<vk::VertexInputAttributeDescription, 1> getPosAttributeDescriptions()
+{
+    auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 1>{
         vk::VertexInputAttributeDescription{
             .location = 0,
             .binding = 0,
             .format = vk::Format::eR32G32B32A32Sfloat,
-            .offset = offsetof(TriangleVertex, position) }
+            .offset = 0 }
     };
     return attributeDescriptions;
 }
