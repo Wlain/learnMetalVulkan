@@ -42,10 +42,13 @@ public:
 
     void buildPipeline()
     {
+        auto* vertexDescriptor = getPosTexCoordVertexDescriptor();
         std::string vertSource = getFileContents("shaders/triangle.vert");
         std::string fragShader = getFileContents("shaders/triangle.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_device);
         m_pipeline->setProgram(vertSource, fragShader);
+        m_pipeline->setVertexDescriptor(vertexDescriptor);
+        m_pipeline->build();
     }
 
     void buildBuffers()
@@ -90,7 +93,7 @@ private:
 
 void testQuadEboMtl()
 {
-    Device::Info info{ Device::RenderType::Metal, 640, 480, "Metal Example Quad use EBO" };
+    Device::Info info{ Device::RenderType::Metal, 800, 600, "Metal Example Quad use EBO" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);

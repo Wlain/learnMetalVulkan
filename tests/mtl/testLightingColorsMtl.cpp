@@ -1,5 +1,5 @@
 //
-// Created by william on 2022/10/24.
+// Created by william on 2022/10/31.
 //
 
 #include "../mesh/globalMeshs.h"
@@ -19,11 +19,11 @@
 using namespace backend;
 namespace
 {
-class TestCameraMtl : public EffectBase
+class TestLightingColorsMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestCameraMtl() override
+    ~TestLightingColorsMtl() override
     {
         m_depthStencilState->release();
     }
@@ -48,19 +48,27 @@ public:
 
     void buildPipeline()
     {
-        auto* vertexDescriptor = getPosTexCoordVertexDescriptor();
-        std::string vertSource = getFileContents("shaders/texture.vert");
-        std::string fragShader = getFileContents("shaders/texture.frag");
-        m_pipeline = MAKE_SHARED(m_pipeline, m_device);
-        m_pipeline->setProgram(vertSource, fragShader);
-        m_pipeline->setVertexDescriptor(vertexDescriptor);
-        m_pipeline->build();
+        auto* vertexDescriptor = getPosVertexDescriptor();
+        // lightCube
+        std::string vertSource = getFileContents("shaders/lightCube.vert");
+        std::string fragShader = getFileContents("shaders/lightCube.frag");
+        m_pipelineLightCube = MAKE_SHARED(m_pipelineLightCube, m_device);
+        m_pipelineLightCube->setProgram(vertSource, fragShader);
+        m_pipelineLightCube->setVertexDescriptor(vertexDescriptor);
+        m_pipelineLightCube->build();
+        // color
+        vertSource = getFileContents("shaders/colors.vert");
+        fragShader = getFileContents("shaders/colors.frag");
+        m_pipelineColor = MAKE_SHARED(m_pipelineColor, m_device);
+        m_pipelineColor->setProgram(vertSource, fragShader);
+        m_pipelineColor->setVertexDescriptor(vertexDescriptor);
+        m_pipelineColor->build();
     }
 
     void buildBuffers()
     {
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_device);
-        m_vertexBuffer->create(sizeof(g_cubeVertex[0]) * g_cubeVertex.size(), (void*)g_cubeVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_vertexBuffer->create(sizeof(g_cubeVertices[0]) * g_cubeVertices.size(), (void*)g_cubeVertices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
     }
 
     void setupDepthStencilTexture()
@@ -99,20 +107,26 @@ public:
         pass->stencilAttachment()->setClearStencil(0);
         auto* buffer = m_queue->commandBuffer();
         auto* encoder = buffer->renderCommandEncoder(pass);
-        encoder->setRenderPipelineState(m_pipeline->pipelineState());
-        encoder->setDepthStencilState(m_depthStencilState);
-        encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
-        encoder->setFragmentTexture(m_texture->handle(), g_textureBinding);
-        for (unsigned int i = 0; i < g_cubePositions.size(); i++)
         {
+            encoder->setRenderPipelineState(m_pipelineLightCube->pipelineState());
+            encoder->setDepthStencilState(m_depthStencilState);
+            encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
             // calculate the model matrix for each object and pass it to shader before drawing
             g_mvpMatrixUbo.model = glm::mat4(1.0f);
-            g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_cubePositions[i]);
-            g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
-            float angle = 20.0f * i;
-            g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_lightPos);
+            g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.2f));                // a smaller cube
             encoder->setVertexBytes(&g_mvpMatrixUbo, sizeof(g_mvpMatrixUbo), g_mvpMatrixUboBinding); // ubo：小内存，大内存用buffer
-            encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(static_cast<uint32_t>(g_cubeVertex.size())));
+            encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(static_cast<uint32_t>(g_cubeVertices.size())));
+        }
+        {
+            encoder->setRenderPipelineState(m_pipelineColor->pipelineState());
+            encoder->setDepthStencilState(m_depthStencilState);
+            encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
+            // calculate the model matrix for each object and pass it to shader before drawing
+            g_mvpMatrixUbo.model = glm::mat4(1.0f);
+            encoder->setVertexBytes(&g_mvpMatrixUbo, sizeof(g_mvpMatrixUbo), g_mvpMatrixUboBinding); // ubo：小内存，大内存用buffer
+            encoder->setFragmentBytes(&g_lightingColorUbo, sizeof(g_lightingColorUbo), g_lightingColorUboBinding);
+            encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(static_cast<uint32_t>(g_cubeVertices.size())));
         }
         encoder->endEncoding();
         buffer->presentDrawable(surface);
@@ -125,22 +139,23 @@ private:
     MTL::CommandQueue* m_queue{ nullptr };
     DeviceMtl* m_device{ nullptr };
     MTL::Device* m_gpu{ nullptr };
-    std::shared_ptr<PipelineMtl> m_pipeline;
+    std::shared_ptr<PipelineMtl> m_pipelineLightCube;
+    std::shared_ptr<PipelineMtl> m_pipelineColor;
     std::shared_ptr<TextureMTL> m_texture;
     std::shared_ptr<TextureMTL> m_depthTexture;
     std::shared_ptr<BufferMTL> m_vertexBuffer;
-    MTL::DepthStencilState* m_depthStencilState;
+    MTL::DepthStencilState* m_depthStencilState{};
 };
 } // namespace
 
-void testCameraMtl()
+void testLightingColorsMtl()
 {
-    Device::Info info{ Device::RenderType::Metal, 800, 600, "Metal Example Cube Multiple" };
+    Device::Info info{ Device::RenderType::Metal, 800, 600, "Metal Example Lighting colors" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);
     Engine engine(rendererMtl);
-    auto effect = std::make_shared<TestCameraMtl>(&rendererMtl);
+    auto effect = std::make_shared<TestLightingColorsMtl>(&rendererMtl);
     engine.setEffect(effect);
     engine.run();
 }

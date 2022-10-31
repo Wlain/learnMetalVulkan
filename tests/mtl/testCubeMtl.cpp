@@ -49,16 +49,19 @@ public:
 
     void buildPipeline()
     {
+        auto* vertexDescriptor = getPosTexCoordVertexDescriptor();
         std::string vertSource = getFileContents("shaders/texture.vert");
         std::string fragShader = getFileContents("shaders/texture.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_device);
         m_pipeline->setProgram(vertSource, fragShader);
+        m_pipeline->setVertexDescriptor(vertexDescriptor);
+        m_pipeline->build();
     }
 
     void buildBuffers()
     {
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_device);
-        m_vertexBuffer->create(sizeof(g_cubeVertex[0]) * g_cubeVertex.size(), (void*)g_cubeVertex.data(), Buffer::BufferUsage::DynamicDraw, Buffer::BufferType::VertexBuffer);
+        m_vertexBuffer->create(sizeof(g_cubeVertex[0]) * g_cubeVertex.size(), (void*)g_cubeVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
     }
 
     void setupDepthStencilTexture()
@@ -124,7 +127,7 @@ private:
 
 void testCubeMtl()
 {
-    Device::Info info{ Device::RenderType::Metal, 640, 640, "Metal Example Cube" };
+    Device::Info info{ Device::RenderType::Metal, 800, 600, "Metal Example Cube" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);

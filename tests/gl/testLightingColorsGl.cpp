@@ -90,7 +90,7 @@ public:
         glBindVertexArray(m_vao);
         // calculate the model matrix for each object and pass it to shader before drawing
         g_mvpMatrixUbo.model = glm::mat4(1.0f);
-        g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, s_lightPos);
+        g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_lightPos);
         g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.2f)); // a smaller cube
         m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
         glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_cubeVertices.size()));
@@ -103,9 +103,6 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_cubeVertices.size()));
     }
 
-public:
-    // lighting
-    inline constexpr static glm::vec3 s_lightPos{ 1.2f, 1.0f, 2.0f };
 
 private:
     GLFWRendererGL* m_render{ nullptr };
@@ -120,7 +117,7 @@ private:
 
 void testLightingColorsGl()
 {
-    Device::Info info{ Device::RenderType::OpenGL, 800, 600, "OpenGL Lighting Colors" };
+    Device::Info info{ Device::RenderType::OpenGL, 800, 600, "OpenGL Example Lighting Colors" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);

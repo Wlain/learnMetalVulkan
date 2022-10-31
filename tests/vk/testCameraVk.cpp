@@ -165,7 +165,7 @@ public:
         m_pipeline = MAKE_SHARED(m_pipeline, m_deviceVk);
         m_pipeline->setProgram(vertSource, fragShader);
         m_bindingDescription = getBindingDescription();
-        m_attributeDescriptions = getAttributeDescriptions();
+        m_attributeDescriptions = getPosTexCoordAttributeDescriptions();
         m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
             .vertexBindingDescriptionCount = 1,
             .pVertexBindingDescriptions = &m_bindingDescription,

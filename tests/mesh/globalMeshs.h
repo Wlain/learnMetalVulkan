@@ -9,6 +9,7 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <vector>
 #define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
+#include "mtlCommonDefine.h"
 #include "vkCommonDefine.h"
 
 struct alignas(16) TriangleVertex
@@ -180,7 +181,7 @@ static vk::VertexInputBindingDescription getBindingDescription()
     return bindingDescription;
 }
 
-static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions()
+static std::array<vk::VertexInputAttributeDescription, 2> getPosTexCoordAttributeDescriptions()
 {
     auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 2>{
         vk::VertexInputAttributeDescription{
@@ -195,6 +196,44 @@ static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptio
             .offset = offsetof(TriangleVertex, color) },
     };
     return attributeDescriptions;
+}
+
+static std::array<vk::VertexInputAttributeDescription, 2> getPosAttributeDescriptions()
+{
+    auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 2>{
+        vk::VertexInputAttributeDescription{
+            .location = 0,
+            .binding = 0,
+            .format = vk::Format::eR32G32B32A32Sfloat,
+            .offset = offsetof(TriangleVertex, position) }
+    };
+    return attributeDescriptions;
+}
+
+static MTL::VertexDescriptor* getPosTexCoordVertexDescriptor()
+{
+    MTL::VertexDescriptor* vertexDescriptor = MTL::VertexDescriptor::alloc()->init();
+    vertexDescriptor->attributes()->object(0)->setFormat(MTL::VertexFormatFloat4);
+    vertexDescriptor->attributes()->object(0)->setOffset(0);
+    vertexDescriptor->attributes()->object(0)->setBufferIndex(0);
+    // texCoord
+    vertexDescriptor->attributes()->object(1)->setFormat(MTL::VertexFormatFloat4);
+    vertexDescriptor->attributes()->object(1)->setOffset(16);
+    vertexDescriptor->attributes()->object(1)->setBufferIndex(0);
+    // layout
+    vertexDescriptor->layouts()->object(0)->setStride(sizeof(glm::vec4) * 2);
+    return vertexDescriptor;
+}
+
+static MTL::VertexDescriptor* getPosVertexDescriptor()
+{
+    MTL::VertexDescriptor* vertexDescriptor = MTL::VertexDescriptor::alloc()->init();
+    vertexDescriptor->attributes()->object(0)->setFormat(MTL::VertexFormatFloat4);
+    vertexDescriptor->attributes()->object(0)->setOffset(0);
+    vertexDescriptor->attributes()->object(0)->setBufferIndex(0);
+    // layout
+    vertexDescriptor->layouts()->object(0)->setStride(sizeof(glm::vec4));
+    return vertexDescriptor;
 }
 
 #endif // LEARNMETALVULKAN_GLOBALMESHS_H

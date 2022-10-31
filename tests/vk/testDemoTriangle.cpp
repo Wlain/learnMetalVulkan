@@ -465,7 +465,7 @@ private:
         };
         auto shaderStages = std::vector<vk::PipelineShaderStageCreateInfo>{ vertShaderStageInfo, fragShaderStageInfo };
         auto bindingDescription = getBindingDescription();
-        auto attributeDescriptions = getAttributeDescriptions();
+        auto attributeDescriptions = getPosTexCoordAttributeDescriptions();
         auto vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
             .vertexBindingDescriptionCount = 1,
             .pVertexBindingDescriptions = &bindingDescription,
