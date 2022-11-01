@@ -33,6 +33,7 @@ public:
 
 private:
     vk::ShaderModule createShaderModule(const std::vector<uint32_t>& code);
+    vk::PipelineShaderStageCreateInfo getShaderCreateInfo(vk::ShaderModule shaderModule, vk::ShaderStageFlagBits stage);
 
 private:
     DeviceVK* m_deviceVk{ nullptr };

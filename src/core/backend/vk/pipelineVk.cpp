@@ -3,6 +3,7 @@
 //
 
 #include "pipelineVk.h"
+#include "commonMacro.h"
 #define GLFW_INCLUDE_NONE
 #include "deviceVk.h"
 #include "glfwRenderer.h"
@@ -71,16 +72,8 @@ void PipelineVk::setProgram(std::string_view vertShader, std::string_view fragSo
     auto [vertShaderCode, fragShaderCode] = PipelineVk::getSpvFromGLSL(vertShader, fragSource);
     m_vertexShaderModule = createShaderModule(vertShaderCode);
     m_fragmentShaderModule = createShaderModule(fragShaderCode);
-    auto vertShaderStageInfo = vk::PipelineShaderStageCreateInfo{
-        .stage = vk::ShaderStageFlagBits::eVertex,
-        .module = m_vertexShaderModule,
-        .pName = "main"
-    };
-    auto fragShaderStageInfo = vk::PipelineShaderStageCreateInfo{
-        .stage = vk::ShaderStageFlagBits::eFragment,
-        .module = m_fragmentShaderModule,
-        .pName = "main"
-    };
+    auto vertShaderStageInfo = getShaderCreateInfo(m_vertexShaderModule, vk::ShaderStageFlagBits::eVertex);
+    auto fragShaderStageInfo = getShaderCreateInfo(m_fragmentShaderModule, vk::ShaderStageFlagBits::eFragment);
     m_pipelineShaderStages = { vertShaderStageInfo, fragShaderStageInfo };
 }
 
@@ -187,5 +180,16 @@ void PipelineVk::setTopology(Topology topology)
         .topology = m_topology,
         .primitiveRestartEnable = false
     };
+}
+
+vk::PipelineShaderStageCreateInfo PipelineVk::getShaderCreateInfo(vk::ShaderModule shaderModule, vk::ShaderStageFlagBits stage)
+{
+    vk::PipelineShaderStageCreateInfo shaderStage = {
+        .stage = stage,
+        .module = shaderModule,
+        .pName = "main"
+    };
+    ASSERT(shaderStage.module);
+    return shaderStage;
 }
 } // namespace backend

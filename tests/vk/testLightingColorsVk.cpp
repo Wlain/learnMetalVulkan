@@ -27,9 +27,9 @@ public:
         device.destroy(m_lightCubeDescriptorSetLayout);
         device.destroy(m_colorDescriptorSetLayout);
         device.freeDescriptorSets(m_lightCubeDescriptorPool, m_lightCubeDescriptorSets);
-        device.freeDescriptorSets(m_colorDescriptorPool, m_colorDescriptorSets);
+//        device.freeDescriptorSets(m_colorDescriptorPool, m_colorDescriptorSets);
         device.destroy(m_lightCubeDescriptorPool);
-        device.destroy(m_colorDescriptorPool);
+//        device.destroy(m_colorDescriptorPool);
     }
 
     void initialize() override
@@ -54,7 +54,6 @@ public:
     void update(float deltaTime) override
     {
         EffectBase::update(deltaTime);
-        EffectBase::update(deltaTime);
         g_mvpMatrixUbo.view = m_camera.viewMatrix();
         g_mvpMatrixUbo.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
     }
@@ -63,17 +62,16 @@ public:
     {
         if (!m_lightCubeDescriptorSetLayout)
         {
-            auto vertUboLayoutBinding = vk::DescriptorSetLayoutBinding{
+            std::array bindings = { vk::DescriptorSetLayoutBinding{
                 .binding = g_mvpMatrixUboBinding,
                 .descriptorType = vk::DescriptorType::eUniformBuffer,
                 .descriptorCount = 1,
                 .stageFlags = vk::ShaderStageFlagBits::eVertex,
                 .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
-            };
-            std::array binding = { vertUboLayoutBinding };
+            } };
             auto layoutInfo = vk::DescriptorSetLayoutCreateInfo{
-                .bindingCount = binding.size(),
-                .pBindings = binding.data()
+                .bindingCount = bindings.size(),
+                .pBindings = bindings.data()
             };
             m_lightCubeDescriptorSetLayout = m_deviceVk->handle().createDescriptorSetLayout(layoutInfo);
         }
@@ -84,25 +82,23 @@ public:
     {
         if (!m_colorDescriptorSetLayout)
         {
-            auto vertUboLayoutBinding = vk::DescriptorSetLayoutBinding{
-                .binding = g_mvpMatrixUboBinding,
-                .descriptorType = vk::DescriptorType::eUniformBuffer,
-                .descriptorCount = 1,
-                .stageFlags = vk::ShaderStageFlagBits::eVertex,
-                .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
-            };
-            auto fragUboLayoutBinding = vk::DescriptorSetLayoutBinding{
-                .binding = g_lightingColorUboBinding,
-                .descriptorType = vk::DescriptorType::eUniformBuffer,
-                .descriptorCount = 1,
-                .stageFlags = vk::ShaderStageFlagBits::eFragment,
-                .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
-            };
-
-            std::array binding = { vertUboLayoutBinding, fragUboLayoutBinding };
+            std::array bindings = { vk::DescriptorSetLayoutBinding{
+                                        .binding = g_mvpMatrixUboBinding,
+                                        .descriptorType = vk::DescriptorType::eUniformBuffer,
+                                        .descriptorCount = 1,
+                                        .stageFlags = vk::ShaderStageFlagBits::eVertex,
+                                        .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
+                                    },
+                                    vk::DescriptorSetLayoutBinding{
+                                        .binding = g_lightingColorUboBinding,
+                                        .descriptorType = vk::DescriptorType::eUniformBuffer,
+                                        .descriptorCount = 1,
+                                        .stageFlags = vk::ShaderStageFlagBits::eFragment,
+                                        .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
+                                    } };
             auto layoutInfo = vk::DescriptorSetLayoutCreateInfo{
-                .bindingCount = binding.size(),
-                .pBindings = binding.data()
+                .bindingCount = bindings.size(),
+                .pBindings = bindings.data()
             };
             m_colorDescriptorSetLayout = m_deviceVk->handle().createDescriptorSetLayout(layoutInfo);
         }
@@ -240,13 +236,13 @@ public:
         std::string fragShader = getFileContents("shaders/lightCube.frag");
         m_lightCubePipeline = MAKE_SHARED(m_lightCubePipeline, m_deviceVk);
         m_lightCubePipeline->setProgram(vertSource, fragShader);
-        m_lightCubeBindingDescription = getPosBindingDescription();
-        m_lightCubeAttributeDescriptions = getPosAttributeDescriptions();
-        m_lightCubeVertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
+        m_bindingDescription = getPosBindingDescription();
+        m_attributeDescriptions = getPosAttributeDescriptions();
+        m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
             .vertexBindingDescriptionCount = 1,
-            .pVertexBindingDescriptions = &m_lightCubeBindingDescription,
-            .vertexAttributeDescriptionCount = static_cast<uint32_t>(m_lightCubeAttributeDescriptions.size()),
-            .pVertexAttributeDescriptions = m_lightCubeAttributeDescriptions.data()
+            .pVertexBindingDescriptions = &m_bindingDescription,
+            .vertexAttributeDescriptionCount = static_cast<uint32_t>(m_attributeDescriptions.size()),
+            .pVertexAttributeDescriptions = m_attributeDescriptions.data()
         };
         auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 1,
@@ -268,7 +264,7 @@ public:
             .back.compareOp = vk::CompareOp::eAlways
         };
         m_lightCubePipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
-        m_lightCubePipeline->initVertexBuffer(m_lightCubeVertexInputInfo);
+        m_lightCubePipeline->initVertexBuffer(m_vertexInputInfo);
         m_lightCubePipeline->setTopology(backend::Topology::Triangles);
         m_lightCubePipeline->setPipelineLayout(m_lightCubePipelineLayout);
         m_lightCubePipeline->setViewport();
@@ -279,36 +275,28 @@ public:
         m_lightCubePipeline->setRenderPass();
         m_lightCubePipeline->build();
 
-        // color
-        vertSource = getFileContents("shaders/colors.vert");
-        fragShader = getFileContents("shaders/colors.frag");
-        m_colorPipeline = MAKE_SHARED(m_colorPipeline, m_render->device());
-        m_colorPipeline->setProgram(vertSource, fragShader);
-        m_colorBindingDescription = getPosBindingDescription();
-        m_colorAttributeDescriptions = getPosAttributeDescriptions();
-        m_colorVertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
-            .vertexBindingDescriptionCount = 1,
-            .pVertexBindingDescriptions = &m_colorBindingDescription,
-            .vertexAttributeDescriptionCount = static_cast<uint32_t>(m_colorAttributeDescriptions.size()),
-            .pVertexAttributeDescriptions = m_colorAttributeDescriptions.data()
-        };
-        pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
-            .setLayoutCount = 1,
-            .pSetLayouts = &createColorDescriptorSetLayout(),
-            .pushConstantRangeCount = 0,   // optional
-            .pPushConstantRanges = nullptr // optional
-        };
-        m_colorPipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
-        m_colorPipeline->initVertexBuffer(m_colorVertexInputInfo);
-        m_colorPipeline->setTopology(backend::Topology::Triangles);
-        m_colorPipeline->setPipelineLayout(m_colorPipelineLayout);
-        m_colorPipeline->setViewport();
-        m_colorPipeline->setRasterization();
-        m_colorPipeline->setMultisample();
-        m_colorPipeline->setDepthStencil(m_depthStencilState);
-        m_colorPipeline->setColorBlendAttachment();
-        m_colorPipeline->setRenderPass();
-        m_colorPipeline->build();
+        //        // color
+        //        vertSource = getFileContents("shaders/colors.vert");
+        //        fragShader = getFileContents("shaders/colors.frag");
+        //        m_colorPipeline = MAKE_SHARED(m_colorPipeline, m_render->device());
+        //        m_colorPipeline->setProgram(vertSource, fragShader);
+        //        pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
+        //            .setLayoutCount = 1,
+        //            .pSetLayouts = &createColorDescriptorSetLayout(),
+        //            .pushConstantRangeCount = 0,   // optional
+        //            .pPushConstantRanges = nullptr // optional
+        //        };
+        //        m_colorPipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
+        //        m_colorPipeline->initVertexBuffer(m_vertexInputInfo);
+        //        m_colorPipeline->setTopology(backend::Topology::Triangles);
+        //        m_colorPipeline->setPipelineLayout(m_colorPipelineLayout);
+        //        m_colorPipeline->setViewport();
+        //        m_colorPipeline->setRasterization();
+        //        m_colorPipeline->setMultisample();
+        //        m_colorPipeline->setDepthStencil(m_depthStencilState);
+        //        m_colorPipeline->setColorBlendAttachment();
+        //        m_colorPipeline->setRenderPass();
+        //        m_colorPipeline->build();
     }
 
     void render() override
@@ -334,31 +322,27 @@ public:
                 .clearValueCount = 2,
                 .pClearValues = clearValues.data(),
             };
-
+            commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+            commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
             {
-                commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-                commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_lightCubePipeline->handle());
-                commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
                 // calculate the model matrix for each object and pass it to shader before drawing
                 g_mvpMatrixUbo.model = glm::mat4(1.0f);
                 g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_lightPos);
                 g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.2f)); // a smaller cube
                 m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
                 commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_lightCubePipelineLayout, 0, createLightCubeDescriptorSets()[i], nullptr);
+                commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_lightCubePipeline->handle());
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
-                commandBuffers[i].endRenderPass();
             }
-            {
-                commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-                commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_colorPipeline->handle());
-                commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
-                // calculate the model matrix for each object and pmass it to shader before drawing
-                g_mvpMatrixUbo.model = glm::mat4(1.0f);
-                m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
-                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_colorPipelineLayout, 0, createColorDescriptorSets()[i], nullptr);
-                commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
-                commandBuffers[i].endRenderPass();
-            }
+            //            {
+            //                // calculate the model matrix for each object and pmass it to shader before drawing
+            //                g_mvpMatrixUbo.model = glm::mat4(1.0f);
+            //                m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
+            //                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_colorPipelineLayout, 0, createColorDescriptorSets()[i], nullptr);
+            //                commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_colorPipeline->handle());
+            //                commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
+            //            }
+            commandBuffers[i].endRenderPass();
             commandBuffers[i].end();
         }
     }
@@ -372,15 +356,11 @@ private:
     std::shared_ptr<BufferVK> m_vertUniformBuffer;
     std::shared_ptr<BufferVK> m_fragUniformBuffer;
     vk::PipelineDepthStencilStateCreateInfo m_depthStencilState;
-    vk::PipelineVertexInputStateCreateInfo m_lightCubeVertexInputInfo;
-    vk::PipelineVertexInputStateCreateInfo m_colorVertexInputInfo;
-
-    std::array<vk::VertexInputAttributeDescription, 1> m_lightCubeAttributeDescriptions;
-    std::array<vk::VertexInputAttributeDescription, 1> m_colorAttributeDescriptions;
+    vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
+    std::array<vk::VertexInputAttributeDescription, 1> m_attributeDescriptions;
     vk::PipelineLayout m_lightCubePipelineLayout;
     vk::PipelineLayout m_colorPipelineLayout;
-    vk::VertexInputBindingDescription m_lightCubeBindingDescription;
-    vk::VertexInputBindingDescription m_colorBindingDescription;
+    vk::VertexInputBindingDescription m_bindingDescription;
     vk::DescriptorSetLayout m_lightCubeDescriptorSetLayout;
     vk::DescriptorSetLayout m_colorDescriptorSetLayout;
     vk::DescriptorPool m_lightCubeDescriptorPool;
