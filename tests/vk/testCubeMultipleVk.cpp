@@ -211,12 +211,10 @@ public:
         {
             auto beginInfo = vk::CommandBufferBeginInfo{};
             commandBuffers[i].begin(beginInfo);
-
             static float red{ 1.0f };
-            //                red = red > 1.0f ? 0.0 : red + 0.001f;
             std::array<vk::ClearValue, 2> clearValues = {
                 vk::ClearValue{
-                    .color = { .float32 = std::array<float, 4>{ red, 0.0f, 0.0f, 1.0f } } },
+                    .color = { .float32 = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f } } },
                 vk::ClearValue{
                     .depthStencil = { 1.0f, 0 } }
             };
@@ -232,9 +230,7 @@ public:
 
             commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
             commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
-            auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer->buffer() };
-            auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
-            commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
+            commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
             for (unsigned int j = 0; j < g_cubePositions.size(); j++)
             {
                 // calculate the model matrix for each object and pass it to shader before drawing

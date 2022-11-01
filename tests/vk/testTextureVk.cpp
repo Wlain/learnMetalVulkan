@@ -203,9 +203,7 @@ public:
             };
             commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
             commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
-            auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer->buffer() };
-            auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
-            commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
+            commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
             commandBuffers[i].bindIndexBuffer(m_indexBuffer->buffer(), 0, vk::IndexType::eUint16);
             commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, 1, &createDescriptorSets()[i], 0, nullptr);
             commandBuffers[i].drawIndexed(static_cast<std::uint32_t>(g_quadIndices.size()), 1, 0, 0, 0);

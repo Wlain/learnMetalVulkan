@@ -37,8 +37,6 @@ public:
         m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
         m_swapchainSize = (uint32_t)m_deviceVk->swapchainImageViews().size();
         m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
-        m_texture = MAKE_SHARED(m_texture, m_deviceVk);
-        m_texture->createWithFileName("textures/test.jpg", true);
         buildBuffers();
         buildPipeline();
     }
@@ -94,7 +92,7 @@ public:
                 .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
             };
             auto fragUboLayoutBinding = vk::DescriptorSetLayoutBinding{
-                .binding = g_mvpMatrixUboBinding,
+                .binding = g_lightingColorUboBinding,
                 .descriptorType = vk::DescriptorType::eUniformBuffer,
                 .descriptorCount = 1,
                 .stageFlags = vk::ShaderStageFlagBits::eFragment,
@@ -171,7 +169,7 @@ public:
                 auto vertBufferInfo = vk::DescriptorBufferInfo{
                     .buffer = m_vertUniformBuffer->buffer(),
                     .offset = 0,
-                    .range = 0
+                    .range = sizeof(VertMVPMatrixUBO)
                 };
                 std::array descriptorWrites = {
                     vk::WriteDescriptorSet{
@@ -206,12 +204,12 @@ public:
                 auto vertBufferInfo = vk::DescriptorBufferInfo{
                     .buffer = m_vertUniformBuffer->buffer(),
                     .offset = 0,
-                    .range = 0
+                    .range = sizeof(VertMVPMatrixUBO)
                 };
                 auto fragBufferInfo = vk::DescriptorBufferInfo{
                     .buffer = m_fragUniformBuffer->buffer(),
                     .offset = 0,
-                    .range = 0
+                    .range = sizeof(FragLightingColorUBO)
                 };
                 std::array descriptorWrites = {
                     vk::WriteDescriptorSet{
@@ -315,52 +313,54 @@ public:
 
     void render() override
     {
-        //        auto& commandBuffers = m_deviceVk->commandBuffers();
-        //        auto& framebuffer = m_deviceVk->swapchainFramebuffers();
-        //        for (std::size_t i = 0; i < commandBuffers.size(); ++i)
-        //        {
-        //            auto beginInfo = vk::CommandBufferBeginInfo{};
-        //            commandBuffers[i].begin(beginInfo);
-        //
-        //            static float red{ 1.0f };
-        //            //                red = red > 1.0f ? 0.0 : red + 0.001f;
-        //            std::array<vk::ClearValue, 2> clearValues = {
-        //                vk::ClearValue{
-        //                    .color = { .float32 = std::array<float, 4>{ red, 0.0f, 0.0f, 1.0f } } },
-        //                vk::ClearValue{
-        //                    .depthStencil = { 1.0f, 0 } }
-        //            };
-        //            auto renderPassInfo = vk::RenderPassBeginInfo{
-        //                .renderPass = m_deviceVk->renderPass(),
-        //                .framebuffer = framebuffer[i],
-        //                .renderArea = {
-        //                    .offset = { 0, 0 },
-        //                    .extent = m_deviceVk->swapchainExtent() },
-        //                .clearValueCount = 2,
-        //                .pClearValues = clearValues.data(),
-        //            };
-        //
-        //            commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-        //            commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
-        //            auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer->buffer() };
-        //            auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
-        //            commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
-        //            for (unsigned int j = 0; j < g_cubePositions.size(); j++)
-        //            {
-        //                // calculate the model matrix for each object and pass it to shader before drawing
-        //                uint32_t dynamicOffset = j * static_cast<uint32_t>(m_vertUboDynamicAlignment);
-        //                g_mvpMatrixUbo.model = glm::mat4(1.0f);
-        //                g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_cubePositions[j]);
-        //                g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
-        //                float angle = 20.0f * j;
-        //                g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-        //                m_vertUniformBuffer->update(&g_mvpMatrixUbo, m_vertUboDynamicAlignment, dynamicOffset);
-        //                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, createDescriptorSets()[i], dynamicOffset);
-        //                commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertex.size()), 1, 0, 0);
-        //            }
-        //            commandBuffers[i].endRenderPass();
-        //            commandBuffers[i].end();
-        //        }
+        auto& commandBuffers = m_deviceVk->commandBuffers();
+        auto& framebuffer = m_deviceVk->swapchainFramebuffers();
+        for (std::size_t i = 0; i < commandBuffers.size(); ++i)
+        {
+            auto beginInfo = vk::CommandBufferBeginInfo{};
+            commandBuffers[i].begin(beginInfo);
+            std::array<vk::ClearValue, 2> clearValues = {
+                vk::ClearValue{
+                    .color = { .float32 = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f } } },
+                vk::ClearValue{
+                    .depthStencil = { 1.0f, 0 } }
+            };
+            auto renderPassInfo = vk::RenderPassBeginInfo{
+                .renderPass = m_deviceVk->renderPass(),
+                .framebuffer = framebuffer[i],
+                .renderArea = {
+                    .offset = { 0, 0 },
+                    .extent = m_deviceVk->swapchainExtent() },
+                .clearValueCount = 2,
+                .pClearValues = clearValues.data(),
+            };
+
+            {
+                commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+                commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_lightCubePipeline->handle());
+                commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
+                // calculate the model matrix for each object and pass it to shader before drawing
+                g_mvpMatrixUbo.model = glm::mat4(1.0f);
+                g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_lightPos);
+                g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.2f)); // a smaller cube
+                m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
+                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_lightCubePipelineLayout, 0, createLightCubeDescriptorSets()[i], nullptr);
+                commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
+                commandBuffers[i].endRenderPass();
+            }
+            {
+                commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+                commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_colorPipeline->handle());
+                commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
+                // calculate the model matrix for each object and pmass it to shader before drawing
+                g_mvpMatrixUbo.model = glm::mat4(1.0f);
+                m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
+                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_colorPipelineLayout, 0, createColorDescriptorSets()[i], nullptr);
+                commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
+                commandBuffers[i].endRenderPass();
+            }
+            commandBuffers[i].end();
+        }
     }
 
 private:
@@ -371,10 +371,10 @@ private:
     std::shared_ptr<BufferVK> m_vertexBuffer;
     std::shared_ptr<BufferVK> m_vertUniformBuffer;
     std::shared_ptr<BufferVK> m_fragUniformBuffer;
-    std::shared_ptr<TextureVK> m_texture;
     vk::PipelineDepthStencilStateCreateInfo m_depthStencilState;
     vk::PipelineVertexInputStateCreateInfo m_lightCubeVertexInputInfo;
     vk::PipelineVertexInputStateCreateInfo m_colorVertexInputInfo;
+
     std::array<vk::VertexInputAttributeDescription, 1> m_lightCubeAttributeDescriptions;
     std::array<vk::VertexInputAttributeDescription, 1> m_colorAttributeDescriptions;
     vk::PipelineLayout m_lightCubePipelineLayout;

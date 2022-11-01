@@ -89,4 +89,7 @@ layout(binding = 1) uniform VertUniformBufferObject
     mat4 proj;
 } ubo;
 ```
+Q11 关于Vulkan的uniform：只需要知道两个东西
+* 一个是binding 的确定, 对应到vk是：WriteDescriptorSet
+* 第二个是内存布局的确定，对应到vk是：DescriptorBinding
 
