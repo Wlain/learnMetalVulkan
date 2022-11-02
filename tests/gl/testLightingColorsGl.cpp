@@ -10,7 +10,6 @@
 #include "glCommonDefine.h"
 #include "glfwRendererGL.h"
 #include "pipelineGl.h"
-#include "textureGl.h"
 #include "utils/utils.h"
 
 using namespace backend;
@@ -97,12 +96,11 @@ public:
 
         // draw lightCube
         m_render->setPipeline(m_pipelineColor);
-        // calculate the model matrix for each object and pmass it to shader before drawing
+        // calculate the model matrix for each object and pass it to shader before drawing
         g_mvpMatrixUbo.model = glm::mat4(1.0f);
         m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
         glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_cubeVertices.size()));
     }
-
 
 private:
     GLFWRendererGL* m_render{ nullptr };

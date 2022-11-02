@@ -209,9 +209,9 @@ public:
     {
         auto& commandBuffers = m_deviceVk->commandBuffers();
         auto& framebuffer = m_deviceVk->swapchainFramebuffers();
+        auto beginInfo = vk::CommandBufferBeginInfo{};
         for (std::size_t i = 0; i < commandBuffers.size(); ++i)
         {
-            auto beginInfo = vk::CommandBufferBeginInfo{};
             commandBuffers[i].begin(beginInfo);
             std::array<vk::ClearValue, 2> clearValues = {
                 vk::ClearValue{
