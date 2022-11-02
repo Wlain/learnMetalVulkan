@@ -135,6 +135,30 @@ vk::Extent2D DeviceVK::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabi
 
 DeviceVK::~DeviceVK()
 {
+    m_device.destroy(m_renderPass);
+    for (auto& view : m_swapchainImagesViews)
+    {
+        m_device.destroy(view);
+    }
+    for (auto& framebuffer : m_swapchainFramebuffers)
+    {
+        m_device.destroy(framebuffer);
+    }
+    m_swapchainFramebuffers.clear();
+    m_device.freeCommandBuffers(m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
+    for (auto fence : m_inflightFences)
+    {
+        m_device.destroyFence(fence);
+    }
+    for (auto semaphore : m_renderFinishedSemaphores)
+    {
+        m_device.destroySemaphore(semaphore);
+    }
+    for (auto semaphore : m_imageAvailableSemaphores)
+    {
+        m_device.destroySemaphore(semaphore);
+    }
+    m_device.destroyCommandPool(m_commandPool);
     m_depthTexture = nullptr;
     m_device.destroy(m_swapChain);
     m_device.destroy();
@@ -354,7 +378,7 @@ void DeviceVK::creatSwapChain()
     m_swapchainImages = m_device.getSwapchainImagesKHR(m_swapChain);
     m_swapchainImageFormat = surfaceFormat.format;
     m_swapchainExtent = extent;
-    m_swapchainImagesView.reserve(m_swapchainImages.size());
+    m_swapchainImagesViews.reserve(m_swapchainImages.size());
 }
 
 const vk::SwapchainKHR& DeviceVK::swapChain() const
@@ -443,7 +467,7 @@ const std::vector<vk::Image>& DeviceVK::swapchainImages() const
 
 const std::vector<vk::ImageView>& DeviceVK::swapchainImageViews() const
 {
-    return m_swapchainImagesView;
+    return m_swapchainImagesViews;
 }
 
 vk::Format DeviceVK::swapchainImageFormat() const
@@ -471,7 +495,7 @@ void DeviceVK::createImageViews()
                 .a = vk::ComponentSwizzle::eIdentity },
             .subresourceRange = { .aspectMask = vk::ImageAspectFlagBits::eColor, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1 }
         };
-        m_swapchainImagesView.emplace_back(m_device.createImageView(imageViewCreateInfo));
+        m_swapchainImagesViews.emplace_back(m_device.createImageView(imageViewCreateInfo));
     }
 }
 

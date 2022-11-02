@@ -27,9 +27,9 @@ public:
         device.destroy(m_lightCubeDescriptorSetLayout);
         device.destroy(m_colorDescriptorSetLayout);
         device.freeDescriptorSets(m_lightCubeDescriptorPool, m_lightCubeDescriptorSets);
-//        device.freeDescriptorSets(m_colorDescriptorPool, m_colorDescriptorSets);
+        device.freeDescriptorSets(m_colorDescriptorPool, m_colorDescriptorSets);
         device.destroy(m_lightCubeDescriptorPool);
-//        device.destroy(m_colorDescriptorPool);
+        device.destroy(m_colorDescriptorPool);
     }
 
     void initialize() override
@@ -275,28 +275,28 @@ public:
         m_lightCubePipeline->setRenderPass();
         m_lightCubePipeline->build();
 
-        //        // color
-        //        vertSource = getFileContents("shaders/colors.vert");
-        //        fragShader = getFileContents("shaders/colors.frag");
-        //        m_colorPipeline = MAKE_SHARED(m_colorPipeline, m_render->device());
-        //        m_colorPipeline->setProgram(vertSource, fragShader);
-        //        pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
-        //            .setLayoutCount = 1,
-        //            .pSetLayouts = &createColorDescriptorSetLayout(),
-        //            .pushConstantRangeCount = 0,   // optional
-        //            .pPushConstantRanges = nullptr // optional
-        //        };
-        //        m_colorPipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
-        //        m_colorPipeline->initVertexBuffer(m_vertexInputInfo);
-        //        m_colorPipeline->setTopology(backend::Topology::Triangles);
-        //        m_colorPipeline->setPipelineLayout(m_colorPipelineLayout);
-        //        m_colorPipeline->setViewport();
-        //        m_colorPipeline->setRasterization();
-        //        m_colorPipeline->setMultisample();
-        //        m_colorPipeline->setDepthStencil(m_depthStencilState);
-        //        m_colorPipeline->setColorBlendAttachment();
-        //        m_colorPipeline->setRenderPass();
-        //        m_colorPipeline->build();
+        // color
+        vertSource = getFileContents("shaders/colors.vert");
+        fragShader = getFileContents("shaders/colors.frag");
+        m_colorPipeline = MAKE_SHARED(m_colorPipeline, m_render->device());
+        m_colorPipeline->setProgram(vertSource, fragShader);
+        pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
+            .setLayoutCount = 1,
+            .pSetLayouts = &createColorDescriptorSetLayout(),
+            .pushConstantRangeCount = 0,   // optional
+            .pPushConstantRanges = nullptr // optional
+        };
+        m_colorPipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
+        m_colorPipeline->initVertexBuffer(m_vertexInputInfo);
+        m_colorPipeline->setTopology(backend::Topology::Triangles);
+        m_colorPipeline->setPipelineLayout(m_colorPipelineLayout);
+        m_colorPipeline->setViewport();
+        m_colorPipeline->setRasterization();
+        m_colorPipeline->setMultisample();
+        m_colorPipeline->setDepthStencil(m_depthStencilState);
+        m_colorPipeline->setColorBlendAttachment();
+        m_colorPipeline->setRenderPass();
+        m_colorPipeline->build();
     }
 
     void render() override
@@ -334,14 +334,14 @@ public:
                 commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_lightCubePipeline->handle());
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
             }
-            //            {
-            //                // calculate the model matrix for each object and pmass it to shader before drawing
-            //                g_mvpMatrixUbo.model = glm::mat4(1.0f);
-            //                m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
-            //                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_colorPipelineLayout, 0, createColorDescriptorSets()[i], nullptr);
-            //                commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_colorPipeline->handle());
-            //                commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
-            //            }
+            {
+                // calculate the model matrix for each object and pmass it to shader before drawing
+                g_mvpMatrixUbo.model = glm::mat4(1.0f);
+                m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
+                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_colorPipelineLayout, 0, createColorDescriptorSets()[i], nullptr);
+                commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_colorPipeline->handle());
+                commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
+            }
             commandBuffers[i].endRenderPass();
             commandBuffers[i].end();
         }

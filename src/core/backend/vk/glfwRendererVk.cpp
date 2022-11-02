@@ -27,29 +27,7 @@ GLFWRendererVK::GLFWRendererVK(Device* handle) :
     m_renderFinishedSemaphores = m_deviceVk->renderFinishedSemaphores();
 }
 
-GLFWRendererVK::~GLFWRendererVK()
-{
-    for (auto& framebuffer : m_swapchainFramebuffers)
-    {
-        m_device.destroy(framebuffer);
-    }
-    m_swapchainFramebuffers.clear();
-    m_device.freeCommandBuffers(m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
-    m_pipeline = nullptr;
-    for (auto fence : m_inflightFences)
-    {
-        m_device.destroyFence(fence);
-    }
-    for (auto semaphore : m_renderFinishedSemaphores)
-    {
-        m_device.destroySemaphore(semaphore);
-    }
-    for (auto semaphore : m_imageAvailableSemaphores)
-    {
-        m_device.destroySemaphore(semaphore);
-    }
-    m_device.destroyCommandPool(m_commandPool);
-}
+GLFWRendererVK::~GLFWRendererVK() = default;
 
 void GLFWRendererVK::swapBuffers()
 {

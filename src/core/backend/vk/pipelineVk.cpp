@@ -19,11 +19,6 @@ PipelineVk::~PipelineVk()
 {
     auto device = m_deviceVk->handle();
     device.destroy(m_pipelineLayout);
-    device.destroy(m_renderPass);
-    for (auto& view : m_deviceVk->swapchainImageViews())
-    {
-        device.destroy(view);
-    }
     device.destroy(m_pipeline);
 }
 

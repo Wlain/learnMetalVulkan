@@ -96,7 +96,7 @@ private:
     vk::SurfaceKHR m_surface;
     vk::SwapchainKHR m_swapChain;
     std::vector<vk::Image> m_swapchainImages;
-    std::vector<vk::ImageView> m_swapchainImagesView;
+    std::vector<vk::ImageView> m_swapchainImagesViews;
     std::shared_ptr<TextureVK> m_depthTexture;
     vk::Format m_swapchainImageFormat = vk::Format::eUndefined;
     vk::Extent2D m_swapchainExtent;
