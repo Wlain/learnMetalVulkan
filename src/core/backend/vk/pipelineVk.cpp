@@ -53,6 +53,11 @@ vk::Pipeline PipelineVk::handle() const
     return m_pipeline;
 }
 
+vk::Pipeline& PipelineVk::handle()
+{
+    return m_pipeline;
+}
+
 vk::ShaderModule PipelineVk::createShaderModule(const std::vector<uint32_t>& code)
 {
     auto createInfo = vk::ShaderModuleCreateInfo{

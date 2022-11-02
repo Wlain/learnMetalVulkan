@@ -29,6 +29,7 @@ public:
     void setRenderPass();
     void build() override;
     [[nodiscard]] vk::Pipeline handle() const;
+    [[nodiscard]] vk::Pipeline& handle();
     void setTopology(Topology topology) override;
 
 private:

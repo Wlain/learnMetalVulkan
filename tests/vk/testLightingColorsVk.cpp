@@ -303,6 +303,10 @@ public:
     {
         auto& commandBuffers = m_deviceVk->commandBuffers();
         auto& framebuffer = m_deviceVk->swapchainFramebuffers();
+        auto bind = [](const vk::CommandBuffer& cb, vk::Pipeline& pipeline, vk::PipelineLayout& layout, vk::DescriptorSet& descriptorSet) {
+            cb.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, descriptorSet, nullptr);
+            cb.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
+        };
         for (std::size_t i = 0; i < commandBuffers.size(); ++i)
         {
             auto beginInfo = vk::CommandBufferBeginInfo{};
@@ -330,16 +334,14 @@ public:
                 g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_lightPos);
                 g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.2f)); // a smaller cube
                 m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
-                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_lightCubePipelineLayout, 0, createLightCubeDescriptorSets()[i], nullptr);
-                commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_lightCubePipeline->handle());
+                bind(commandBuffers[i], m_lightCubePipeline->handle(), m_lightCubePipelineLayout, createLightCubeDescriptorSets()[i]);
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
             }
             {
-                // calculate the model matrix for each object and pmass it to shader before drawing
+                // calculate the model matrix for each object and pass it to shader before drawing
                 g_mvpMatrixUbo.model = glm::mat4(1.0f);
                 m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
-                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_colorPipelineLayout, 0, createColorDescriptorSets()[i], nullptr);
-                commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_colorPipeline->handle());
+                bind(commandBuffers[i], m_colorPipeline->handle(), m_colorPipelineLayout, createColorDescriptorSets()[i]);
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
             }
             commandBuffers[i].endRenderPass();
