@@ -43,6 +43,6 @@ extern void testBasicLightingDiffuseMtl();
 
 int main()
 {
-    testBasicLightingDiffuseGl();
+    testBasicLightingDiffuseMtl();
     return 0;
 }
