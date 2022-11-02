@@ -37,8 +37,12 @@ extern void testLightingColorsGl();
 extern void testLightingColorsVk();
 extern void testLightingColorsMtl();
 
+extern void testBasicLightingDiffuseGl();
+extern void testBasicLightingDiffuseVk();
+extern void testBasicLightingDiffuseMtl();
+
 int main()
 {
-    testWindowVk();
+    testBasicLightingDiffuseGl();
     return 0;
 }

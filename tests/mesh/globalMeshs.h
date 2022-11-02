@@ -44,13 +44,24 @@ struct alignas(16) FragLightingColorUBO
     glm::vec4 objectColor{ 1.0f };
 };
 
+struct alignas(16) FragBasicLightingColorUBO
+{
+    glm::vec4 lightPos{ 1.0f };
+    glm::vec4 lightColor{ 1.0f };
+    glm::vec4 objectColor{ 1.0f };
+};
+
 static constexpr uint32_t g_mvpMatrixUboBinding = 2;
 static VertMVPMatrixUBO g_mvpMatrixUbo = { glm::eulerAngleZ(glm::radians(30.0f)), glm::mat4(1.0f), glm::mat4(1.0f) }; /* NOLINT */
 
 static constexpr uint32_t g_lightingColorUboBinding = 3;
+
 static FragLightingColorUBO g_lightingColorUbo = { glm::vec4(1.0f, 1.0f, 1.0f, 1.0), glm::vec4(1.0f, 0.5f, 0.31f, 1.0) }; /* NOLINT */
 
 static constexpr uint32_t g_textureBinding = 1;
+
+static constexpr uint32_t g_basicLightingColorUboBinding = 3;
+static FragBasicLightingColorUBO g_basicLightingColorUbo = { glm::vec4(1.2f, 1.0f, 2.0f, 1.0), glm::vec4(1.0f, 0.5f, 0.31f, 1.0), glm::vec4(1.0f, 1.0f, 1.0f, 1.0) }; /* NOLINT */
 
 static glm::vec3 g_lightPos{ 1.2f, 1.0f, 2.0f };
 
@@ -155,6 +166,56 @@ static const std::vector<glm::vec4> g_cubeVertices = {
     { 0.5f, 0.5f, 0.5f, 1.0f },
     { -0.5f, 0.5f, 0.5f, 1.0f },
     { -0.5f, 0.5f, -0.5f, 1.0f }
+};
+
+struct alignas(16) LightingVertex
+{
+    glm::vec4 position;
+    glm::vec4 normal;
+};
+
+static const std::vector<LightingVertex> g_cubeVerticesWithNormal = {
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } }
 };
 
 // world space positions of our cubes
