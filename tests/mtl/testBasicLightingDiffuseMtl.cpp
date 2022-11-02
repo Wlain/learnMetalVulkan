@@ -122,6 +122,7 @@ public:
             // calculate the model matrix for each object and pass it to shader before drawing
             g_mvpMatrixUbo.model = glm::mat4(1.0f);
             encoder->setVertexBytes(&g_mvpMatrixUbo, sizeof(g_mvpMatrixUbo), g_mvpMatrixUboBinding); // ubo：小内存，大内存用buffer
+            g_basicLightingColorUbo.viewPos = glm::vec4(m_camera.position, 1.0f);
             encoder->setFragmentBytes(&g_basicLightingColorUbo, sizeof(g_basicLightingColorUbo), g_basicLightingColorUboBinding);
             encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(static_cast<uint32_t>(g_cubeVerticesWithNormal.size())));
         }
