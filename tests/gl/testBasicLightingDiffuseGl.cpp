@@ -112,6 +112,8 @@ public:
         // calculate the model matrix for each object and pass it to shader before drawing
         g_mvpMatrixUbo.model = glm::mat4(1.0f);
         m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
+        g_basicLightingColorUbo.viewPos = glm::vec4(m_camera.position, 1.0f);
+        m_fragUniformBuffer->update(&g_basicLightingColorUbo, sizeof(FragBasicLightingColorUBO), 0);
         glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_cubeVerticesWithNormal.size()));
     }
 

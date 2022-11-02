@@ -8,6 +8,7 @@ layout(binding = 3) uniform FragUniformBufferObject
     vec4 lightPos;
     vec4 lightColor;
     vec4 objectColor;
+    vec4 viewPos;
 } fragUbo;
 
 void main()
@@ -20,6 +21,13 @@ void main()
     vec3 lightDir = normalize(fragUbo.lightPos.xyz - vFragPos);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = diff * fragUbo.lightColor.rgb;
-    vec3 result = (ambient + diffuse) * fragUbo.objectColor.rgb;
+
+    // specular
+    float specularStrength = 0.5;
+    vec3 viewDir = normalize(fragUbo.viewPos.xyz - vFragPos);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specular = specularStrength * spec * fragUbo.lightColor.rgb;
+    vec3 result = (ambient + diffuse + specular) * fragUbo.objectColor.rgb;
     fragColor = vec4(result, 1.0);
 }
