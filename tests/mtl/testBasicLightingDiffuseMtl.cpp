@@ -109,8 +109,10 @@ public:
             encoder->setDepthStencilState(m_depthStencilState);
             encoder->setVertexBuffer(m_vertexBufferLightingCube->buffer(), 0, 0);
             // calculate the model matrix for each object and pass it to shader before drawing
+            g_basicLightingColorUbo.lightPos.x = 1.0f + sin(m_duringTime) * 2.0f;
+            g_basicLightingColorUbo.lightPos.y = sin(m_duringTime / 2.0f) * 1.0f;
             g_mvpMatrixUbo.model = glm::mat4(1.0f);
-            g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_lightPos);
+            g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, glm::vec3(g_basicLightingColorUbo.lightPos));
             g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.2f));                // a smaller cube
             encoder->setVertexBytes(&g_mvpMatrixUbo, sizeof(g_mvpMatrixUbo), g_mvpMatrixUboBinding); // ubo：小内存，大内存用buffer
             encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(static_cast<uint32_t>(g_cubeVerticesWithNormal.size())));
