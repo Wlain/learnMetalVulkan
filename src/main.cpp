@@ -1,8 +1,7 @@
 //
 // Created by william on 2022/9/3.
 //
-extern void testDemoTriangleVk();
-extern void testDemoTextureVk();
+
 extern void testWindowSdlVk();
 extern void testWindowSdlMtl();
 
@@ -40,6 +39,6 @@ extern void testLightingColorsMtl();
 
 int main()
 {
-    testLightingColorsVk();
+    testWindowVk();
     return 0;
 }

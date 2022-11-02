@@ -303,19 +303,17 @@ public:
     {
         auto& commandBuffers = m_deviceVk->commandBuffers();
         auto& framebuffer = m_deviceVk->swapchainFramebuffers();
-        auto bind = [](const vk::CommandBuffer& cb, vk::Pipeline& pipeline, vk::PipelineLayout& layout, vk::DescriptorSet& descriptorSet) {
+        auto bind = [](const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, vk::DescriptorSet& descriptorSet) {
             cb.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, descriptorSet, nullptr);
             cb.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
         };
-        auto beginInfo = vk::CommandBufferBeginInfo{};
         for (std::size_t i = 0; i < commandBuffers.size(); ++i)
         {
+            auto beginInfo = vk::CommandBufferBeginInfo{};
             commandBuffers[i].begin(beginInfo);
-            std::array<vk::ClearValue, 2> clearValues = {
-                vk::ClearValue{
-                    .color = { .float32 = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f } } },
-                vk::ClearValue{
-                    .depthStencil = { 1.0f, 0 } }
+            std::array clearValues = {
+                vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f } } },
+                vk::ClearValue{ .depthStencil = { 1.0f, 0 } }
             };
             auto renderPassInfo = vk::RenderPassBeginInfo{
                 .renderPass = m_deviceVk->renderPass(),
@@ -338,7 +336,7 @@ public:
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
             }
             {
-                // calculate the model matrix for each object and pass it to shader before drawing
+                // calculate the model matrix for each object and pmass it to shader before drawing
                 g_mvpMatrixUbo.model = glm::mat4(1.0f);
                 m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
                 bind(commandBuffers[i], m_colorPipeline->handle(), m_colorPipelineLayout, createColorDescriptorSets()[i]);

@@ -184,13 +184,9 @@ public:
         for (std::size_t i = 0; i < commandBuffers.size(); ++i)
         {
             commandBuffers[i].begin(beginInfo);
-            static float red{ 0.0f };
-            red = red > 1.0f ? 0.0 : red + 0.001f;
-            std::array<vk::ClearValue, 2> clearValues = {
-                vk::ClearValue{
-                    .color = { .float32 = std::array<float, 4>{ red, 0.0f, 0.0f, 1.0f } } },
-                vk::ClearValue{
-                    .depthStencil = { 1.0f, 0 } }
+            std::array clearValues = {
+                vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f } } },
+                vk::ClearValue{ .depthStencil = { 1.0f, 0 } }
             };
             auto renderPassInfo = vk::RenderPassBeginInfo{
                 .renderPass = m_deviceVk->renderPass(),
