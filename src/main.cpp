@@ -41,9 +41,11 @@ extern void testBasicLightingDiffuseVk();
 extern void testBasicLightingDiffuseMtl();
 
 extern void testMaterialsGl();
+extern void testMaterialsVk();
+extern void testMaterialsMtl();
 
 int main()
 {
-    testMaterialsGl();
+    testLightingColorsVk();
     return 0;
 }
