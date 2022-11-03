@@ -12,6 +12,56 @@
 #include "mtlCommonDefine.h"
 #include "vkCommonDefine.h"
 
+static std::vector<glm::vec4> getSphereMesh(int stacks = 16, int slices = 32, float radius = 1)
+{
+    using namespace glm;
+    size_t vertexCount = ((stacks + 1) * (slices + 1));
+    std::vector<vec3> vertices{ vertexCount };
+    int index = 0;
+    // create vertices
+    for (int j = 0; j <= stacks; j++)
+    {
+        float latitude1 = (glm::pi<float>() / (float)stacks) * (float)j - (glm::pi<float>() / 2);
+        float sinLat1 = sin(latitude1);
+        float cosLat1 = cos(latitude1);
+        for (int i = 0; i <= slices; i++)
+        {
+            float longitude = ((glm::pi<float>() * 2) / (float)slices) * (float)i;
+            float sinLong = sin(longitude);
+            float cosLong = cos(longitude);
+            vec3 normal{ cosLong * cosLat1, sinLat1, sinLong * cosLat1 };
+            normal = normalize(normal);
+            vertices[index] = normal * radius;
+            index++;
+        }
+    }
+    std::vector<vec4> finalPosition;
+    // create indices
+    for (int j = 0; j < stacks; j++)
+    {
+        for (int i = 0; i <= slices; i++)
+        {
+            glm::u8vec2 offset[] = {
+                // first triangle
+                { i, j },
+                { (i + 1) % (slices + 1), j + 1 },
+                { (i + 1) % (slices + 1), j },
+
+                // second triangle
+                { i, j },
+                { i, j + 1 },
+                { (i + 1) % (slices + 1), j + 1 }
+            };
+            for (const auto& o : offset)
+            {
+                index = o[1] * (slices + 1) + o[0];
+                finalPosition.push_back(glm::vec4(vertices[index], 1.0f));
+            }
+        }
+    }
+    return finalPosition;
+}
+
 struct alignas(16) TriangleVertex
 {
     glm::vec4 position;
@@ -220,6 +270,8 @@ static const std::vector<glm::vec4> g_cubeVertices = {
     { -0.5f, 0.5f, 0.5f, 1.0f },
     { -0.5f, 0.5f, -0.5f, 1.0f }
 };
+
+static const std::vector<glm::vec4> g_sphereMesh = getSphereMesh();
 
 struct alignas(16) LightingVertex
 {

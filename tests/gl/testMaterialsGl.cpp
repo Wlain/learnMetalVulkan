@@ -20,7 +20,7 @@ public:
     using EffectBase::EffectBase;
     ~TestMaterialsGl() override
     {
-        glDeleteVertexArrays(1, &m_lightCubeVao);
+        glDeleteVertexArrays(1, &m_lightSphereVao);
         glDeleteVertexArrays(1, &m_materialCubeVao);
     }
     void initialize() override
@@ -31,11 +31,11 @@ public:
     }
     void buildPipeline()
     {
-        // lightCube
+        // lightSphere
         std::string vertSource = getFileContents("shaders/lightColorCube.vert");
         std::string fragShader = getFileContents("shaders/lightColorCube.frag");
-        m_lightCubePipeline = MAKE_SHARED(m_lightCubePipeline, m_render->device());
-        m_lightCubePipeline->setProgram(vertSource, fragShader);
+        m_lightSpherePipeline = MAKE_SHARED(m_lightSpherePipeline, m_render->device());
+        m_lightSpherePipeline->setProgram(vertSource, fragShader);
         // material
         vertSource = getFileContents("shaders/materials.vert");
         fragShader = getFileContents("shaders/materials.frag");
@@ -44,41 +44,45 @@ public:
     }
     void buildBuffers()
     {
-        m_lightCubeVertUbo = MAKE_SHARED(m_lightCubeVertUbo, m_render->device());
-        m_lightCubeVertUbo->create(sizeof(VertMVPMatrixUBO), &g_mvpMatrixUbo, Buffer::BufferUsage::DynamicDraw, Buffer::BufferType::UniformBuffer);
+        m_lightSphereVertUbo = MAKE_SHARED(m_lightSphereVertUbo, m_render->device());
+        m_lightSphereVertUbo->create(sizeof(VertMVPMatrixUBO), &g_mvpMatrixUbo, Buffer::BufferUsage::DynamicDraw, Buffer::BufferType::UniformBuffer);
         m_materialCubeFragUbo = MAKE_SHARED(m_materialCubeFragUbo, m_render->device());
         m_materialCubeFragUbo->create(sizeof(FragMaterialsColorUBO), &g_fragMaterialsColorUBO, Buffer::BufferUsage::DynamicDraw, Buffer::BufferType::UniformBuffer);
-        m_lightCubeFragUbo = MAKE_SHARED(m_lightCubeFragUbo, m_render->device());
-        m_lightCubeFragUbo->create(sizeof(FragLightColorUBO), &g_lightColorUbo, Buffer::BufferUsage::DynamicDraw, Buffer::BufferType::UniformBuffer);
-        auto lightCubeProgram = m_lightCubePipeline->program();
+        m_lightSphereFragUbo = MAKE_SHARED(m_lightSphereFragUbo, m_render->device());
+        m_lightSphereFragUbo->create(sizeof(FragLightColorUBO), &g_lightColorUbo, Buffer::BufferUsage::DynamicDraw, Buffer::BufferType::UniformBuffer);
+        auto lightSphereProgram = m_lightSpherePipeline->program();
         auto colorProgram = m_materialCubePipeline->program();
-        auto lightCubeVertUboIndex = glGetUniformBlockIndex(lightCubeProgram, "VertMVPMatrixUBO");
-        auto lightCubeFragUboIndex = glGetUniformBlockIndex(lightCubeProgram, "FragUniformBufferObject");
+        auto lightSphereVertUboIndex = glGetUniformBlockIndex(lightSphereProgram, "VertMVPMatrixUBO");
+        auto lightSphereFragUboIndex = glGetUniformBlockIndex(lightSphereProgram, "FragUniformBufferObject");
         auto colorVertUboIndex = glGetUniformBlockIndex(colorProgram, "VertMVPMatrixUBO");
         auto colorFragUboIndex = glGetUniformBlockIndex(colorProgram, "FragUniformBufferObject");
-        glUniformBlockBinding(lightCubeProgram, lightCubeVertUboIndex, g_mvpMatrixUboBinding);
-        glUniformBlockBinding(lightCubeProgram, lightCubeFragUboIndex, g_lightUboBinding);
+        glUniformBlockBinding(lightSphereProgram, lightSphereVertUboIndex, g_mvpMatrixUboBinding);
+        glUniformBlockBinding(lightSphereProgram, lightSphereFragUboIndex, g_lightUboBinding);
         glUniformBlockBinding(colorProgram, colorVertUboIndex, g_mvpMatrixUboBinding);
         glUniformBlockBinding(colorProgram, colorFragUboIndex, g_materialsUboBinding);
         // define the range of the buffer that links to a uniform binding point
-        glBindBufferRange(m_lightCubeVertUbo->bufferType(), g_mvpMatrixUboBinding, m_lightCubeVertUbo->buffer(), 0, sizeof(VertMVPMatrixUBO));
-        glBindBufferRange(m_lightCubeFragUbo->bufferType(), g_lightUboBinding, m_lightCubeFragUbo->buffer(), 0, sizeof(FragLightColorUBO));
+        glBindBufferRange(m_lightSphereVertUbo->bufferType(), g_mvpMatrixUboBinding, m_lightSphereVertUbo->buffer(), 0, sizeof(VertMVPMatrixUBO));
+        glBindBufferRange(m_lightSphereFragUbo->bufferType(), g_lightUboBinding, m_lightSphereFragUbo->buffer(), 0, sizeof(FragLightColorUBO));
         glBindBufferRange(m_materialCubeFragUbo->bufferType(), g_materialsUboBinding, m_materialCubeFragUbo->buffer(), 0, sizeof(FragMaterialsColorUBO));
 
         // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-        m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_render->device());
-        m_vertexBuffer->create(g_cubeVerticesWithNormal.size() * sizeof(g_cubeVerticesWithNormal[0]), (void*)g_cubeVerticesWithNormal.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_materialCubeVertexBuffer = MAKE_SHARED(m_materialCubeVertexBuffer, m_render->device());
+        m_materialCubeVertexBuffer->create(g_cubeVerticesWithNormal.size() * sizeof(g_cubeVerticesWithNormal[0]), (void*)g_cubeVerticesWithNormal.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_lightSphereVertexBuffer = MAKE_SHARED(m_lightSphereVertexBuffer, m_render->device());
+        m_lightSphereVertexBuffer->create(g_sphereMesh.size() * sizeof(g_sphereMesh[0]), (void*)g_sphereMesh.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
 
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
-        glGenVertexArrays(1, &m_lightCubeVao);
-        glBindVertexArray(m_lightCubeVao);
+        glGenVertexArrays(1, &m_lightSphereVao);
+        glBindVertexArray(m_lightSphereVao);
+        glBindBuffer(m_lightSphereVertexBuffer->bufferType(), m_lightSphereVertexBuffer->buffer());
         // position attribute
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(LightingVertex), (void*)offsetof(LightingVertex, position));
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), nullptr);
         glEnableVertexAttribArray(0);
 
         glGenVertexArrays(1, &m_materialCubeVao);
         glBindVertexArray(m_materialCubeVao);
+        glBindBuffer(m_materialCubeVertexBuffer->bufferType(), m_materialCubeVertexBuffer->buffer());
         // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
         // position attribute
         glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(LightingVertex), (void*)offsetof(LightingVertex, position));
@@ -101,13 +105,13 @@ public:
         glClearColor(1.0f, 0.0f, 0.0f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // draw lighting source
-        m_render->setPipeline(m_lightCubePipeline);
-        glBindVertexArray(m_lightCubeVao);
+        m_render->setPipeline(m_lightSpherePipeline);
+        glBindVertexArray(m_lightSphereVao);
         // calculate the model matrix for each object and pass it to shader before drawing
         g_lightColorUbo.lightColor.x = static_cast<float>(sin(m_duringTime * 2.0));
         g_lightColorUbo.lightColor.y = static_cast<float>(sin(m_duringTime * 0.7));
         g_lightColorUbo.lightColor.z = static_cast<float>(sin(m_duringTime * 1.3));
-        m_lightCubeFragUbo->update(&g_lightColorUbo, sizeof(FragLightColorUBO), 0);
+        m_lightSphereFragUbo->update(&g_lightColorUbo, sizeof(FragLightColorUBO), 0);
         glm::vec4 diffuse = g_lightColorUbo.lightColor * glm::vec4(0.5f); // decrease the influence
         glm::vec4 ambient = diffuse * glm::vec4(0.2f);                    // decrease the influence
         glm::vec4 specular = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -115,16 +119,16 @@ public:
         g_fragMaterialsColorUBO.light.position.y = sin(m_duringTime / 2.0f) * 1.0f;
         g_mvpMatrixUbo.model = glm::mat4(1.0f);
         g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, glm::vec3(g_fragMaterialsColorUBO.light.position));
-        g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.2f)); // a smaller cube
-        m_lightCubeVertUbo->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
-        glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_cubeVerticesWithNormal.size()));
+        g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.05f)); // a smaller cube
+        m_lightSphereVertUbo->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_sphereMesh.size()));
 
-        // draw lightCube
+        // draw lightSphere
         m_render->setPipeline(m_materialCubePipeline);
         glBindVertexArray(m_materialCubeVao);
         // calculate the model matrix for each object and pass it to shader before drawing
         g_mvpMatrixUbo.model = glm::mat4(1.0f);
-        m_lightCubeVertUbo->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
+        m_lightSphereVertUbo->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
         g_fragMaterialsColorUBO.viewPos = glm::vec4(m_camera.position, 1.0f);
         g_fragMaterialsColorUBO.light.ambient = ambient;
         g_fragMaterialsColorUBO.light.diffuse = diffuse;
@@ -135,13 +139,14 @@ public:
 
 private:
     GLFWRendererGL* m_render{ nullptr };
-    std::shared_ptr<PipelineGL> m_lightCubePipeline;
+    std::shared_ptr<PipelineGL> m_lightSpherePipeline;
     std::shared_ptr<PipelineGL> m_materialCubePipeline;
-    std::shared_ptr<BufferGL> m_vertexBuffer;
-    std::shared_ptr<BufferGL> m_lightCubeVertUbo;
+    std::shared_ptr<BufferGL> m_materialCubeVertexBuffer;
+    std::shared_ptr<BufferGL> m_lightSphereVertexBuffer;
+    std::shared_ptr<BufferGL> m_lightSphereVertUbo;
     std::shared_ptr<BufferGL> m_materialCubeFragUbo;
-    std::shared_ptr<BufferGL> m_lightCubeFragUbo;
-    GLuint m_lightCubeVao{ 0 };
+    std::shared_ptr<BufferGL> m_lightSphereFragUbo;
+    GLuint m_lightSphereVao{ 0 };
     GLuint m_materialCubeVao{ 0 };
 };
 } // namespace
