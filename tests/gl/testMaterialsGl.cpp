@@ -108,9 +108,9 @@ public:
         m_render->setPipeline(m_lightSpherePipeline);
         glBindVertexArray(m_lightSphereVao);
         // calculate the model matrix for each object and pass it to shader before drawing
-        g_lightColorUbo.lightColor.x = static_cast<float>(sin(m_duringTime * 2.0));
-        g_lightColorUbo.lightColor.y = static_cast<float>(sin(m_duringTime * 0.7));
-        g_lightColorUbo.lightColor.z = static_cast<float>(sin(m_duringTime * 1.3));
+        g_lightColorUbo.lightColor.x = static_cast<float>(std::abs(sin(m_duringTime * 2.0)));
+        g_lightColorUbo.lightColor.y = static_cast<float>(std::abs(sin(m_duringTime * 0.7)));
+        g_lightColorUbo.lightColor.z = static_cast<float>(std::abs(sin(m_duringTime * 1.3)));
         m_lightSphereFragUbo->update(&g_lightColorUbo, sizeof(FragLightColorUBO), 0);
         glm::vec4 diffuse = g_lightColorUbo.lightColor * glm::vec4(0.5f); // decrease the influence
         glm::vec4 ambient = diffuse * glm::vec4(0.2f);                    // decrease the influence
