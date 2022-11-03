@@ -153,7 +153,7 @@ private:
 
 void testMaterialsGl()
 {
-    Device::Info info{ Device::RenderType::OpenGL, 800, 600, "OpenGL Example Basic Lighting Diffuse" };
+    Device::Info info{ Device::RenderType::OpenGL, 800, 600, "OpenGL Example Materials" };
     DeviceGL handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
