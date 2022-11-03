@@ -1,7 +1,6 @@
 //
 // Created by william on 2022/9/3.
 //
-
 extern void testWindowSdlVk();
 extern void testWindowSdlMtl();
 
@@ -41,8 +40,10 @@ extern void testBasicLightingDiffuseGl();
 extern void testBasicLightingDiffuseVk();
 extern void testBasicLightingDiffuseMtl();
 
+extern void testMaterialsGl();
+
 int main()
 {
-    testBasicLightingDiffuseMtl();
+    testMaterialsGl();
     return 0;
 }

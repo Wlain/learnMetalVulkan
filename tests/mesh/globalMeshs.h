@@ -52,6 +52,34 @@ struct alignas(16) FragBasicLightingColorUBO
     glm::vec4 viewPos{ 1.0f };
 };
 
+struct alignas(16) Material
+{
+    glm::vec4 ambient{ 1.0f };
+    glm::vec4 diffuse{ 1.0f };
+    glm::vec4 specular{ 1.0f };
+    float shininess{ 1.0f };
+};
+
+struct alignas(16) Light
+{
+    glm::vec4 position{ 1.0f };
+    glm::vec4 ambient{ 1.0f };
+    glm::vec4 diffuse{ 1.0f };
+    glm::vec4 specular{ 1.0f };
+};
+
+struct alignas(16) FragLightColorUBO
+{
+    glm::vec4 lightColor{ 1.0f };
+};
+
+struct alignas(16) FragMaterialsColorUBO
+{
+    glm::vec4 viewPos{ 1.0f };
+    Material material;
+    Light light;
+};
+
 static constexpr uint32_t g_mvpMatrixUboBinding = 2;
 static VertMVPMatrixUBO g_mvpMatrixUbo = { glm::eulerAngleZ(glm::radians(30.0f)), glm::mat4(1.0f), glm::mat4(1.0f) }; /* NOLINT */
 
@@ -68,6 +96,25 @@ static FragBasicLightingColorUBO g_basicLightingColorUbo = {
     { 1.0f, 1.0f, 1.0f, 1.0f },
     { 1.0f, 1.0f, 1.0f, 1.0f }
 }; /* NOLINT */
+
+static constexpr uint32_t g_lightUboBinding = 4;
+
+static FragLightColorUBO g_lightColorUbo = {
+    .lightColor = { 1.0f, 0.0f, 0.0f, 1.0f }
+};
+
+static constexpr uint32_t g_materialsUboBinding = 3;
+static FragMaterialsColorUBO g_fragMaterialsColorUBO = {
+    .viewPos = { 1.0f, 1.0f, 1.0f, 1.0f },
+    .material = { { 1.0f, 0.5f, 0.31f, 1.0f },
+                  { 1.0f, 0.5f, 0.31f, 1.0f },
+                  { 0.5f, 0.5f, 0.5f, 1.0f },
+                  32.0f },
+    .light = { { 1.0f, 1.0f, 1.0f, 1.0f },
+               { 1.0f, 1.0f, 1.0f, 1.0f },
+               { 1.0f, 1.0f, 1.0f, 1.0f },
+               { 1.0f, 1.0f, 1.0f, 1.0f } }
+};
 
 static glm::vec3 g_lightPos{ 1.2f, 1.0f, 2.0f };
 
