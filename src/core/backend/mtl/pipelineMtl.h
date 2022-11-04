@@ -6,7 +6,6 @@
 #define LEARNMETALVULKAN_SHADERMTL_H
 #include "deviceMtl.h"
 #include "pipeline.h"
-
 namespace backend
 {
 class PipelineMtl : public Pipeline
