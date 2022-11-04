@@ -19,17 +19,14 @@ class TestBasicLightingDiffuseGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestBasicLightingDiffuseGl() override
-    {
-        glDeleteVertexArrays(1, &m_cubeVao);
-        glDeleteVertexArrays(1, &m_lightCubeVao);
-    }
+    ~TestBasicLightingDiffuseGl() override = default;
     void initialize() override
     {
         m_render = dynamic_cast<GLFWRendererGL*>(m_renderer);
         buildPipeline();
         buildBuffers();
     }
+
     void buildPipeline()
     {
         // lightCube
@@ -62,26 +59,13 @@ public:
         glBindBufferRange(m_fragUniformBuffer->bufferType(), g_basicLightingColorUboBinding, m_fragUniformBuffer->buffer(), 0, sizeof(FragBasicLightingColorUBO));
 
         // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-        m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_render->device());
-        m_vertexBuffer->create(g_cubeVerticesWithNormal.size() * sizeof(g_cubeVerticesWithNormal[0]), (void*)g_cubeVerticesWithNormal.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_lightingCubeVertexBuffer = MAKE_SHARED(m_lightingCubeVertexBuffer, m_render->device());
+        m_lightingCubeVertexBuffer->create(g_cubeVertices.size() * sizeof(g_cubeVertices[0]), (void*)g_cubeVertices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_pipelineLightCube->setAttributeDescription(getOneElemAttributesDescriptions());
 
-        // set up vertex data (and buffer(s)) and configure vertex attributes
-        // ------------------------------------------------------------------
-        glGenVertexArrays(1, &m_cubeVao);
-        glBindVertexArray(m_cubeVao);
-        // position attribute
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(LightingVertex), (void*)offsetof(LightingVertex, position));
-        glEnableVertexAttribArray(0);
-
-        glGenVertexArrays(1, &m_lightCubeVao);
-        glBindVertexArray(m_lightCubeVao);
-        // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-        // position attribute
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(LightingVertex), (void*)offsetof(LightingVertex, position));
-        glEnableVertexAttribArray(0);
-        // normal attribute
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(LightingVertex), (void*)offsetof(LightingVertex, normal));
-        glEnableVertexAttribArray(1);
+        m_materialVertexBuffer = MAKE_SHARED(m_materialVertexBuffer, m_render->device());
+        m_materialVertexBuffer->create(g_cubeVerticesWithNormal.size() * sizeof(g_cubeVerticesWithNormal[0]), (void*)g_cubeVerticesWithNormal.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_pipelineLightDiffuse->setAttributeDescription(getTwoElemsAttributesDescriptions());
     }
 
     void update(float deltaTime) override
@@ -98,7 +82,6 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // draw color
         m_render->setPipeline(m_pipelineLightCube);
-        glBindVertexArray(m_cubeVao);
         // calculate the model matrix for each object and pass it to shader before drawing
         g_basicLightingColorUbo.lightPos.x = 1.0f + sin(m_duringTime) * 2.0f;
         g_basicLightingColorUbo.lightPos.y = sin(m_duringTime / 2.0f) * 1.0f;
@@ -110,7 +93,6 @@ public:
 
         // draw lightCube
         m_render->setPipeline(m_pipelineLightDiffuse);
-        glBindVertexArray(m_lightCubeVao);
         // calculate the model matrix for each object and pass it to shader before drawing
         g_mvpMatrixUbo.model = glm::mat4(1.0f);
         m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
@@ -123,11 +105,10 @@ private:
     GLFWRendererGL* m_render{ nullptr };
     std::shared_ptr<PipelineGL> m_pipelineLightCube;
     std::shared_ptr<PipelineGL> m_pipelineLightDiffuse;
-    std::shared_ptr<BufferGL> m_vertexBuffer;
+    std::shared_ptr<BufferGL> m_lightingCubeVertexBuffer;
+    std::shared_ptr<BufferGL> m_materialVertexBuffer;
     std::shared_ptr<BufferGL> m_vertUniformBuffer;
     std::shared_ptr<BufferGL> m_fragUniformBuffer;
-    GLuint m_cubeVao{ 0 };
-    GLuint m_lightCubeVao{ 0 };
 };
 } // namespace
 

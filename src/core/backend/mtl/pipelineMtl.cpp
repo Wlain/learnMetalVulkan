@@ -72,7 +72,7 @@ MTL::RenderPipelineState* PipelineMtl::pipelineState() const
     return m_pipelineState;
 }
 
-MTL::VertexFormat getFormat(const Format& format)
+MTL::VertexFormat getFormatMtl(const Format& format)
 {
     MTL::VertexFormat result{};
     switch (format)
@@ -96,7 +96,7 @@ void backend::PipelineMtl::setAttributeDescription(const std::vector<AttributeDe
     m_vertexDescriptor->layouts()->object(0)->setStride(attributeDescriptions[0].stride);
     for (size_t i = 0; i < attributeDescriptions.size(); ++i)
     {
-        m_vertexDescriptor->attributes()->object(i)->setFormat(getFormat(attributeDescriptions[i].format));
+        m_vertexDescriptor->attributes()->object(i)->setFormat(getFormatMtl(attributeDescriptions[i].format));
         m_vertexDescriptor->attributes()->object(i)->setOffset(attributeDescriptions[i].offset);
         m_vertexDescriptor->attributes()->object(i)->setBufferIndex(attributeDescriptions[i].binding);
     }

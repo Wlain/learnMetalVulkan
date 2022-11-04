@@ -20,10 +20,7 @@ class TestCameraGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestCameraGl() override
-    {
-        glDeleteVertexArrays(1, &m_vao);
-    }
+    ~TestCameraGl() override = default;
     void initialize() override
     {
         m_render = dynamic_cast<GLFWRendererGL*>(m_renderer);
@@ -38,6 +35,7 @@ public:
         m_pipeline = MAKE_SHARED(m_pipeline, m_render->device());
         m_pipeline->setProgram(vertSource, fragShader);
     }
+
     void buildBuffers()
     {
         auto program = m_pipeline->program();
@@ -49,17 +47,11 @@ public:
         glBindBufferRange(m_uniformBuffer->bufferType(), g_mvpMatrixUboBinding, m_uniformBuffer->buffer(), 0, sizeof(VertMVPMatrixUBO));
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
-        glGenVertexArrays(1, &m_vao);
-        glBindVertexArray(m_vao);
+        glBindVertexArray(m_pipeline->vao());
         // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_render->device());
         m_vertexBuffer->create(g_cubeVertex.size() * sizeof(g_cubeVertex[0]), (void*)g_cubeVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
-        // position attribute
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)nullptr);
-        glEnableVertexAttribArray(0);
-        // texCoord attribute
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)(4 * sizeof(float)));
-        glEnableVertexAttribArray(1);
+        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
     }
 
     void buildTexture()
@@ -84,7 +76,6 @@ public:
         m_render->setPipeline(m_pipeline);
         // bind Texture
         glBindTexture(GL_TEXTURE_2D, m_texture->handle());
-        glBindVertexArray(m_vao);
         for (unsigned int i = 0; i < g_cubePositions.size(); i++)
         {
             // calculate the model matrix for each object and pass it to shader before drawing
@@ -104,7 +95,6 @@ private:
     std::shared_ptr<TextureGL> m_texture;
     std::shared_ptr<BufferGL> m_vertexBuffer;
     std::shared_ptr<BufferGL> m_uniformBuffer;
-    GLuint m_vao{ 0 };
 };
 } // namespace
 

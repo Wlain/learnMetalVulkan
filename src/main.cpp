@@ -46,6 +46,6 @@ extern void testMaterialsMtl();
 
 int main()
 {
-    testMaterialsGl();
+    testTriangleGl();
     return 0;
 }

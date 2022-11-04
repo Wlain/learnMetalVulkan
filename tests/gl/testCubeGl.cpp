@@ -19,10 +19,7 @@ class TestCubeGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestCubeGl() override
-    {
-        glDeleteVertexArrays(1, &m_vao);
-    }
+    ~TestCubeGl() override = default;
     void initialize() override
     {
         m_render = dynamic_cast<GLFWRendererGL*>(m_renderer);
@@ -47,19 +44,12 @@ public:
         m_uniformBuffer->create(sizeof(VertMVPMatrixUBO), &g_mvpMatrixUbo, Buffer::BufferUsage::DynamicDraw, Buffer::BufferType::UniformBuffer);
         // define the range of the buffer that links to a uniform binding point
         glBindBufferRange(m_uniformBuffer->bufferType(), g_mvpMatrixUboBinding, m_uniformBuffer->buffer(), 0, sizeof(VertMVPMatrixUBO));
-        // set up vertex data (and buffer(s)) and configure vertex attributes
-        // ------------------------------------------------------------------
-        glGenVertexArrays(1, &m_vao);
-        glBindVertexArray(m_vao);
         // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+        glBindVertexArray(m_pipeline->vao());
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_render->device());
         m_vertexBuffer->create(g_cubeVertex.size() * sizeof(g_cubeVertex[0]), (void*)g_cubeVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
-        // position attribute
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)nullptr);
-        glEnableVertexAttribArray(0);
-        // texCoord attribute
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)(4 * sizeof(float)));
-        glEnableVertexAttribArray(1);
+        // set up vertex data (and buffer(s)) and configure vertex attributes
+        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
     }
 
     void buildTexture()
@@ -85,7 +75,6 @@ public:
         m_uniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
         // bind Texture
         glBindTexture(GL_TEXTURE_2D, m_texture->handle());
-        glBindVertexArray(m_vao);
         glDrawArrays(GL_TRIANGLES, 0, static_cast<uint32_t>(g_cubeVertex.size()));
     }
 
@@ -95,7 +84,6 @@ private:
     std::shared_ptr<TextureGL> m_texture;
     std::shared_ptr<BufferGL> m_vertexBuffer;
     std::shared_ptr<BufferGL> m_uniformBuffer;
-    GLuint m_vao{ 0 };
 };
 } // namespace
 

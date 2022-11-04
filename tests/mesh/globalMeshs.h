@@ -346,7 +346,8 @@ static std::vector<backend::Pipeline::AttributeDescription> getOneElemAttributes
           .inputRate = backend::InputRate::Vertex,
           .location = 0,
           .format = backend::Format::Float32,
-          .offset = 0 }
+          .offset = 0,
+          .components = 4 }
     };
     return result;
 }
@@ -359,13 +360,15 @@ static std::vector<backend::Pipeline::AttributeDescription> getTwoElemsAttribute
           .inputRate = backend::InputRate::Vertex,
           .location = 0,
           .format = backend::Format::Float32,
-          .offset = 0 },
+          .offset = 0,
+          .components = 4 },
         { .binding = 0,
           .stride = sizeof(glm::vec4) * 2,
           .inputRate = backend::InputRate::Vertex,
           .location = 1,
           .format = backend::Format::Float32,
-          .offset = 0 + sizeof(glm::vec4) }
+          .offset = 0 + sizeof(glm::vec4),
+          .components = 4 }
     };
     return result;
 }

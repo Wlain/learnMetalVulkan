@@ -19,16 +19,15 @@ class TestLightingColorsGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestLightingColorsGl() override
-    {
-        glDeleteVertexArrays(1, &m_vao);
-    }
+    ~TestLightingColorsGl() override = default;
+
     void initialize() override
     {
         m_render = dynamic_cast<GLFWRendererGL*>(m_renderer);
         buildPipeline();
         buildBuffers();
     }
+
     void buildPipeline()
     {
         // lightCube
@@ -42,6 +41,7 @@ public:
         m_pipelineColor = MAKE_SHARED(m_pipelineColor, m_render->device());
         m_pipelineColor->setProgram(vertSource, fragShader);
     }
+
     void buildBuffers()
     {
         m_vertUniformBuffer = MAKE_SHARED(m_vertUniformBuffer, m_render->device());
@@ -59,17 +59,11 @@ public:
         // define the range of the buffer that links to a uniform binding point
         glBindBufferRange(m_vertUniformBuffer->bufferType(), g_mvpMatrixUboBinding, m_vertUniformBuffer->buffer(), 0, sizeof(VertMVPMatrixUBO));
         glBindBufferRange(m_fragUniformBuffer->bufferType(), g_lightingColorUboBinding, m_fragUniformBuffer->buffer(), 0, sizeof(FragLightingColorUBO));
-
-        // set up vertex data (and buffer(s)) and configure vertex attributes
-        // ------------------------------------------------------------------
-        glGenVertexArrays(1, &m_vao);
-        glBindVertexArray(m_vao);
         // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_render->device());
         m_vertexBuffer->create(g_cubeVertices.size() * sizeof(g_cubeVertices[0]), (void*)g_cubeVertices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
-        // position attribute
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (void*)nullptr);
-        glEnableVertexAttribArray(0);
+        m_pipelineColor->setAttributeDescription(getOneElemAttributesDescriptions());
+        m_pipelineLightCube->setAttributeDescription(getOneElemAttributesDescriptions());
     }
 
     void update(float deltaTime) override
@@ -86,7 +80,6 @@ public:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // draw color
         m_render->setPipeline(m_pipelineLightCube);
-        glBindVertexArray(m_vao);
         // calculate the model matrix for each object and pass it to shader before drawing
         g_mvpMatrixUbo.model = glm::mat4(1.0f);
         g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_lightPos);
@@ -109,7 +102,6 @@ private:
     std::shared_ptr<BufferGL> m_vertexBuffer;
     std::shared_ptr<BufferGL> m_vertUniformBuffer;
     std::shared_ptr<BufferGL> m_fragUniformBuffer;
-    GLuint m_vao{ 0 };
 };
 } // namespace
 

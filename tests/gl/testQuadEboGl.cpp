@@ -19,10 +19,7 @@ class TestQuadGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestQuadGl() override
-    {
-        glDeleteVertexArrays(1, &m_vao);
-    }
+    ~TestQuadGl() override = default;
 
     void initialize() override
     {
@@ -40,21 +37,12 @@ public:
     }
     void buildBuffers()
     {
-        // set up vertex data (and buffer(s)) and configure vertex attributes
-        // ------------------------------------------------------------------
-        glGenVertexArrays(1, &m_vao);
-        glBindVertexArray(m_vao);
         // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_render->device());
         m_vertexBuffer->create(g_quadVertex.size() * sizeof(g_quadVertex[0]), (void*)g_quadVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
         m_indexBuffer = MAKE_SHARED(m_indexBuffer, m_render->device());
         m_indexBuffer->create(g_quadIndices.size() * sizeof(g_quadIndices[0]), (void*)g_quadIndices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::IndexBuffer);
-        // position attribute
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)nullptr);
-        glEnableVertexAttribArray(0);
-        // color attribute
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)(4 * sizeof(float)));
-        glEnableVertexAttribArray(1);
     }
 
     void buildTexture()
@@ -73,7 +61,6 @@ public:
         m_render->setPipeline(m_pipeline);
         // bind Texture
         glBindTexture(GL_TEXTURE_2D, m_texture->handle());
-        glBindVertexArray(m_vao);
         glDrawElements(GL_TRIANGLES, g_quadIndices.size(), GL_UNSIGNED_SHORT, 0);
     }
 
@@ -83,7 +70,6 @@ private:
     std::shared_ptr<TextureGL> m_texture;
     std::shared_ptr<BufferGL> m_vertexBuffer;
     std::shared_ptr<BufferGL> m_indexBuffer;
-    GLuint m_vao{ 0 };
 };
 
 void testQuadEboGl()

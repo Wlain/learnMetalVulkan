@@ -20,6 +20,7 @@ void GLFWRendererGL::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
 {
     auto pipelineGL = std::dynamic_pointer_cast<PipelineGL>(pipeline);
     glUseProgram(pipelineGL->program());
+    glBindVertexArray(pipelineGL->vao());
 }
 
 } // namespace backend

@@ -44,6 +44,7 @@ public:
         uint32_t location{ 0 };
         Format format{ Format::Unknown };
         uint32_t offset{ 0 };
+        uint32_t components{0};
     };
 
 public:
