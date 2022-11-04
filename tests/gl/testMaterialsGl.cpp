@@ -11,6 +11,7 @@
 #include "glfwRendererGL.h"
 #include "pipelineGl.h"
 #include "utils/utils.h"
+
 using namespace backend;
 namespace
 {
