@@ -10,6 +10,7 @@
 #include <vector>
 #define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
 #include "mtlCommonDefine.h"
+#include "pipeline.h"
 #include "vkCommonDefine.h"
 
 static std::vector<glm::vec4> getSphereMesh(int stacks = 16, int slices = 32, float radius = 1)
@@ -337,53 +338,36 @@ static const std::vector<glm::vec3> g_cubePositions = {
     glm::vec3(-1.3f, 1.0f, -1.5f)
 };
 
-static vk::VertexInputBindingDescription getPosTexCoordBindingDescription()
+static std::vector<backend::Pipeline::AttributeDescription> getOneElemAttributesDescriptions()
 {
-    auto bindingDescription = vk::VertexInputBindingDescription{
-        .binding = 0,
-        .stride = sizeof(TriangleVertex),
-        .inputRate = vk::VertexInputRate::eVertex
+    static std::vector<backend::Pipeline::AttributeDescription> result{
+        { .binding = 0,
+          .stride = sizeof(glm::vec4),
+          .inputRate = backend::InputRate::Vertex,
+          .location = 0,
+          .format = backend::Format::Float32,
+          .offset = 0 }
     };
-    return bindingDescription;
+    return result;
 }
 
-static std::array<vk::VertexInputAttributeDescription, 2> getPosTexCoordAttributeDescriptions()
+static std::vector<backend::Pipeline::AttributeDescription> getTwoElemsAttributesDescriptions()
 {
-    auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 2>{
-        vk::VertexInputAttributeDescription{
-            .location = 0,
-            .binding = 0,
-            .format = vk::Format::eR32G32B32A32Sfloat,
-            .offset = offsetof(TriangleVertex, position) },
-        vk::VertexInputAttributeDescription{
-            .location = 1,
-            .binding = 0,
-            .format = vk::Format::eR32G32B32A32Sfloat,
-            .offset = offsetof(TriangleVertex, color) },
+    static std::vector<backend::Pipeline::AttributeDescription> result = {
+        { .binding = 0,
+          .stride = sizeof(glm::vec4) * 2,
+          .inputRate = backend::InputRate::Vertex,
+          .location = 0,
+          .format = backend::Format::Float32,
+          .offset = 0 },
+        { .binding = 0,
+          .stride = sizeof(glm::vec4) * 2,
+          .inputRate = backend::InputRate::Vertex,
+          .location = 1,
+          .format = backend::Format::Float32,
+          .offset = 0 + sizeof(glm::vec4) }
     };
-    return attributeDescriptions;
-}
-
-static vk::VertexInputBindingDescription getPosBindingDescription()
-{
-    auto bindingDescription = vk::VertexInputBindingDescription{
-        .binding = 0,
-        .stride = sizeof(glm::vec4),
-        .inputRate = vk::VertexInputRate::eVertex
-    };
-    return bindingDescription;
-}
-
-static std::array<vk::VertexInputAttributeDescription, 1> getPosAttributeDescriptions()
-{
-    auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 1>{
-        vk::VertexInputAttributeDescription{
-            .location = 0,
-            .binding = 0,
-            .format = vk::Format::eR32G32B32A32Sfloat,
-            .offset = 0 }
-    };
-    return attributeDescriptions;
+    return result;
 }
 
 static MTL::VertexDescriptor* getPosTexCoordVertexDescriptor()

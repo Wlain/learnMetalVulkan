@@ -118,4 +118,8 @@ std::string Pipeline::getMslShaderFromSpv(std::vector<uint32_t> shader)
 void Pipeline::setTopology(Topology topology)
 {
 }
+
+void Pipeline::setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions)
+{
+}
 } // namespace backend

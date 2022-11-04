@@ -19,11 +19,11 @@ public:
     explicit PipelineVk(Device* device);
     ~PipelineVk() override;
     void setProgram(std::string_view vertShader, std::string_view fragSource) override;
-    void initVertexBuffer(const VkPipelineVertexInputStateCreateInfo& info);
     void setPipelineLayout(vk::PipelineLayout layout);
     void setViewport();
     void setRasterization();
     void setMultisample();
+    void setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions) override;
     void setDepthStencil(vk::PipelineDepthStencilStateCreateInfo info);
     void setColorBlendAttachment();
     void setRenderPass();
@@ -54,6 +54,8 @@ private:
     vk::PipelineDepthStencilStateCreateInfo m_depthStencilState;
     vk::PipelineColorBlendAttachmentState m_colorBlendAttachment;
     vk::PipelineColorBlendStateCreateInfo m_colorBlending;
+    vk::VertexInputBindingDescription m_bindingDescription;
+    std::vector<vk::VertexInputAttributeDescription> m_inputAttributeDescriptions{};
     vk::PrimitiveTopology m_topology{};
 };
 } // namespace backend

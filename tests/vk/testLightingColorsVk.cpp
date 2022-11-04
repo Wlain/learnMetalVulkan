@@ -236,14 +236,6 @@ public:
         std::string fragShader = getFileContents("shaders/lightCube.frag");
         m_lightCubePipeline = MAKE_SHARED(m_lightCubePipeline, m_deviceVk);
         m_lightCubePipeline->setProgram(vertSource, fragShader);
-        m_bindingDescription = getPosBindingDescription();
-        m_attributeDescriptions = getPosAttributeDescriptions();
-        m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
-            .vertexBindingDescriptionCount = 1,
-            .pVertexBindingDescriptions = &m_bindingDescription,
-            .vertexAttributeDescriptionCount = static_cast<uint32_t>(m_attributeDescriptions.size()),
-            .pVertexAttributeDescriptions = m_attributeDescriptions.data()
-        };
         auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 1,
             .pSetLayouts = &createLightCubeDescriptorSetLayout(),
@@ -264,7 +256,7 @@ public:
             .back.compareOp = vk::CompareOp::eAlways
         };
         m_lightCubePipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
-        m_lightCubePipeline->initVertexBuffer(m_vertexInputInfo);
+        m_lightCubePipeline->setAttributeDescription(getOneElemAttributesDescriptions());
         m_lightCubePipeline->setTopology(backend::Topology::Triangles);
         m_lightCubePipeline->setPipelineLayout(m_lightCubePipelineLayout);
         m_lightCubePipeline->setViewport();
@@ -287,7 +279,7 @@ public:
             .pPushConstantRanges = nullptr // optional
         };
         m_colorPipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
-        m_colorPipeline->initVertexBuffer(m_vertexInputInfo);
+        m_colorPipeline->setAttributeDescription(getOneElemAttributesDescriptions());
         m_colorPipeline->setTopology(backend::Topology::Triangles);
         m_colorPipeline->setPipelineLayout(m_colorPipelineLayout);
         m_colorPipeline->setViewport();
@@ -356,11 +348,8 @@ private:
     std::shared_ptr<BufferVK> m_vertUniformBuffer;
     std::shared_ptr<BufferVK> m_fragUniformBuffer;
     vk::PipelineDepthStencilStateCreateInfo m_depthStencilState;
-    vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
-    std::array<vk::VertexInputAttributeDescription, 1> m_attributeDescriptions;
     vk::PipelineLayout m_lightCubePipelineLayout;
     vk::PipelineLayout m_colorPipelineLayout;
-    vk::VertexInputBindingDescription m_bindingDescription;
     vk::DescriptorSetLayout m_lightCubeDescriptorSetLayout;
     vk::DescriptorSetLayout m_colorDescriptorSetLayout;
     vk::DescriptorPool m_lightCubeDescriptorPool;

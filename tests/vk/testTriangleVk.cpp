@@ -39,20 +39,12 @@ public:
         std::string fragShader = getFileContents("shaders/triangle.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_deviceVk);
         m_pipeline->setProgram(vertSource, fragShader);
-        m_bindingDescription = getPosTexCoordBindingDescription();
-        m_attributeDescriptions = getPosTexCoordAttributeDescriptions();
-        m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
-            .vertexBindingDescriptionCount = 1,
-            .pVertexBindingDescriptions = &m_bindingDescription,
-            .vertexAttributeDescriptionCount = static_cast<uint32_t>(m_attributeDescriptions.size()),
-            .pVertexAttributeDescriptions = m_attributeDescriptions.data()
-        };
         auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 0,
             .pushConstantRangeCount = 0
         };
         m_pipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
-        m_pipeline->initVertexBuffer(m_vertexInputInfo);
+        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
         m_pipeline->setTopology(backend::Topology::Triangles);
         m_pipeline->setPipelineLayout(m_pipelineLayout);
         m_pipeline->setViewport();
@@ -99,11 +91,7 @@ private:
     DeviceVK* m_deviceVk{ nullptr };
     std::shared_ptr<PipelineVk> m_pipeline;
     std::shared_ptr<BufferVK> m_vertexBuffer;
-    vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
-    std::array<vk::VertexInputAttributeDescription, 2> m_attributeDescriptions;
     vk::PipelineLayout m_pipelineLayout;
-    vk::VertexInputBindingDescription m_bindingDescription;
-    std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribute;
 };
 } // namespace
 

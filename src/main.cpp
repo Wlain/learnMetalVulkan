@@ -46,6 +46,6 @@ extern void testMaterialsMtl();
 
 int main()
 {
-    testLightingColorsVk();
+    testWindowVk();
     return 0;
 }

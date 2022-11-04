@@ -3,6 +3,7 @@
 //
 
 #include "pipelineVk.h"
+
 #include "commonMacro.h"
 #define GLFW_INCLUDE_NONE
 #include "deviceVk.h"
@@ -41,11 +42,6 @@ void PipelineVk::build()
     m_pipeline = m_deviceVk->handle().createGraphicsPipeline(VK_NULL_HANDLE, pipelineInfo).value;
     m_deviceVk->handle().destroyShaderModule(m_vertexShaderModule);
     m_deviceVk->handle().destroyShaderModule(m_fragmentShaderModule);
-}
-
-void PipelineVk::initVertexBuffer(const VkPipelineVertexInputStateCreateInfo& info)
-{
-    m_vertexInputInfo = info;
 }
 
 vk::Pipeline PipelineVk::handle() const
@@ -191,5 +187,60 @@ vk::PipelineShaderStageCreateInfo PipelineVk::getShaderCreateInfo(vk::ShaderModu
     };
     ASSERT(shaderStage.module);
     return shaderStage;
+}
+
+vk::VertexInputRate getVertexInputRate(InputRate inputRate)
+{
+    vk::VertexInputRate result{};
+    switch (inputRate)
+    {
+    case InputRate::Vertex:
+        result = vk::VertexInputRate::eVertex;
+        break;
+    case InputRate::Instance:
+        result = vk::VertexInputRate::eInstance;
+        break;
+    }
+    return result;
+}
+
+vk::Format getVertexFormat(Format format)
+{
+    vk::Format result{};
+    switch (format)
+    {
+    case Format::Float16:
+        break;
+    case Format::Float32:
+        result = vk::Format::eR32G32B32A32Sfloat;
+        break;
+    case Format::Unknown:
+    default:
+        break;
+    }
+    return result;
+}
+
+void PipelineVk::setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions)
+{
+    m_bindingDescription = vk::VertexInputBindingDescription{
+        .binding = attributeDescriptions[0].binding,
+        .stride = attributeDescriptions[0].stride,
+        .inputRate = getVertexInputRate(attributeDescriptions[0].inputRate)
+    };
+    for (const auto& attribute : attributeDescriptions)
+    {
+        m_inputAttributeDescriptions.emplace_back(vk::VertexInputAttributeDescription{
+            .location = attribute.location,
+            .binding = attribute.binding,
+            .format = getVertexFormat(attribute.format),
+            .offset = attribute.offset });
+    }
+    m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = &m_bindingDescription,
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(m_inputAttributeDescriptions.size()),
+        .pVertexAttributeDescriptions = m_inputAttributeDescriptions.data()
+    };
 }
 } // namespace backend
