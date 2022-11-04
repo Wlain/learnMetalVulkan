@@ -34,12 +34,11 @@ public:
 
     void buildPipeline()
     {
-        auto* vertexDescriptor = getPosTexCoordVertexDescriptor();
         std::string vertSource = getFileContents("shaders/triangle.vert");
         std::string fragShader = getFileContents("shaders/triangle.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_device);
         m_pipeline->setProgram(vertSource, fragShader);
-        m_pipeline->setVertexDescriptor(vertexDescriptor);
+        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
         m_pipeline->build();
     }
 

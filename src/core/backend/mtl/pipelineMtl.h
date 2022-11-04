@@ -17,7 +17,7 @@ public:
     void build() override;
     ~PipelineMtl() override;
     MTL::RenderPipelineState* pipelineState() const;
-    void setVertexDescriptor(MTL::VertexDescriptor* mVertexDescriptor);
+    void setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions) override;
 
 private:
     DeviceMtl* m_deviceMtl{ nullptr };

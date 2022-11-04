@@ -189,7 +189,7 @@ vk::PipelineShaderStageCreateInfo PipelineVk::getShaderCreateInfo(vk::ShaderModu
     return shaderStage;
 }
 
-vk::VertexInputRate getVertexInputRate(InputRate inputRate)
+vk::VertexInputRate getVertexInputRate(const InputRate& inputRate)
 {
     vk::VertexInputRate result{};
     switch (inputRate)
@@ -204,7 +204,7 @@ vk::VertexInputRate getVertexInputRate(InputRate inputRate)
     return result;
 }
 
-vk::Format getVertexFormat(Format format)
+vk::Format getVertexFormat(const Format& format)
 {
     vk::Format result{};
     switch (format)

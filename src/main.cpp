@@ -46,6 +46,6 @@ extern void testMaterialsMtl();
 
 int main()
 {
-    testWindowVk();
+    testMaterialsGl();
     return 0;
 }

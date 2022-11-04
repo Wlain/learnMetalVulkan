@@ -369,36 +369,4 @@ static std::vector<backend::Pipeline::AttributeDescription> getTwoElemsAttribute
     };
     return result;
 }
-
-static MTL::VertexDescriptor* getPosTexCoordVertexDescriptor()
-{
-    MTL::VertexDescriptor* vertexDescriptor = MTL::VertexDescriptor::alloc()->init();
-    vertexDescriptor->attributes()->object(0)->setFormat(MTL::VertexFormatFloat4);
-    vertexDescriptor->attributes()->object(0)->setOffset(offsetof(TextureVertex, position));
-    vertexDescriptor->attributes()->object(0)->setBufferIndex(0);
-    // texCoord
-    vertexDescriptor->attributes()->object(1)->setFormat(MTL::VertexFormatFloat4);
-    vertexDescriptor->attributes()->object(1)->setOffset(offsetof(TextureVertex, texCoord));
-    vertexDescriptor->attributes()->object(1)->setBufferIndex(0);
-    // layout
-    vertexDescriptor->layouts()->object(0)->setStride(sizeof(TextureVertex));
-    return vertexDescriptor;
-}
-
-static MTL::VertexDescriptor* getPosVertexDescriptor()
-{
-    MTL::VertexDescriptor* vertexDescriptor = MTL::VertexDescriptor::alloc()->init();
-    vertexDescriptor->attributes()->object(0)->setFormat(MTL::VertexFormatFloat4);
-    vertexDescriptor->attributes()->object(0)->setOffset(0);
-    vertexDescriptor->attributes()->object(0)->setBufferIndex(0);
-    // layout
-    vertexDescriptor->layouts()->object(0)->setStride(sizeof(glm::vec4));
-    return vertexDescriptor;
-}
-
-static MTL::VertexDescriptor* getBasicLightingVertexDescriptor()
-{
-    return getPosTexCoordVertexDescriptor();
-}
-
 #endif // LEARNMETALVULKAN_GLOBALMESHS_H

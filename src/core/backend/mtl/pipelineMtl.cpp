@@ -47,7 +47,6 @@ void PipelineMtl::setProgram(std::string_view vertShader, std::string_view fragS
     }
     m_vertFunc = m_vertLibrary->newFunction(NS::String::string("vertexMain", UTF8StringEncoding));
     m_fragFunc = fragLibrary->newFunction(NS::String::string("fragmentMain", UTF8StringEncoding));
-
 }
 
 void PipelineMtl::build()
@@ -73,8 +72,33 @@ MTL::RenderPipelineState* PipelineMtl::pipelineState() const
     return m_pipelineState;
 }
 
-void PipelineMtl::setVertexDescriptor(MTL::VertexDescriptor* mVertexDescriptor)
+MTL::VertexFormat getFormat(const Format& format)
 {
-    m_vertexDescriptor = mVertexDescriptor;
+    MTL::VertexFormat result{};
+    switch (format)
+    {
+    case Format::Float16:
+        break;
+    case Format::Float32:
+        result = MTL::VertexFormatFloat4;
+        break;
+    case Format::Unknown:
+    default:
+        break;
+    }
+    return result;
+}
+
+void backend::PipelineMtl::setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions)
+{
+    m_vertexDescriptor = MTL::VertexDescriptor::alloc()->init();
+    // layout
+    m_vertexDescriptor->layouts()->object(0)->setStride(attributeDescriptions[0].stride);
+    for (size_t i = 0; i < attributeDescriptions.size(); ++i)
+    {
+        m_vertexDescriptor->attributes()->object(i)->setFormat(getFormat(attributeDescriptions[i].format));
+        m_vertexDescriptor->attributes()->object(i)->setOffset(attributeDescriptions[i].offset);
+        m_vertexDescriptor->attributes()->object(i)->setBufferIndex(attributeDescriptions[i].binding);
+    }
 }
 } // namespace backend

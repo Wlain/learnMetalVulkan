@@ -41,21 +41,19 @@ public:
 
     void buildPipeline()
     {
-        auto* vertexDescriptor = getPosVertexDescriptor();
         // lightCube
         std::string vertSource = getFileContents("shaders/lightCube.vert");
         std::string fragShader = getFileContents("shaders/lightCube.frag");
         m_pipelineLightCube = MAKE_SHARED(m_pipelineLightCube, m_device);
         m_pipelineLightCube->setProgram(vertSource, fragShader);
-        m_pipelineLightCube->setVertexDescriptor(vertexDescriptor);
+        m_pipelineLightCube->setAttributeDescription(getOneElemAttributesDescriptions());
         m_pipelineLightCube->build();
         // basic lighting
-        vertexDescriptor = getBasicLightingVertexDescriptor();
         vertSource = getFileContents("shaders/basicLighting.vert");
         fragShader = getFileContents("shaders/basicLighting.frag");
         m_pipelineBasicLighting = MAKE_SHARED(m_pipelineBasicLighting, m_device);
         m_pipelineBasicLighting->setProgram(vertSource, fragShader);
-        m_pipelineBasicLighting->setVertexDescriptor(vertexDescriptor);
+        m_pipelineBasicLighting->setAttributeDescription(getTwoElemsAttributesDescriptions());
         m_pipelineBasicLighting->build();
     }
 
