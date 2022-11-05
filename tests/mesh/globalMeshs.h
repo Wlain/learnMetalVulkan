@@ -9,6 +9,7 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <vector>
 #define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
+#include "globalCommonDefine.h"
 #include "mtlCommonDefine.h"
 #include "pipeline.h"
 #include "vkCommonDefine.h"
@@ -372,4 +373,44 @@ static std::vector<backend::Pipeline::AttributeDescription> getTwoElemsAttribute
     };
     return result;
 }
+
+static std::vector g_textureShaderResource = {
+    backend::ShaderResource{
+        .binding = g_mvpMatrixUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Vertex,
+        .arraySize = 1 },
+    backend::ShaderResource{
+        .binding = g_textureBinding,
+        .type = backend::ShaderResourceType::Sampler,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Fragment,
+        .arraySize = 1 }
+};
+
+static std::vector g_lightCubeShaderResource = {
+    backend::ShaderResource{
+        .binding = g_mvpMatrixUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Vertex,
+        .arraySize = 1 }
+};
+
+static std::vector g_colorsShaderResource = {
+    backend::ShaderResource{
+        .binding = g_mvpMatrixUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Vertex,
+        .arraySize = 1 },
+    backend::ShaderResource{
+        .binding = g_lightingColorUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Fragment,
+        .arraySize = 1 }
+};
+
 #endif // LEARNMETALVULKAN_GLOBALMESHS_H

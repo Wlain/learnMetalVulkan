@@ -5,9 +5,13 @@
 #ifndef LEARNMETALVULKAN_GLOBALCOMMONDEFINE_H
 #define LEARNMETALVULKAN_GLOBALCOMMONDEFINE_H
 #include <cstdint>
+#include <string>
 
+namespace backend
+{
 enum class ShaderResourceType : uint8_t
 {
+    Unknown,
     Input,
     InputAttachment,
     Output,
@@ -24,6 +28,7 @@ enum class ShaderResourceType : uint8_t
 
 enum class ShaderResourceMode : uint8_t
 {
+    Unknown,
     Static,
     Dynamic,
     UpdateAfterBind
@@ -31,27 +36,29 @@ enum class ShaderResourceMode : uint8_t
 
 enum class ShaderType : uint8_t
 {
+    Unknown,
     Vertex,
     Fragment
 };
 
 struct ShaderResource
 {
-    ShaderType stages;
-    ShaderResourceType type;
-    ShaderResourceMode mode;
-    uint32_t set;
-    uint32_t binding;
-    uint32_t location;
-    uint32_t inputAttachmentIndex;
-    uint32_t vecSize;
-    uint32_t columns;
-    uint32_t arraySize;
-    uint32_t offset;
-    uint32_t size;
-    uint32_t constantId;
-    uint32_t qualifiers;
+    ShaderType stages{};
+    ShaderResourceType type{};
+    ShaderResourceMode mode{};
+    uint32_t set{ 0 };
+    uint32_t binding{ 0 };
+    uint32_t location{ 0 };
+    uint32_t inputAttachmentIndex{ 0 };
+    uint32_t vecSize{ 0 };
+    uint32_t columns{ 0 };
+    uint32_t arraySize{ 0 };
+    uint32_t offset{ 0 };
+    uint32_t size{ 0 };
+    uint32_t constantId{ 0 };
+    uint32_t qualifiers{ 0 };
     std::string name;
 };
+} // namespace backend
 
 #endif // LEARNMETALVULKAN_GLOBALCOMMONDEFINE_H

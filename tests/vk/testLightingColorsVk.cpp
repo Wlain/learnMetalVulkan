@@ -5,6 +5,7 @@
 #include "../mesh/globalMeshs.h"
 #include "bufferVk.h"
 #include "commonHandle.h"
+#include "descriptorSet.h"
 #include "deviceVk.h"
 #include "engine.h"
 #include "glfwRendererVk.h"
@@ -21,16 +22,7 @@ class TestLightingColorsVk : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestLightingColorsVk() override
-    {
-        auto device = m_deviceVk->handle();
-        device.destroy(m_lightCubeDescriptorSetLayout);
-        device.destroy(m_colorDescriptorSetLayout);
-        device.freeDescriptorSets(m_lightCubeDescriptorPool, m_lightCubeDescriptorSets);
-        device.freeDescriptorSets(m_colorDescriptorPool, m_colorDescriptorSets);
-        device.destroy(m_lightCubeDescriptorPool);
-        device.destroy(m_colorDescriptorPool);
-    }
+    ~TestLightingColorsVk() override = default;
 
     void initialize() override
     {
@@ -38,6 +30,7 @@ public:
         m_swapchainSize = (uint32_t)m_deviceVk->swapchainImageViews().size();
         m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
         buildBuffers();
+        buildDescriptorsSets();
         buildPipeline();
     }
 
@@ -58,175 +51,42 @@ public:
         g_mvpMatrixUbo.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
     }
 
-    vk::DescriptorSetLayout& createLightCubeDescriptorSetLayout()
+    void buildDescriptorsSets()
     {
-        if (!m_lightCubeDescriptorSetLayout)
-        {
-            std::array bindings = { vk::DescriptorSetLayoutBinding{
-                .binding = g_mvpMatrixUboBinding,
-                .descriptorType = vk::DescriptorType::eUniformBuffer,
-                .descriptorCount = 1,
-                .stageFlags = vk::ShaderStageFlagBits::eVertex,
-                .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
-            } };
-            auto layoutInfo = vk::DescriptorSetLayoutCreateInfo{
-                .bindingCount = bindings.size(),
-                .pBindings = bindings.data()
-            };
-            m_lightCubeDescriptorSetLayout = m_deviceVk->handle().createDescriptorSetLayout(layoutInfo);
-        }
-        return m_lightCubeDescriptorSetLayout;
-    }
+        m_lightCubeDescriptorSets = MAKE_SHARED(m_lightCubeDescriptorSets, m_deviceVk);
+        std::vector descriptorPoolSizes{
+            vk::DescriptorPoolSize{ .type = vk::DescriptorType::eUniformBuffer,
+                                    .descriptorCount = m_swapchainSize },
+        };
+        std::map<uint32_t, vk::DescriptorBufferInfo> bufferInfos{
+            { g_mvpMatrixUboBinding, vk::DescriptorBufferInfo{
+                                         .buffer = m_vertUniformBuffer->buffer(),
+                                         .offset = 0,
+                                         .range = sizeof(VertMVPMatrixUBO) } }
+        };
+        m_lightCubeDescriptorSets->createDescriptorPool(descriptorPoolSizes, m_swapchainSize);
+        m_lightCubeDescriptorSets->createDescriptorSetLayout(g_lightCubeShaderResource);
+        m_lightCubeDescriptorSets->createDescriptorSets(bufferInfos, {});
 
-    vk::DescriptorSetLayout& createColorDescriptorSetLayout()
-    {
-        if (!m_colorDescriptorSetLayout)
-        {
-            std::array bindings = { vk::DescriptorSetLayoutBinding{
-                                        .binding = g_mvpMatrixUboBinding,
-                                        .descriptorType = vk::DescriptorType::eUniformBuffer,
-                                        .descriptorCount = 1,
-                                        .stageFlags = vk::ShaderStageFlagBits::eVertex,
-                                        .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
-                                    },
-                                    vk::DescriptorSetLayoutBinding{
-                                        .binding = g_lightingColorUboBinding,
-                                        .descriptorType = vk::DescriptorType::eUniformBuffer,
-                                        .descriptorCount = 1,
-                                        .stageFlags = vk::ShaderStageFlagBits::eFragment,
-                                        .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
-                                    } };
-            auto layoutInfo = vk::DescriptorSetLayoutCreateInfo{
-                .bindingCount = bindings.size(),
-                .pBindings = bindings.data()
-            };
-            m_colorDescriptorSetLayout = m_deviceVk->handle().createDescriptorSetLayout(layoutInfo);
-        }
-        return m_colorDescriptorSetLayout;
-    }
-
-    vk::DescriptorPool& createLightCubeDescriptorPool()
-    {
-        if (!m_lightCubeDescriptorPool)
-        {
-            std::array poolSizes{
-                vk::DescriptorPoolSize{
-                    .type = vk::DescriptorType::eUniformBuffer,
-                    .descriptorCount = m_swapchainSize }
-            };
-            auto poolInfo = vk::DescriptorPoolCreateInfo{
-                .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-                .maxSets = m_swapchainSize,
-                .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
-                .pPoolSizes = poolSizes.data()
-            };
-            m_lightCubeDescriptorPool = m_deviceVk->handle().createDescriptorPool(poolInfo);
-        }
-        return m_lightCubeDescriptorPool;
-    }
-
-    vk::DescriptorPool& createColorDescriptorPool()
-    {
-        if (!m_colorDescriptorPool)
-        {
-            std::array poolSizes{
-                vk::DescriptorPoolSize{
-                    .type = vk::DescriptorType::eUniformBuffer,
-                    .descriptorCount = m_swapchainSize },
-                vk::DescriptorPoolSize{
-                    .type = vk::DescriptorType::eUniformBuffer,
-                    .descriptorCount = m_swapchainSize }
-            };
-            auto poolInfo = vk::DescriptorPoolCreateInfo{
-                .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-                .maxSets = m_swapchainSize,
-                .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
-                .pPoolSizes = poolSizes.data()
-            };
-            m_colorDescriptorPool = m_deviceVk->handle().createDescriptorPool(poolInfo);
-        }
-        return m_colorDescriptorPool;
-    }
-
-    std::vector<vk::DescriptorSet>& createLightCubeDescriptorSets()
-    {
-        if (m_lightCubeDescriptorSets.empty())
-        {
-            std::vector<vk::DescriptorSetLayout> layouts(m_swapchainSize, createLightCubeDescriptorSetLayout());
-            auto allocInfo = vk::DescriptorSetAllocateInfo{
-                .descriptorPool = createLightCubeDescriptorPool(),
-                .descriptorSetCount = m_swapchainSize,
-                .pSetLayouts = layouts.data()
-            };
-            m_lightCubeDescriptorSets.resize(m_swapchainSize);
-            m_lightCubeDescriptorSets = m_deviceVk->handle().allocateDescriptorSets(allocInfo);
-            for (size_t i = 0; i < m_swapchainSize; i++)
-            {
-                auto vertBufferInfo = vk::DescriptorBufferInfo{
-                    .buffer = m_vertUniformBuffer->buffer(),
-                    .offset = 0,
-                    .range = sizeof(VertMVPMatrixUBO)
-                };
-                std::array descriptorWrites = {
-                    vk::WriteDescriptorSet{
-                        .dstSet = m_lightCubeDescriptorSets[i],
-                        .dstBinding = g_mvpMatrixUboBinding,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = vk::DescriptorType::eUniformBuffer,
-                        .pBufferInfo = &vertBufferInfo }
-                };
-                m_deviceVk->handle().updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-            }
-        }
-        return m_lightCubeDescriptorSets;
-    }
-
-    std::vector<vk::DescriptorSet>& createColorDescriptorSets()
-    {
-        if (m_colorDescriptorSets.empty())
-        {
-            std::vector<vk::DescriptorSetLayout> layouts(m_swapchainSize, createColorDescriptorSetLayout());
-
-            auto allocInfo = vk::DescriptorSetAllocateInfo{
-                .descriptorPool = createColorDescriptorPool(),
-                .descriptorSetCount = m_swapchainSize,
-                .pSetLayouts = layouts.data()
-            };
-            m_colorDescriptorSets.resize(m_swapchainSize);
-            m_colorDescriptorSets = m_deviceVk->handle().allocateDescriptorSets(allocInfo);
-            for (size_t i = 0; i < m_swapchainSize; i++)
-            {
-                auto vertBufferInfo = vk::DescriptorBufferInfo{
-                    .buffer = m_vertUniformBuffer->buffer(),
-                    .offset = 0,
-                    .range = sizeof(VertMVPMatrixUBO)
-                };
-                auto fragBufferInfo = vk::DescriptorBufferInfo{
-                    .buffer = m_fragUniformBuffer->buffer(),
-                    .offset = 0,
-                    .range = sizeof(FragLightingColorUBO)
-                };
-                std::array descriptorWrites = {
-                    vk::WriteDescriptorSet{
-                        .dstSet = m_colorDescriptorSets[i],
-                        .dstBinding = g_mvpMatrixUboBinding,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = vk::DescriptorType::eUniformBuffer,
-                        .pBufferInfo = &vertBufferInfo },
-                    vk::WriteDescriptorSet{
-                        .dstSet = m_colorDescriptorSets[i],
-                        .dstBinding = g_lightingColorUboBinding,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = vk::DescriptorType::eUniformBuffer,
-                        .pBufferInfo = &fragBufferInfo }
-                };
-                m_deviceVk->handle().updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-            }
-        }
-        return m_colorDescriptorSets;
+        m_colorsDescriptorSets = MAKE_SHARED(m_colorsDescriptorSets, m_deviceVk);
+        descriptorPoolSizes = {
+            vk::DescriptorPoolSize{
+                .type = vk::DescriptorType::eUniformBuffer,
+                .descriptorCount = m_swapchainSize },
+            vk::DescriptorPoolSize{
+                .type = vk::DescriptorType::eUniformBuffer,
+                .descriptorCount = m_swapchainSize },
+        };
+        bufferInfos = {
+            { g_mvpMatrixUboBinding, vk::DescriptorBufferInfo{
+                                         .buffer = m_vertUniformBuffer->buffer(),
+                                         .offset = 0,
+                                         .range = sizeof(VertMVPMatrixUBO) } },
+            { g_lightingColorUboBinding, vk::DescriptorBufferInfo{ .buffer = m_fragUniformBuffer->buffer(), .offset = 0, .range = sizeof(FragLightingColorUBO) } },
+        };
+        m_colorsDescriptorSets->createDescriptorPool(descriptorPoolSizes, m_swapchainSize);
+        m_colorsDescriptorSets->createDescriptorSetLayout(g_colorsShaderResource);
+        m_colorsDescriptorSets->createDescriptorSets(bufferInfos, {});
     }
 
     void buildPipeline()
@@ -238,7 +98,7 @@ public:
         m_lightCubePipeline->setProgram(vertSource, fragShader);
         auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 1,
-            .pSetLayouts = &createLightCubeDescriptorSetLayout(),
+            .pSetLayouts = &m_lightCubeDescriptorSets->layout(),
             .pushConstantRangeCount = 0,   // optional
             .pPushConstantRanges = nullptr // optional
         };
@@ -270,32 +130,32 @@ public:
         // color
         vertSource = getFileContents("shaders/colors.vert");
         fragShader = getFileContents("shaders/colors.frag");
-        m_colorPipeline = MAKE_SHARED(m_colorPipeline, m_render->device());
-        m_colorPipeline->setProgram(vertSource, fragShader);
+        m_colorsPipeline = MAKE_SHARED(m_colorsPipeline, m_render->device());
+        m_colorsPipeline->setProgram(vertSource, fragShader);
         pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 1,
-            .pSetLayouts = &createColorDescriptorSetLayout(),
+            .pSetLayouts = &m_colorsDescriptorSets->layout(),
             .pushConstantRangeCount = 0,   // optional
             .pPushConstantRanges = nullptr // optional
         };
-        m_colorPipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
-        m_colorPipeline->setAttributeDescription(getOneElemAttributesDescriptions());
-        m_colorPipeline->setTopology(backend::Topology::Triangles);
-        m_colorPipeline->setPipelineLayout(m_colorPipelineLayout);
-        m_colorPipeline->setViewport();
-        m_colorPipeline->setRasterization();
-        m_colorPipeline->setMultisample();
-        m_colorPipeline->setDepthStencil(m_depthStencilState);
-        m_colorPipeline->setColorBlendAttachment();
-        m_colorPipeline->setRenderPass();
-        m_colorPipeline->build();
+        m_colorsPipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
+        m_colorsPipeline->setAttributeDescription(getOneElemAttributesDescriptions());
+        m_colorsPipeline->setTopology(backend::Topology::Triangles);
+        m_colorsPipeline->setPipelineLayout(m_colorsPipelineLayout);
+        m_colorsPipeline->setViewport();
+        m_colorsPipeline->setRasterization();
+        m_colorsPipeline->setMultisample();
+        m_colorsPipeline->setDepthStencil(m_depthStencilState);
+        m_colorsPipeline->setColorBlendAttachment();
+        m_colorsPipeline->setRenderPass();
+        m_colorsPipeline->build();
     }
 
     void render() override
     {
         auto& commandBuffers = m_deviceVk->commandBuffers();
         auto& framebuffer = m_deviceVk->swapchainFramebuffers();
-        auto bind = [](const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, vk::DescriptorSet& descriptorSet) {
+        auto bind = [](const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, const vk::DescriptorSet& descriptorSet) {
             cb.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, descriptorSet, nullptr);
             cb.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
         };
@@ -316,25 +176,28 @@ public:
                 .clearValueCount = 2,
                 .pClearValues = clearValues.data(),
             };
-            commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-            commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
             {
+                commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+                commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
                 // calculate the model matrix for each object and pass it to shader before drawing
                 g_mvpMatrixUbo.model = glm::mat4(1.0f);
                 g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_lightPos);
                 g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.2f)); // a smaller cube
                 m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
-                bind(commandBuffers[i], m_lightCubePipeline->handle(), m_lightCubePipelineLayout, createLightCubeDescriptorSets()[i]);
+                bind(commandBuffers[i], m_lightCubePipeline->handle(), m_lightCubePipelineLayout, m_lightCubeDescriptorSets->handle());
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
+                // calculate the model matrix for each object and pass it to shader before drawing
+                commandBuffers[i].endRenderPass();
             }
             {
-                // calculate the model matrix for each object and pmass it to shader before drawing
+                commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+                commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
                 g_mvpMatrixUbo.model = glm::mat4(1.0f);
                 m_vertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
-                bind(commandBuffers[i], m_colorPipeline->handle(), m_colorPipelineLayout, createColorDescriptorSets()[i]);
+                bind(commandBuffers[i], m_colorsPipeline->handle(), m_colorsPipelineLayout, m_colorsDescriptorSets->handle());
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
+                commandBuffers[i].endRenderPass();
             }
-            commandBuffers[i].endRenderPass();
             commandBuffers[i].end();
         }
     }
@@ -343,19 +206,15 @@ private:
     GLFWRendererVK* m_render{ nullptr };
     DeviceVK* m_deviceVk{ nullptr };
     std::shared_ptr<PipelineVk> m_lightCubePipeline;
-    std::shared_ptr<PipelineVk> m_colorPipeline;
+    std::shared_ptr<PipelineVk> m_colorsPipeline;
     std::shared_ptr<BufferVK> m_vertexBuffer;
     std::shared_ptr<BufferVK> m_vertUniformBuffer;
     std::shared_ptr<BufferVK> m_fragUniformBuffer;
     vk::PipelineDepthStencilStateCreateInfo m_depthStencilState;
     vk::PipelineLayout m_lightCubePipelineLayout;
-    vk::PipelineLayout m_colorPipelineLayout;
-    vk::DescriptorSetLayout m_lightCubeDescriptorSetLayout;
-    vk::DescriptorSetLayout m_colorDescriptorSetLayout;
-    vk::DescriptorPool m_lightCubeDescriptorPool;
-    vk::DescriptorPool m_colorDescriptorPool;
-    std::vector<vk::DescriptorSet> m_lightCubeDescriptorSets;
-    std::vector<vk::DescriptorSet> m_colorDescriptorSets;
+    vk::PipelineLayout m_colorsPipelineLayout;
+    std::shared_ptr<DescriptorSet> m_colorsDescriptorSets;
+    std::shared_ptr<DescriptorSet> m_lightCubeDescriptorSets;
     uint32_t m_swapchainSize{};
 };
 } // namespace

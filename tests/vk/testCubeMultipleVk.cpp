@@ -5,6 +5,7 @@
 #include "../mesh/globalMeshs.h"
 #include "bufferVk.h"
 #include "commonHandle.h"
+#include "descriptorSet.h"
 #include "deviceVk.h"
 #include "engine.h"
 #include "glfwRendererVk.h"
@@ -13,6 +14,7 @@
 #include "utils.h"
 
 #include <array>
+
 using namespace backend;
 
 namespace
@@ -21,22 +23,22 @@ class TestCubeMultipleVk : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestCubeMultipleVk() override
-    {
-        auto device = m_deviceVk->handle();
-        device.destroy(m_descriptorSetLayout);
-        device.freeDescriptorSets(m_descriptorPool, m_descriptorSets);
-        device.destroy(m_descriptorPool);
-    }
+    ~TestCubeMultipleVk() override = default;
     void initialize() override
     {
         m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
         m_swapchainSize = (uint32_t)m_deviceVk->swapchainImageViews().size();
         m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
+        buildTextures();
+        buildBuffers();
+        buildDescriptorsSets();
+        buildPipeline();
+    }
+
+    void buildTextures()
+    {
         m_texture = MAKE_SHARED(m_texture, m_deviceVk);
         m_texture->createWithFileName("textures/test.jpg", true);
-        buildBuffers();
-        buildPipeline();
     }
 
     void buildBuffers()
@@ -61,99 +63,33 @@ public:
         g_mvpMatrixUbo.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
     }
 
-    vk::DescriptorSetLayout& createDescriptorSetLayout()
+    void buildDescriptorsSets()
     {
-        if (!m_descriptorSetLayout)
-        {
-            auto uboLayoutBinding = vk::DescriptorSetLayoutBinding{
-                .binding = g_mvpMatrixUboBinding,
-                .descriptorType = vk::DescriptorType::eUniformBufferDynamic,
-                .descriptorCount = 1,
-                .stageFlags = vk::ShaderStageFlagBits::eVertex,
-                .pImmutableSamplers = nullptr // optional (only relevant to Image Sampling;
-            };
-            auto samplerLayoutBinding = vk::DescriptorSetLayoutBinding{
-                .binding = g_textureBinding,
-                .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-                .descriptorCount = 1,
-                .stageFlags = vk::ShaderStageFlagBits::eFragment,
-                .pImmutableSamplers = nullptr,
-            };
-            std::array binding = { uboLayoutBinding, samplerLayoutBinding };
-            auto layoutInfo = vk::DescriptorSetLayoutCreateInfo{
-                .bindingCount = binding.size(),
-                .pBindings = binding.data()
-            };
-            m_descriptorSetLayout = m_deviceVk->handle().createDescriptorSetLayout(layoutInfo);
-        }
-        return m_descriptorSetLayout;
-    }
-
-    vk::DescriptorPool& createDescriptorPool()
-    {
-        if (!m_descriptorPool)
-        {
-            std::array<vk::DescriptorPoolSize, 2> poolSizes{};
-            poolSizes[0].type = vk::DescriptorType::eUniformBufferDynamic;
-            poolSizes[0].descriptorCount = m_swapchainSize;
-            poolSizes[1].type = vk::DescriptorType::eCombinedImageSampler;
-            poolSizes[1].descriptorCount = m_swapchainSize;
-            auto poolInfo = vk::DescriptorPoolCreateInfo{
-                .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-                .maxSets = m_swapchainSize,
-                .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
-                .pPoolSizes = poolSizes.data()
-            };
-            m_descriptorPool = m_deviceVk->handle().createDescriptorPool(poolInfo);
-        }
-        return m_descriptorPool;
-    }
-
-    std::vector<vk::DescriptorSet>& createDescriptorSets()
-    {
-        if (m_descriptorSets.empty())
-        {
-            std::vector<vk::DescriptorSetLayout> layouts(m_swapchainSize, createDescriptorSetLayout());
-
-            auto allocInfo = vk::DescriptorSetAllocateInfo{
-                .descriptorPool = createDescriptorPool(),
-                .descriptorSetCount = m_swapchainSize,
-                .pSetLayouts = layouts.data()
-            };
-            m_descriptorSets.resize(m_swapchainSize);
-            m_descriptorSets = m_deviceVk->handle().allocateDescriptorSets(allocInfo);
-            for (size_t i = 0; i < m_swapchainSize; i++)
-            {
-                auto bufferInfo = vk::DescriptorBufferInfo{
-                    .buffer = m_uniformBuffer->buffer(),
-                    .offset = 0,
-                    .range = m_dynamicAlignment
-                };
-                auto imageInfo = vk::DescriptorImageInfo{
-                    .sampler = m_texture->sampler(),
-                    .imageView = m_texture->imageView(),
-                    .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
-                };
-                std::array descriptorWrites = {
-                    vk::WriteDescriptorSet{
-                        .dstSet = m_descriptorSets[i],
-                        .dstBinding = g_mvpMatrixUboBinding,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = vk::DescriptorType::eUniformBufferDynamic,
-                        .pBufferInfo = &bufferInfo },
-                    vk::WriteDescriptorSet{
-                        .dstSet = m_descriptorSets[i],
-                        .dstBinding = g_textureBinding,
-                        .dstArrayElement = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-                        .pImageInfo = &imageInfo }
-                };
-                m_deviceVk->handle().updateDescriptorSets(static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-            }
-        }
-        return m_descriptorSets;
+        m_descriptorSets = MAKE_SHARED(m_descriptorSets, m_deviceVk);
+        g_textureShaderResource[0].mode = ShaderResourceMode::Dynamic;
+        std::vector descriptorPoolSizes{
+            vk::DescriptorPoolSize{
+                .type = vk::DescriptorType::eUniformBufferDynamic,
+                .descriptorCount = m_swapchainSize },
+            vk::DescriptorPoolSize{
+                .type = vk::DescriptorType::eCombinedImageSampler,
+                .descriptorCount = m_swapchainSize }
+        };
+        std::map<uint32_t, vk::DescriptorBufferInfo> bufferInfos{
+            { g_mvpMatrixUboBinding, vk::DescriptorBufferInfo{
+                                         .buffer = m_uniformBuffer->buffer(),
+                                         .offset = 0,
+                                         .range = m_dynamicAlignment } }
+        };
+        std::map<uint32_t, vk::DescriptorImageInfo> imageInfos{
+            { g_textureBinding, vk::DescriptorImageInfo{
+                                    .sampler = m_texture->sampler(),
+                                    .imageView = m_texture->imageView(),
+                                    .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal } }
+        };
+        m_descriptorSets->createDescriptorPool(descriptorPoolSizes, m_swapchainSize);
+        m_descriptorSets->createDescriptorSetLayout(g_textureShaderResource);
+        m_descriptorSets->createDescriptorSets(bufferInfos, imageInfos);
     }
 
     void buildPipeline()
@@ -164,7 +100,7 @@ public:
         m_pipeline->setProgram(vertSource, fragShader);
         auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 1,
-            .pSetLayouts = &createDescriptorSetLayout(),
+            .pSetLayouts = &m_descriptorSets->layout(),
             .pushConstantRangeCount = 0,   // optional
             .pPushConstantRanges = nullptr // optional
         };
@@ -231,7 +167,7 @@ public:
                 float angle = 20.0f * j;
                 g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
                 m_uniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), dynamicOffset);
-                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, createDescriptorSets()[i], dynamicOffset);
+                commandBuffers[i].bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, m_descriptorSets->handle(), dynamicOffset);
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertex.size()), 1, 0, 0);
             }
             commandBuffers[i].endRenderPass();
@@ -249,9 +185,7 @@ private:
     std::shared_ptr<TextureVK> m_texture;
     vk::PipelineDepthStencilStateCreateInfo m_depthStencilState;
     vk::PipelineLayout m_pipelineLayout;
-    vk::DescriptorSetLayout m_descriptorSetLayout;
-    vk::DescriptorPool m_descriptorPool;
-    std::vector<vk::DescriptorSet> m_descriptorSets;
+    std::shared_ptr<DescriptorSet> m_descriptorSets;
     uint32_t m_swapchainSize{};
     uint32_t m_dynamicAlignment{};
 };
