@@ -38,7 +38,7 @@ public:
         buildDepthStencilStates();
         setupDepthStencilTexture();
         buildTexture();
-        g_mvpMatrix.view = glm::translate(g_mvpMatrix.view, glm::vec3(0.0f, 0.0f, -3.0f));
+        g_mvpMatrixUbo.view = glm::translate(g_mvpMatrixUbo.view, glm::vec3(0.0f, 0.0f, -3.0f));
     }
 
     void buildTexture()
@@ -53,6 +53,8 @@ public:
         std::string fragShader = getFileContents("shaders/texture.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_device);
         m_pipeline->setProgram(vertSource, fragShader);
+        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
+        m_pipeline->build();
     }
 
     void buildBuffers()
@@ -78,7 +80,7 @@ public:
 
     void resize(int width, int height) override
     {
-        g_mvpMatrix.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+        g_mvpMatrixUbo.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
     }
 
     void render() override
@@ -98,16 +100,16 @@ public:
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
         encoder->setDepthStencilState(m_depthStencilState);
         encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
-        encoder->setFragmentTexture(m_texture->handle(), 1);
+        encoder->setFragmentTexture(m_texture->handle(), g_textureBinding);
         for (unsigned int i = 0; i < g_cubePositions.size(); i++)
         {
             // calculate the model matrix for each object and pass it to shader before drawing
-            g_mvpMatrix.model = glm::mat4(1.0f);
-            g_mvpMatrix.model = glm::translate(g_mvpMatrix.model, g_cubePositions[i]);
-            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
+            g_mvpMatrixUbo.model = glm::mat4(1.0f);
+            g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_cubePositions[i]);
+            g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
             float angle = 20.0f * i;
-            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            encoder->setVertexBytes(&g_mvpMatrix, sizeof(g_mvpMatrix), 2); // ubo：小内存，大内存用buffer
+            g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            encoder->setVertexBytes(&g_mvpMatrixUbo, sizeof(g_mvpMatrixUbo), g_mvpMatrixUboBinding); // ubo：小内存，大内存用buffer
             encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(static_cast<uint32_t>(g_cubeVertex.size())));
         }
         encoder->endEncoding();
@@ -131,7 +133,7 @@ private:
 
 void testCubeMultipleMtl()
 {
-    Device::Info info{ Device::RenderType::Metal, 640, 640, "Metal Example Cube Multiple" };
+    Device::Info info{ Device::RenderType::Metal, 800, 600, "Metal Example Cube Multiple" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);

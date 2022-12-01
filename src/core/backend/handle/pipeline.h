@@ -20,14 +20,40 @@ enum class Topology
     TriangleStrip
 };
 
+enum class Format
+{
+    Unknown,
+    Float16,
+    Float32,
+};
+
+enum class InputRate
+{
+    Vertex,
+    Instance,
+};
+
 class Pipeline
 {
+public:
+    struct AttributeDescription
+    {
+        uint32_t binding{ 0 };
+        uint32_t stride{ 0 };
+        InputRate inputRate{ InputRate::Vertex };
+        uint32_t location{ 0 };
+        Format format{ Format::Unknown };
+        uint32_t offset{ 0 };
+        uint32_t components{0};
+    };
+
 public:
     explicit Pipeline(Device* device);
     Pipeline();
     virtual ~Pipeline() = default;
     virtual void setProgram(std::string_view vertShader, std::string_view fragSource) = 0;
     virtual void setTopology(Topology topology);
+    virtual void setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions);
     virtual void build();
 
 public:
@@ -37,6 +63,7 @@ public:
 
 protected:
     Device* m_handle{ nullptr };
+    std::vector<AttributeDescription> m_attributeDescription;
 };
 } // namespace backend
 

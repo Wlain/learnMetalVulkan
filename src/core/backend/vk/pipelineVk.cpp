@@ -3,6 +3,8 @@
 //
 
 #include "pipelineVk.h"
+
+#include "commonMacro.h"
 #define GLFW_INCLUDE_NONE
 #include "deviceVk.h"
 #include "glfwRenderer.h"
@@ -18,11 +20,6 @@ PipelineVk::~PipelineVk()
 {
     auto device = m_deviceVk->handle();
     device.destroy(m_pipelineLayout);
-    device.destroy(m_renderPass);
-    for (auto& view : m_deviceVk->swapchainImageViews())
-    {
-        device.destroy(view);
-    }
     device.destroy(m_pipeline);
 }
 
@@ -47,12 +44,12 @@ void PipelineVk::build()
     m_deviceVk->handle().destroyShaderModule(m_fragmentShaderModule);
 }
 
-void PipelineVk::initVertexBuffer(const VkPipelineVertexInputStateCreateInfo& info)
+vk::Pipeline PipelineVk::handle() const
 {
-    m_vertexInputInfo = info;
+    return m_pipeline;
 }
 
-vk::Pipeline PipelineVk::handle() const
+vk::Pipeline& PipelineVk::handle()
 {
     return m_pipeline;
 }
@@ -71,16 +68,8 @@ void PipelineVk::setProgram(std::string_view vertShader, std::string_view fragSo
     auto [vertShaderCode, fragShaderCode] = PipelineVk::getSpvFromGLSL(vertShader, fragSource);
     m_vertexShaderModule = createShaderModule(vertShaderCode);
     m_fragmentShaderModule = createShaderModule(fragShaderCode);
-    auto vertShaderStageInfo = vk::PipelineShaderStageCreateInfo{
-        .stage = vk::ShaderStageFlagBits::eVertex,
-        .module = m_vertexShaderModule,
-        .pName = "main"
-    };
-    auto fragShaderStageInfo = vk::PipelineShaderStageCreateInfo{
-        .stage = vk::ShaderStageFlagBits::eFragment,
-        .module = m_fragmentShaderModule,
-        .pName = "main"
-    };
+    auto vertShaderStageInfo = getShaderCreateInfo(m_vertexShaderModule, vk::ShaderStageFlagBits::eVertex);
+    auto fragShaderStageInfo = getShaderCreateInfo(m_fragmentShaderModule, vk::ShaderStageFlagBits::eFragment);
     m_pipelineShaderStages = { vertShaderStageInfo, fragShaderStageInfo };
 }
 
@@ -186,6 +175,72 @@ void PipelineVk::setTopology(Topology topology)
     m_inputAssembly = vk::PipelineInputAssemblyStateCreateInfo{
         .topology = m_topology,
         .primitiveRestartEnable = false
+    };
+}
+
+vk::PipelineShaderStageCreateInfo PipelineVk::getShaderCreateInfo(vk::ShaderModule shaderModule, vk::ShaderStageFlagBits stage)
+{
+    vk::PipelineShaderStageCreateInfo shaderStage = {
+        .stage = stage,
+        .module = shaderModule,
+        .pName = "main"
+    };
+    ASSERT(shaderStage.module);
+    return shaderStage;
+}
+
+vk::VertexInputRate getVertexInputRate(const InputRate& inputRate)
+{
+    vk::VertexInputRate result{};
+    switch (inputRate)
+    {
+    case InputRate::Vertex:
+        result = vk::VertexInputRate::eVertex;
+        break;
+    case InputRate::Instance:
+        result = vk::VertexInputRate::eInstance;
+        break;
+    }
+    return result;
+}
+
+vk::Format getVertexFormat(const Format& format)
+{
+    vk::Format result{};
+    switch (format)
+    {
+    case Format::Float16:
+        break;
+    case Format::Float32:
+        result = vk::Format::eR32G32B32A32Sfloat;
+        break;
+    case Format::Unknown:
+    default:
+        break;
+    }
+    return result;
+}
+
+void PipelineVk::setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions)
+{
+    m_bindingDescription = vk::VertexInputBindingDescription{
+        .binding = attributeDescriptions[0].binding,
+        .stride = attributeDescriptions[0].stride,
+        .inputRate = getVertexInputRate(attributeDescriptions[0].inputRate)
+    };
+    for (const auto& attribute : attributeDescriptions)
+    {
+        m_inputAttributeDescriptions.emplace_back(vk::VertexInputAttributeDescription{
+            .location = attribute.location,
+            .binding = attribute.binding,
+            .format = getVertexFormat(attribute.format),
+            .offset = attribute.offset });
+    }
+    m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
+        .vertexBindingDescriptionCount = 1,
+        .pVertexBindingDescriptions = &m_bindingDescription,
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(m_inputAttributeDescriptions.size()),
+        .pVertexAttributeDescriptions = m_inputAttributeDescriptions.data()
     };
 }
 } // namespace backend

@@ -9,7 +9,60 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <vector>
 #define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
+#include "globalCommonDefine.h"
+#include "mtlCommonDefine.h"
+#include "pipeline.h"
 #include "vkCommonDefine.h"
+
+static std::vector<glm::vec4> getSphereMesh(int stacks = 16, int slices = 32, float radius = 1)
+{
+    using namespace glm;
+    size_t vertexCount = ((stacks + 1) * (slices + 1));
+    std::vector<vec3> vertices{ vertexCount };
+    int index = 0;
+    // create vertices
+    for (int j = 0; j <= stacks; j++)
+    {
+        float latitude1 = (glm::pi<float>() / (float)stacks) * (float)j - (glm::pi<float>() / 2);
+        float sinLat1 = sin(latitude1);
+        float cosLat1 = cos(latitude1);
+        for (int i = 0; i <= slices; i++)
+        {
+            float longitude = ((glm::pi<float>() * 2) / (float)slices) * (float)i;
+            float sinLong = sin(longitude);
+            float cosLong = cos(longitude);
+            vec3 normal{ cosLong * cosLat1, sinLat1, sinLong * cosLat1 };
+            normal = normalize(normal);
+            vertices[index] = normal * radius;
+            index++;
+        }
+    }
+    std::vector<vec4> finalPosition;
+    // create indices
+    for (int j = 0; j < stacks; j++)
+    {
+        for (int i = 0; i <= slices; i++)
+        {
+            glm::u8vec2 offset[] = {
+                // first triangle
+                { i, j },
+                { (i + 1) % (slices + 1), j + 1 },
+                { (i + 1) % (slices + 1), j },
+
+                // second triangle
+                { i, j },
+                { i, j + 1 },
+                { (i + 1) % (slices + 1), j + 1 }
+            };
+            for (const auto& o : offset)
+            {
+                index = o[1] * (slices + 1) + o[0];
+                finalPosition.push_back(glm::vec4(vertices[index], 1.0f));
+            }
+        }
+    }
+    return finalPosition;
+}
 
 struct alignas(16) TriangleVertex
 {
@@ -30,24 +83,99 @@ struct alignas(16) TextureVertex
     glm::vec4 texCoord;
 };
 
-struct alignas(16) UniformBufferObject
+struct alignas(16) VertMVPMatrixUBO
 {
-    glm::mat4 model{1.0f};
-    glm::mat4 view{1.0f};
-    glm::mat4 proj{1.0f};
+    glm::mat4 model{ 1.0f };
+    glm::mat4 view{ 1.0f };
+    glm::mat4 proj{ 1.0f };
 };
 
-static UniformBufferObject g_mvpMatrix = { glm::eulerAngleZ(glm::radians(30.0f)), glm::mat4(1.0f), glm::mat4(1.0f) }; /* NOLINT */
+struct alignas(16) FragLightingColorsUBO
+{
+    glm::vec4 lightColor{ 1.0f };
+    glm::vec4 objectColor{ 1.0f };
+};
 
-// clang-format off
-static const std::vector<TextureVertex> g_quadVertex = {    /* NOLINT */
+struct alignas(16) FragBasicLightingColorUBO
+{
+    glm::vec4 lightPos{ 1.0f };
+    glm::vec4 lightColor{ 1.0f };
+    glm::vec4 objectColor{ 1.0f };
+    glm::vec4 viewPos{ 1.0f };
+};
+
+struct alignas(16) Material
+{
+    glm::vec4 ambient{ 1.0f };
+    glm::vec4 diffuse{ 1.0f };
+    glm::vec4 specular{ 1.0f };
+    float shininess{ 1.0f };
+};
+
+struct alignas(16) Light
+{
+    glm::vec4 position{ 1.0f };
+    glm::vec4 ambient{ 1.0f };
+    glm::vec4 diffuse{ 1.0f };
+    glm::vec4 specular{ 1.0f };
+};
+
+struct alignas(16) FragLightSphereUBO
+{
+    glm::vec4 lightColor{ 1.0f };
+};
+
+struct alignas(16) FragMaterialsColorUBO
+{
+    glm::vec4 viewPos{ 1.0f };
+    Material material;
+    Light light;
+};
+
+static constexpr uint32_t g_mvpMatrixUboBinding = 2;
+static VertMVPMatrixUBO g_mvpMatrixUbo = { glm::eulerAngleZ(glm::radians(30.0f)), glm::mat4(1.0f), glm::mat4(1.0f) }; /* NOLINT */
+
+static constexpr uint32_t g_lightingColorUboBinding = 3;
+static FragLightingColorsUBO g_lightingColorsUbo = { glm::vec4(1.0f, 1.0f, 1.0f, 1.0), glm::vec4(1.0f, 0.5f, 0.31f, 1.0) }; /* NOLINT */
+
+static constexpr uint32_t g_textureBinding = 1;
+
+static constexpr uint32_t g_basicLightingColorUboBinding = 3;
+static FragBasicLightingColorUBO g_basicLightingColorUbo = {
+    { 1.2f, 1.0f, 2.0f, 1.0f },
+    { 1.0f, 0.5f, 0.31f, 1.0f },
+    { 1.0f, 1.0f, 1.0f, 1.0f },
+    { 1.0f, 1.0f, 1.0f, 1.0f }
+}; /* NOLINT */
+
+static constexpr uint32_t g_lightSphereUboBinding = 4;
+static FragLightSphereUBO g_lightColorUbo = {
+    .lightColor = { 1.0f, 0.0f, 0.0f, 1.0f }
+};
+
+static constexpr uint32_t g_materialsUboBinding = 3;
+static FragMaterialsColorUBO g_fragMaterialsColorUBO = {
+    .viewPos = { 1.0f, 1.0f, 1.0f, 1.0f },
+    .material = { { 1.0f, 0.5f, 0.31f, 1.0f },
+                  { 1.0f, 0.5f, 0.31f, 1.0f },
+                  { 0.5f, 0.5f, 0.5f, 1.0f },
+                  32.0f },
+    .light = { { 1.0f, 1.0f, 1.0f, 1.0f },
+               { 1.0f, 1.0f, 1.0f, 1.0f },
+               { 1.0f, 1.0f, 1.0f, 1.0f },
+               { 1.0f, 1.0f, 1.0f, 1.0f } }
+};
+
+static glm::vec3 g_lightPos{ 1.2f, 1.0f, 2.0f };
+
+static const std::vector<TextureVertex> g_quadVertex = {
+    /* NOLINT */
     // positions                  // texture coords
     { { -0.5f, 0.5f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },  // top left
     { { 0.5f, 0.5f, 0.0f, 1.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },   // top right
     { { -0.5f, -0.5f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } }, // bottom left
     { { 0.5f, -0.5f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } }   // bottom right
 };
-// clang-format on
 
 static const std::vector<uint16_t> g_quadIndices = { /* NOLINT */
                                                      1, 3, 0,
@@ -99,6 +227,102 @@ static const std::vector<TextureVertex> g_cubeVertex = { /* NOLINT */
                                                          { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } }
 };
 
+static const std::vector<glm::vec4> g_cubeVertices = {
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, 0.5f, -0.5f, 1.0f },
+    { 0.5f, 0.5f, -0.5f, 1.0f },
+    { -0.5f, 0.5f, -0.5f, 1.0f },
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+
+    { -0.5f, -0.5f, 0.5f, 1.0f },
+    { 0.5f, -0.5f, 0.5f, 1.0f },
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+    { -0.5f, 0.5f, 0.5f, 1.0f },
+    { -0.5f, -0.5f, 0.5f, 1.0f },
+
+    { -0.5f, 0.5f, 0.5f, 1.0f },
+    { -0.5f, 0.5f, -0.5f, 1.0f },
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+    { -0.5f, -0.5f, 0.5f, 1.0f },
+    { -0.5f, 0.5f, 0.5f, 1.0f },
+
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+    { 0.5f, 0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, 0.5f, 1.0f },
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, -0.5f, 1.0f },
+    { 0.5f, -0.5f, 0.5f, 1.0f },
+    { 0.5f, -0.5f, 0.5f, 1.0f },
+    { -0.5f, -0.5f, 0.5f, 1.0f },
+    { -0.5f, -0.5f, -0.5f, 1.0f },
+
+    { -0.5f, 0.5f, -0.5f, 1.0f },
+    { 0.5f, 0.5f, -0.5f, 1.0f },
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+    { 0.5f, 0.5f, 0.5f, 1.0f },
+    { -0.5f, 0.5f, 0.5f, 1.0f },
+    { -0.5f, 0.5f, -0.5f, 1.0f }
+};
+
+static const std::vector<glm::vec4> g_sphereMesh = getSphereMesh();
+
+struct alignas(16) LightingVertex
+{
+    glm::vec4 position;
+    glm::vec4 normal;
+};
+
+static const std::vector<LightingVertex> g_cubeVerticesWithNormal = {
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
+
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f } },
+
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f } },
+
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f } },
+
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } }
+};
+
 // world space positions of our cubes
 static const std::vector<glm::vec3> g_cubePositions = {
     glm::vec3(0.0f, 0.0f, 0.0f),
@@ -113,31 +337,118 @@ static const std::vector<glm::vec3> g_cubePositions = {
     glm::vec3(-1.3f, 1.0f, -1.5f)
 };
 
-static vk::VertexInputBindingDescription getBindingDescription()
+static std::vector<backend::Pipeline::AttributeDescription> getOneElemAttributesDescriptions()
 {
-    auto bindingDescription = vk::VertexInputBindingDescription{
-        .binding = 0,
-        .stride = sizeof(TriangleVertex),
-        .inputRate = vk::VertexInputRate::eVertex
+    static std::vector<backend::Pipeline::AttributeDescription> result{
+        { .binding = 0,
+          .stride = sizeof(glm::vec4),
+          .inputRate = backend::InputRate::Vertex,
+          .location = 0,
+          .format = backend::Format::Float32,
+          .offset = 0,
+          .components = 4 }
     };
-    return bindingDescription;
+    return result;
 }
 
-static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions()
+static std::vector<backend::Pipeline::AttributeDescription> getTwoElemsAttributesDescriptions()
 {
-    auto attributeDescriptions = std::array<vk::VertexInputAttributeDescription, 2>{
-        vk::VertexInputAttributeDescription{
-            .location = 0,
-            .binding = 0,
-            .format = vk::Format::eR32G32B32A32Sfloat,
-            .offset = offsetof(TriangleVertex, position) },
-        vk::VertexInputAttributeDescription{
-            .location = 1,
-            .binding = 0,
-            .format = vk::Format::eR32G32B32A32Sfloat,
-            .offset = offsetof(TriangleVertex, color) },
+    static std::vector<backend::Pipeline::AttributeDescription> result = {
+        { .binding = 0,
+          .stride = sizeof(glm::vec4) * 2,
+          .inputRate = backend::InputRate::Vertex,
+          .location = 0,
+          .format = backend::Format::Float32,
+          .offset = 0,
+          .components = 4 },
+        { .binding = 0,
+          .stride = sizeof(glm::vec4) * 2,
+          .inputRate = backend::InputRate::Vertex,
+          .location = 1,
+          .format = backend::Format::Float32,
+          .offset = 0 + sizeof(glm::vec4),
+          .components = 4 }
     };
-    return attributeDescriptions;
+    return result;
 }
+
+static std::vector g_textureShaderResource = {
+    backend::ShaderResource{
+        .binding = g_mvpMatrixUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Vertex,
+        .arraySize = 1,
+        .name = "VertMVPMatrixUBO" },
+    backend::ShaderResource{
+        .binding = g_textureBinding,
+        .type = backend::ShaderResourceType::Sampler,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Fragment,
+        .arraySize = 1,
+        .name = "inputTexture" }
+};
+
+static std::vector g_lightCubeShaderResource = {
+    backend::ShaderResource{
+        .binding = g_mvpMatrixUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Vertex,
+        .arraySize = 1,
+        .name = "VertMVPMatrixUBO" }
+};
+
+static std::vector g_basicLightingShaderResource = {
+    backend::ShaderResource{
+        .binding = g_mvpMatrixUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Vertex,
+        .arraySize = 1,
+        .name = "VertMVPMatrixUBO" },
+    backend::ShaderResource{
+        .binding = g_lightingColorUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Fragment,
+        .arraySize = 1,
+        .name = "FragUniformBufferObject" }
+};
+
+static std::vector g_lightSphereShaderResource = {
+    backend::ShaderResource{
+        .binding = g_mvpMatrixUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Vertex,
+        .arraySize = 1,
+        .name = "VertMVPMatrixUBO" },
+    backend::ShaderResource{
+        .binding = g_lightSphereUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Fragment,
+        .arraySize = 1,
+        .name = "FragUniformBufferObject" }
+};
+
+
+static std::vector g_materialsShaderResource = {
+    backend::ShaderResource{
+        .binding = g_mvpMatrixUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Vertex,
+        .arraySize = 1,
+        .name = "VertMVPMatrixUBO" },
+    backend::ShaderResource{
+        .binding = g_materialsUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Fragment,
+        .arraySize = 1,
+        .name = "FragUniformBufferObject" }
+};
 
 #endif // LEARNMETALVULKAN_GLOBALMESHS_H

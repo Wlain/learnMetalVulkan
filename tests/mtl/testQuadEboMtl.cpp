@@ -31,13 +31,6 @@ public:
         m_gpu = m_device->gpu();
         buildPipeline();
         buildBuffers();
-        buildTexture();
-    }
-
-    void buildTexture()
-    {
-        m_texture = MAKE_SHARED(m_texture, m_device);
-        m_texture->createWithFileName("textures/test.jpg", true);
     }
 
     void buildPipeline()
@@ -46,6 +39,8 @@ public:
         std::string fragShader = getFileContents("shaders/triangle.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_device);
         m_pipeline->setProgram(vertSource, fragShader);
+        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
+        m_pipeline->build();
     }
 
     void buildBuffers()
@@ -90,7 +85,7 @@ private:
 
 void testQuadEboMtl()
 {
-    Device::Info info{ Device::RenderType::Metal, 640, 480, "Metal Example Quad use EBO" };
+    Device::Info info{ Device::RenderType::Metal, 800, 600, "Metal Example Quad use EBO" };
     DeviceMtl device(info);
     device.init();
     GLFWRendererMtl rendererMtl(&device);

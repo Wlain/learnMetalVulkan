@@ -19,8 +19,9 @@ public:
     bool createWithRGBAData(const char* data, int width, int height) override;
     bool createWithFileName(std::string_view filename, bool premultiplyAlpha) override;
     void updateTextureSampler(bool filterSampling, Wrap warp) const;
-    GLuint handle() const;
     bool createDepthTexture(int width, int height, DepthPrecision precision) override;
+    GLuint handle() const;
+    GLuint target() const;
 
 private:
     GLuint m_textureHandle;

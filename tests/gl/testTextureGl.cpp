@@ -2,16 +2,16 @@
 // Created by cwb on 2022/9/22.
 //
 
-#include "textureGl.h"
-
 #include "../mesh/globalMeshs.h"
-#include "bufferGL.h"
-#include "deviceGL.h"
+#include "bufferGl.h"
+#include "descriptorSetGl.h"
+#include "deviceGl.h"
 #include "effectBase.h"
 #include "engine.h"
 #include "glCommonDefine.h"
 #include "glfwRendererGL.h"
 #include "pipelineGl.h"
+#include "textureGl.h"
 #include "utils/utils.h"
 
 using namespace backend;
@@ -20,17 +20,16 @@ class TestTextureGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestTextureGl() override
-    {
-        glDeleteVertexArrays(1, &m_vao);
-    }
+    ~TestTextureGl() override = default;
     void initialize() override
     {
         m_render = dynamic_cast<GLFWRendererGL*>(m_renderer);
         buildPipeline();
         buildBuffers();
         buildTexture();
+        buildDescriptorsSets();
     }
+
     void buildPipeline()
     {
         std::string vertSource = getFileContents("shaders/texture.vert");
@@ -38,30 +37,16 @@ public:
         m_pipeline = MAKE_SHARED(m_pipeline, m_render->device());
         m_pipeline->setProgram(vertSource, fragShader);
     }
+
     void buildBuffers()
     {
-        auto program = m_pipeline->program();
-        auto uboIndex = glGetUniformBlockIndex(program, "UniformBufferObject");
-        glUniformBlockBinding(program, uboIndex, 0);
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_render->device());
-        m_uniformBuffer->create(sizeof(UniformBufferObject), &g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
-        // define the range of the buffer that links to a uniform binding point
-        glBindBufferRange(m_uniformBuffer->bufferType(), uboIndex, m_uniformBuffer->buffer(), 0, sizeof(UniformBufferObject));
-        // set up vertex data (and buffer(s)) and configure vertex attributes
-        // ------------------------------------------------------------------
-        glGenVertexArrays(1, &m_vao);
-        glBindVertexArray(m_vao);
-        // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+        m_uniformBuffer->create(sizeof(VertMVPMatrixUBO), &g_mvpMatrixUbo, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_render->device());
         m_vertexBuffer->create(g_quadVertex.size() * sizeof(g_quadVertex[0]), (void*)g_quadVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
         m_indexBuffer = MAKE_SHARED(m_indexBuffer, m_render->device());
         m_indexBuffer->create(g_quadIndices.size() * sizeof(g_quadIndices[0]), (void*)g_quadIndices.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::IndexBuffer);
-        // position attribute
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)nullptr);
-        glEnableVertexAttribArray(0);
-        // texCoord attribute
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)(4 * sizeof(float)));
-        glEnableVertexAttribArray(1);
     }
 
     void buildTexture()
@@ -70,16 +55,32 @@ public:
         m_texture->createWithFileName("textures/test.jpg", true);
     }
 
+    void buildDescriptorsSets()
+    {
+        std::map<uint32_t, DescriptorBufferInfo> bufferInfos{
+            { g_mvpMatrixUboBinding, DescriptorBufferInfo{
+                                         .bufferType = m_uniformBuffer->bufferType(),
+                                         .buffer = m_uniformBuffer->buffer(),
+                                         .offset = 0,
+                                         .range = sizeof(VertMVPMatrixUBO) } }
+        };
+        std::map<uint32_t, DescriptorImageInfo> imageInfos{
+            { g_textureBinding, DescriptorImageInfo{
+                                    .target = m_texture->target(),
+                                    .texture = m_texture->handle(),
+                                } }
+        };
+        m_descriptorSet = MAKE_SHARED(m_descriptorSet, m_render->device());
+        m_descriptorSet->createDescriptorSetLayout(g_textureShaderResource);
+        m_descriptorSet->createDescriptorSets(bufferInfos, imageInfos);
+        m_pipeline->setDescriptorSet(m_descriptorSet);
+    }
+
     void render() override
     {
-        static float red = 1.0f;
-        //        red = red > 1.0 ? 0.0f : red + 0.01f;
-        glClearColor(red, 0.0f, 0.0f, 1.0);
+        glClearColor(1.0f, 0.0f, 0.0f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
         m_render->setPipeline(m_pipeline);
-        // bind Texture
-        glBindTexture(GL_TEXTURE_2D, m_texture->handle());
-        glBindVertexArray(m_vao);
         glDrawElements(GL_TRIANGLES, (int32_t)g_quadIndices.size(), GL_UNSIGNED_SHORT, nullptr);
     }
 
@@ -90,13 +91,13 @@ private:
     std::shared_ptr<BufferGL> m_vertexBuffer;
     std::shared_ptr<BufferGL> m_indexBuffer;
     std::shared_ptr<BufferGL> m_uniformBuffer;
-    GLuint m_vao{ 0 };
+    std::shared_ptr<DescriptorSetGl> m_descriptorSet;
 };
 
 void testTextureGl()
 {
-    Device::Info info{ Device::RenderType::OpenGL, 480, 480, "OpenGL Example texture" };
-    DeviceGL handle(info);
+    Device::Info info{ Device::RenderType::OpenGL, 640, 640, "OpenGL Example texture" };
+    DeviceGl handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
     Engine engine(rendererGl);

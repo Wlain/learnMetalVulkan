@@ -1,8 +1,6 @@
 //
 // Created by william on 2022/9/3.
 //
-extern void testDemoTriangleVk();
-extern void testDemoTextureVk();
 extern void testWindowSdlVk();
 extern void testWindowSdlMtl();
 
@@ -34,8 +32,20 @@ extern void testCameraGl();
 extern void testCameraVk();
 extern void testCameraMtl();
 
+extern void testLightingColorsGl();
+extern void testLightingColorsVk();
+extern void testLightingColorsMtl();
+
+extern void testBasicLightingGl();
+extern void testBasicLightingVk();
+extern void testBasicLightingMtl();
+
+extern void testMaterialsGl();
+extern void testMaterialsVk();
+extern void testMaterialsMtl();
+
 int main()
 {
-    testCameraMtl();
+    testBasicLightingGl();
     return 0;
 }

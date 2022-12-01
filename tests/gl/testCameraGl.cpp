@@ -3,8 +3,9 @@
 //
 
 #include "../mesh/globalMeshs.h"
-#include "bufferGL.h"
-#include "deviceGL.h"
+#include "bufferGl.h"
+#include "descriptorSetGl.h"
+#include "deviceGl.h"
 #include "effectBase.h"
 #include "engine.h"
 #include "glCommonDefine.h"
@@ -20,16 +21,14 @@ class TestCameraGl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestCameraGl() override
-    {
-        glDeleteVertexArrays(1, &m_vao);
-    }
+    ~TestCameraGl() override = default;
     void initialize() override
     {
         m_render = dynamic_cast<GLFWRendererGL*>(m_renderer);
         buildPipeline();
         buildBuffers();
         buildTexture();
+        buildDescriptorsSets();
     }
     void buildPipeline()
     {
@@ -38,28 +37,14 @@ public:
         m_pipeline = MAKE_SHARED(m_pipeline, m_render->device());
         m_pipeline->setProgram(vertSource, fragShader);
     }
+
     void buildBuffers()
     {
-        auto program = m_pipeline->program();
-        auto uboIndex = glGetUniformBlockIndex(program, "UniformBufferObject");
-        glUniformBlockBinding(program, uboIndex, 0);
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_render->device());
-        m_uniformBuffer->create(sizeof(UniformBufferObject), &g_mvpMatrix, Buffer::BufferUsage::StaticDraw, Buffer::BufferType::UniformBuffer);
-        // define the range of the buffer that links to a uniform binding point
-        glBindBufferRange(m_uniformBuffer->bufferType(), uboIndex, m_uniformBuffer->buffer(), 0, sizeof(UniformBufferObject));
-        // set up vertex data (and buffer(s)) and configure vertex attributes
-        // ------------------------------------------------------------------
-        glGenVertexArrays(1, &m_vao);
-        glBindVertexArray(m_vao);
-        // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+        m_uniformBuffer->create(sizeof(VertMVPMatrixUBO), &g_mvpMatrixUbo, Buffer::BufferUsage::DynamicDraw, Buffer::BufferType::UniformBuffer);
         m_vertexBuffer = MAKE_SHARED(m_vertexBuffer, m_render->device());
         m_vertexBuffer->create(g_cubeVertex.size() * sizeof(g_cubeVertex[0]), (void*)g_cubeVertex.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
-        // position attribute
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)nullptr);
-        glEnableVertexAttribArray(0);
-        // texCoord attribute
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(TextureVertex), (void*)(4 * sizeof(float)));
-        glEnableVertexAttribArray(1);
+        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
     }
 
     void buildTexture()
@@ -68,32 +53,49 @@ public:
         m_texture->createWithFileName("textures/test.jpg", true);
     }
 
+    void buildDescriptorsSets()
+    {
+        std::map<uint32_t, DescriptorBufferInfo> bufferInfos{
+            { g_mvpMatrixUboBinding, DescriptorBufferInfo{
+                                         .bufferType = m_uniformBuffer->bufferType(),
+                                         .buffer = m_uniformBuffer->buffer(),
+                                         .offset = 0,
+                                         .range = sizeof(VertMVPMatrixUBO) } }
+        };
+        std::map<uint32_t, DescriptorImageInfo> imageInfos{
+            { g_textureBinding, DescriptorImageInfo{
+                                    .target = m_texture->target(),
+                                    .texture = m_texture->handle(),
+                                } }
+        };
+        m_descriptorSet = MAKE_SHARED(m_descriptorSet, m_render->device());
+        m_descriptorSet->createDescriptorSetLayout(g_textureShaderResource);
+        m_descriptorSet->createDescriptorSets(bufferInfos, imageInfos);
+        m_pipeline->setDescriptorSet(m_descriptorSet);
+    }
+
     void update(float deltaTime) override
     {
         EffectBase::update(deltaTime);
-        g_mvpMatrix.view = m_camera.viewMatrix();
-        g_mvpMatrix.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
+        g_mvpMatrixUbo.view = m_camera.viewMatrix();
+        g_mvpMatrixUbo.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
     }
 
     void render() override
     {
         glEnable(GL_DEPTH_TEST);
-        static float red = 1.0f;
-        glClearColor(red, 0.0f, 0.0f, 1.0);
+        glClearColor(1.0f, 0.0f, 0.0f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_render->setPipeline(m_pipeline);
-        // bind Texture
-        glBindTexture(GL_TEXTURE_2D, m_texture->handle());
-        glBindVertexArray(m_vao);
         for (unsigned int i = 0; i < g_cubePositions.size(); i++)
         {
             // calculate the model matrix for each object and pass it to shader before drawing
-            g_mvpMatrix.model = glm::mat4(1.0f);
-            g_mvpMatrix.model = glm::translate(g_mvpMatrix.model, g_cubePositions[i]);
-            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
+            g_mvpMatrixUbo.model = glm::mat4(1.0f);
+            g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_cubePositions[i]);
+            g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
             float angle = 20.0f * (float)i;
-            g_mvpMatrix.model = glm::rotate(g_mvpMatrix.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            m_uniformBuffer->update(&g_mvpMatrix, sizeof(UniformBufferObject), 0);
+            g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            m_uniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
             glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_cubeVertex.size()));
         }
     }
@@ -104,14 +106,14 @@ private:
     std::shared_ptr<TextureGL> m_texture;
     std::shared_ptr<BufferGL> m_vertexBuffer;
     std::shared_ptr<BufferGL> m_uniformBuffer;
-    GLuint m_vao{ 0 };
+    std::shared_ptr<DescriptorSetGl> m_descriptorSet;
 };
 } // namespace
 
 void testCameraGl()
 {
     Device::Info info{ Device::RenderType::OpenGL, 800, 600, "OpenGL Example Camera" };
-    DeviceGL handle(info);
+    DeviceGl handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
     Engine engine(rendererGl);

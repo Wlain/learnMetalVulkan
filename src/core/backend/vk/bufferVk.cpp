@@ -88,6 +88,7 @@ void BufferVK::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::Device
 void BufferVK::create(size_t bufferSize, void* data, BufferUsage usage, BufferType type)
 {
     auto device = m_deviceVk->handle();
+    m_bufferSize = bufferSize;
     //    auto usageFlags = getUsageFlag(usage);
     auto bufferTypeFlags = getBufferType(type);
     auto [stagingBuffer, stagingBufferMemory] = createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
@@ -119,5 +120,10 @@ const vk::Buffer& BufferVK::buffer() const
 const vk::DeviceMemory& BufferVK::deviceMemory() const
 {
     return m_deviceMemory;
+}
+
+size_t BufferVK::bufferSize() const
+{
+    return m_bufferSize;
 }
 } // namespace backend

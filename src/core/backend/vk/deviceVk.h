@@ -58,6 +58,9 @@ public:
     const std::vector<vk::Semaphore>& renderFinishedSemaphores() const;
     vk::CommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
+    vk::RenderPassBeginInfo getSingleRenderPassBeginInfo();
+    vk::PipelineDepthStencilStateCreateInfo getSingleDepthStencilStateCreateInfo();
+    static std::function<void(const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, const vk::DescriptorSet& descriptorSet)> bindPipeline();
 
 private:
     void initInstance();
@@ -96,7 +99,7 @@ private:
     vk::SurfaceKHR m_surface;
     vk::SwapchainKHR m_swapChain;
     std::vector<vk::Image> m_swapchainImages;
-    std::vector<vk::ImageView> m_swapchainImagesView;
+    std::vector<vk::ImageView> m_swapchainImagesViews;
     std::shared_ptr<TextureVK> m_depthTexture;
     vk::Format m_swapchainImageFormat = vk::Format::eUndefined;
     vk::Extent2D m_swapchainExtent;

@@ -20,6 +20,7 @@ public:
     void update(void* data, size_t size, size_t offset) override;
     const vk::Buffer& buffer() const;
     const vk::DeviceMemory& deviceMemory() const;
+    size_t bufferSize() const;
 
 protected:
     vk::BufferUsageFlags getBufferType(Buffer::BufferType type);
@@ -33,6 +34,7 @@ protected:
     DeviceVK* m_deviceVk{ nullptr };
     vk::Buffer m_buffer;
     vk::DeviceMemory m_deviceMemory;
+    size_t m_bufferSize;
 };
 } // namespace backend
 

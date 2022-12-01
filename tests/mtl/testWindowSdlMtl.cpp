@@ -4,6 +4,7 @@
 
 #include "Metal/Metal.hpp"
 #include "QuartzCore/QuartzCore.hpp"
+
 #include <SDL.h>
 
 void testWindowSdlMtl()
@@ -15,7 +16,7 @@ void testWindowSdlMtl()
     auto swapChain = (CA::MetalLayer*)SDL_RenderGetMetalLayer(renderer);
     auto* gpu = swapChain->device();
     auto* queue = gpu->newCommandQueue();
-    MTL::ClearColor color {0, 0, 0, 1};
+    MTL::ClearColor color{ 0, 0, 0, 1 };
     bool quit = false;
     SDL_Event e;
     while (!quit)

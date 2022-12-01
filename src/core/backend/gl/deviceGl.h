@@ -8,11 +8,11 @@
 #include "device.h"
 namespace backend
 {
-class DeviceGL : public Device
+class DeviceGl : public Device
 {
 public:
-    explicit DeviceGL(const Info& info);
-    ~DeviceGL() override;
+    explicit DeviceGl(const Info& info);
+    ~DeviceGl() override;
     void init() override;
 };
 } // namespace backend

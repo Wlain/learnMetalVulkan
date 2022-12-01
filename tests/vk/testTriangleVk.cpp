@@ -39,20 +39,12 @@ public:
         std::string fragShader = getFileContents("shaders/triangle.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_deviceVk);
         m_pipeline->setProgram(vertSource, fragShader);
-        m_bindingDescription = getBindingDescription();
-        m_attributeDescriptions = getAttributeDescriptions();
-        m_vertexInputInfo = vk::PipelineVertexInputStateCreateInfo{
-            .vertexBindingDescriptionCount = 1,
-            .pVertexBindingDescriptions = &m_bindingDescription,
-            .vertexAttributeDescriptionCount = static_cast<uint32_t>(m_attributeDescriptions.size()),
-            .pVertexAttributeDescriptions = m_attributeDescriptions.data()
-        };
         auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
             .setLayoutCount = 0,
             .pushConstantRangeCount = 0
         };
         m_pipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
-        m_pipeline->initVertexBuffer(m_vertexInputInfo);
+        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
         m_pipeline->setTopology(backend::Topology::Triangles);
         m_pipeline->setPipelineLayout(m_pipelineLayout);
         m_pipeline->setViewport();
@@ -68,32 +60,15 @@ public:
     {
         auto& commandBuffers = m_deviceVk->commandBuffers();
         auto& framebuffer = m_deviceVk->swapchainFramebuffers();
+        auto beginInfo = vk::CommandBufferBeginInfo{};
+        auto renderPassInfo = m_deviceVk->getSingleRenderPassBeginInfo();
         for (std::size_t i = 0; i < commandBuffers.size(); ++i)
         {
-            auto beginInfo = vk::CommandBufferBeginInfo{};
+            renderPassInfo.setFramebuffer(framebuffer[i]);
             commandBuffers[i].begin(beginInfo);
-            static float red{ 0.0f };
-            red = red > 1.0f ? 0.0 : red + 0.001f;
-            std::array<vk::ClearValue, 2> clearValues = {
-                vk::ClearValue{
-                    .color = { .float32 = std::array<float, 4>{ red, 0.0f, 0.0f, 1.0f } } },
-                vk::ClearValue{
-                    .depthStencil = { 1.0f, 0 } }
-            };
-            auto renderPassInfo = vk::RenderPassBeginInfo{
-                .renderPass = m_deviceVk->renderPass(),
-                .framebuffer = framebuffer[i],
-                .renderArea = {
-                    .offset = { 0, 0 },
-                    .extent = m_deviceVk->swapchainExtent() },
-                .clearValueCount = 2,
-                .pClearValues = clearValues.data()
-            };
             commandBuffers[i].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
             commandBuffers[i].bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline->handle());
-            auto vertexBuffers = std::array<vk::Buffer, 1>{ m_vertexBuffer->buffer() };
-            auto offsets = std::array<vk::DeviceSize, 1>{ 0 };
-            commandBuffers[i].bindVertexBuffers(0, 1, vertexBuffers.data(), offsets.data());
+            commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
             commandBuffers[i].draw(static_cast<std::uint32_t>(g_triangleVertex.size()), 1, 0, 0);
             commandBuffers[i].endRenderPass();
             commandBuffers[i].end();
@@ -105,11 +80,7 @@ private:
     DeviceVK* m_deviceVk{ nullptr };
     std::shared_ptr<PipelineVk> m_pipeline;
     std::shared_ptr<BufferVK> m_vertexBuffer;
-    vk::PipelineVertexInputStateCreateInfo m_vertexInputInfo;
-    std::array<vk::VertexInputAttributeDescription, 2> m_attributeDescriptions;
     vk::PipelineLayout m_pipelineLayout;
-    vk::VertexInputBindingDescription m_bindingDescription;
-    std::array<vk::VertexInputAttributeDescription, 2> m_vertexInputAttribute;
 };
 } // namespace
 

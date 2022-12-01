@@ -2,7 +2,7 @@
 // Created by william on 2022/9/4.
 //
 
-#include "deviceGL.h"
+#include "deviceGl.h"
 #include "effectBase.h"
 #include "engine.h"
 #include "glCommonDefine.h"
@@ -24,8 +24,8 @@ public:
 
 void testWindowGl()
 {
-    Device::Info info{ DeviceGL::RenderType::OpenGL, 640, 480, "OpenGL Example window" };
-    DeviceGL handle(info);
+    Device::Info info{ DeviceGl::RenderType::OpenGL, 640, 480, "OpenGL Example window" };
+    DeviceGl handle(info);
     handle.init();
     GLFWRendererGL rendererGl(&handle);
     Engine engine(rendererGl);

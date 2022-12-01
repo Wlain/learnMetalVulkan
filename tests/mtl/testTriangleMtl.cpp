@@ -38,6 +38,8 @@ public:
         std::string fragShader = getFileContents("shaders/triangle.frag");
         m_pipeline = MAKE_SHARED(m_pipeline, m_device);
         m_pipeline->setProgram(vertSource, fragShader);
+        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
+        m_pipeline->build();
     }
 
     void buildBuffers()

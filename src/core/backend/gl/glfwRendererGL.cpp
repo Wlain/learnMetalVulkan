@@ -20,6 +20,15 @@ void GLFWRendererGL::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
 {
     auto pipelineGL = std::dynamic_pointer_cast<PipelineGL>(pipeline);
     glUseProgram(pipelineGL->program());
+    glBindVertexArray(pipelineGL->vao());
+    for (const auto& image : pipelineGL->imageInfos())
+    {
+        auto texture = image.second;
+        glUniform1i(image.first, texture.texture);
+        // bind Texture
+        glActiveTexture(GL_TEXTURE0 + image.first);
+        glBindTexture(texture.target, texture.texture);
+    }
 }
 
 } // namespace backend

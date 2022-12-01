@@ -114,27 +114,51 @@ namespace backend
 vk::Extent2D DeviceVK::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities)
 {
     return vk::Extent2D{ static_cast<uint32_t>(m_info.width), static_cast<uint32_t>(m_info.height) };
-//    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-//    {
-//        return capabilities.currentExtent;
-//    }
-//    else
-//    {
-//        auto actualExtent = vk::Extent2D{ static_cast<uint32_t>(m_info.width), static_cast<uint32_t>(m_info.height) };
-//        actualExtent.width = std::clamp(
-//            actualExtent.width,
-//            capabilities.minImageExtent.width,
-//            capabilities.maxImageExtent.width);
-//        actualExtent.height = std::clamp(
-//            actualExtent.height,
-//            capabilities.minImageExtent.height,
-//            capabilities.maxImageExtent.height);
-//        return actualExtent;
-//    }
+    //    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+    //    {
+    //        return capabilities.currentExtent;
+    //    }
+    //    else
+    //    {
+    //        auto actualExtent = vk::Extent2D{ static_cast<uint32_t>(m_info.width), static_cast<uint32_t>(m_info.height) };
+    //        actualExtent.width = std::clamp(
+    //            actualExtent.width,
+    //            capabilities.minImageExtent.width,
+    //            capabilities.maxImageExtent.width);
+    //        actualExtent.height = std::clamp(
+    //            actualExtent.height,
+    //            capabilities.minImageExtent.height,
+    //            capabilities.maxImageExtent.height);
+    //        return actualExtent;
+    //    }
 }
 
 DeviceVK::~DeviceVK()
 {
+    m_device.destroy(m_renderPass);
+    for (auto& view : m_swapchainImagesViews)
+    {
+        m_device.destroy(view);
+    }
+    for (auto& framebuffer : m_swapchainFramebuffers)
+    {
+        m_device.destroy(framebuffer);
+    }
+    m_swapchainFramebuffers.clear();
+    m_device.freeCommandBuffers(m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
+    for (auto fence : m_inflightFences)
+    {
+        m_device.destroyFence(fence);
+    }
+    for (auto semaphore : m_renderFinishedSemaphores)
+    {
+        m_device.destroySemaphore(semaphore);
+    }
+    for (auto semaphore : m_imageAvailableSemaphores)
+    {
+        m_device.destroySemaphore(semaphore);
+    }
+    m_device.destroyCommandPool(m_commandPool);
     m_depthTexture = nullptr;
     m_device.destroy(m_swapChain);
     m_device.destroy();
@@ -354,7 +378,7 @@ void DeviceVK::creatSwapChain()
     m_swapchainImages = m_device.getSwapchainImagesKHR(m_swapChain);
     m_swapchainImageFormat = surfaceFormat.format;
     m_swapchainExtent = extent;
-    m_swapchainImagesView.reserve(m_swapchainImages.size());
+    m_swapchainImagesViews.reserve(m_swapchainImages.size());
 }
 
 const vk::SwapchainKHR& DeviceVK::swapChain() const
@@ -443,7 +467,7 @@ const std::vector<vk::Image>& DeviceVK::swapchainImages() const
 
 const std::vector<vk::ImageView>& DeviceVK::swapchainImageViews() const
 {
-    return m_swapchainImagesView;
+    return m_swapchainImagesViews;
 }
 
 vk::Format DeviceVK::swapchainImageFormat() const
@@ -471,7 +495,7 @@ void DeviceVK::createImageViews()
                 .a = vk::ComponentSwizzle::eIdentity },
             .subresourceRange = { .aspectMask = vk::ImageAspectFlagBits::eColor, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1 }
         };
-        m_swapchainImagesView.emplace_back(m_device.createImageView(imageViewCreateInfo));
+        m_swapchainImagesViews.emplace_back(m_device.createImageView(imageViewCreateInfo));
     }
 }
 
@@ -655,5 +679,49 @@ void DeviceVK::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
     m_graphicsQueue.submit(submitInfo, nullptr);
     m_device.waitIdle();
     m_device.freeCommandBuffers(m_commandPool, 1, &commandBuffer);
+}
+
+vk::RenderPassBeginInfo DeviceVK::getSingleRenderPassBeginInfo()
+{
+    static std::array clearValues = {
+        vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f } } },
+        vk::ClearValue{ .depthStencil = { 1.0f, 0 } }
+    };
+    static auto renderPassInfo = vk::RenderPassBeginInfo{
+        .renderPass = renderPass(),
+        .renderArea = {
+            .offset = { 0, 0 },
+            .extent = swapchainExtent() },
+        .clearValueCount = 2,
+        .pClearValues = clearValues.data(),
+    };
+    return renderPassInfo;
+}
+
+vk::PipelineDepthStencilStateCreateInfo DeviceVK::getSingleDepthStencilStateCreateInfo()
+{
+    static vk::PipelineDepthStencilStateCreateInfo info = {
+        .depthTestEnable = true,
+        .depthWriteEnable = true,
+        .depthCompareOp = vk::CompareOp::eLess,
+        .depthBoundsTestEnable = false,
+        .stencilTestEnable = false,
+        .front.failOp = vk::StencilOp::eKeep,
+        .front.passOp = vk::StencilOp::eKeep,
+        .front.compareOp = vk::CompareOp::eAlways,
+        .back.failOp = vk::StencilOp::eKeep,
+        .back.passOp = vk::StencilOp::eKeep,
+        .back.compareOp = vk::CompareOp::eAlways
+    };
+    return info;
+}
+
+std::function<void(const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, const vk::DescriptorSet& descriptorSet)> DeviceVK::bindPipeline()
+{
+    static auto bindPipeline = [](const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, const vk::DescriptorSet& descriptorSet) {
+        cb.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, descriptorSet, nullptr);
+        cb.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
+    };
+    return bindPipeline;
 }
 } // namespace backend

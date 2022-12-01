@@ -159,4 +159,9 @@ GLuint TextureGL::handle() const
 {
     return m_textureHandle;
 }
+
+GLuint TextureGL::target() const
+{
+    return m_info.target;
+}
 } // namespace backend

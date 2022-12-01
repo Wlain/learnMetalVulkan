@@ -6,7 +6,7 @@
 #define LEARNMETALVULKAN_BUFFERGL_H
 
 #include "buffer.h"
-#include "deviceGL.h"
+#include "deviceGl.h"
 #include "glCommonDefine.h"
 
 namespace backend
@@ -24,6 +24,7 @@ public:
 private:
     GLuint m_buffer{ 0 };
     GLenum m_bufferType{ 0 };
+    GLuint m_offset{ 0 };
 };
 } // namespace backend
 

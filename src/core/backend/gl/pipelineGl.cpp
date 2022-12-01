@@ -10,6 +10,7 @@ Pipeline::Pipeline() = default;
 
 PipelineGL::PipelineGL(Device* handle)
 {
+    glDeleteVertexArrays(1, &m_vao);
 }
 
 PipelineGL::~PipelineGL()
@@ -102,12 +103,74 @@ void PipelineGL::setProgram(std::string_view vertShader, std::string_view fragSo
 
 void PipelineGL::build()
 {
-    Pipeline::build();
 }
 
 GLuint PipelineGL::program() const
 {
     return m_program;
+}
+
+void PipelineGL::setTopology(Topology topology)
+{
+}
+
+GLenum getFormatGl(const Format& format)
+{
+    GLenum result{};
+    switch (format)
+    {
+    case Format::Float16:
+        break;
+    case Format::Float32:
+        result = GL_FLOAT;
+        break;
+    case Format::Unknown:
+    default:
+        break;
+    }
+    return result;
+}
+
+void PipelineGL::setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions)
+{
+    glGenVertexArrays(1, &m_vao);
+    glBindVertexArray(m_vao);
+    // set up vertex data (and buffer(s)) and configure vertex attributes
+    for (const auto& attribute : attributeDescriptions)
+    {
+        glEnableVertexAttribArray(attribute.location);
+        glVertexAttribPointer(attribute.location, attribute.components, getFormatGl(attribute.format), GL_FALSE, attribute.stride, (void*)attribute.offset);
+    }
+}
+
+GLuint PipelineGL::vao() const
+{
+    return m_vao;
+}
+
+void PipelineGL::setDescriptorSet(const std::shared_ptr<DescriptorSetGl>& descriptorSet)
+{
+    for (const auto& shaderResource : descriptorSet->shaderResources())
+    {
+        auto uboIndex = glGetUniformBlockIndex(m_program, shaderResource.name.c_str());
+        glUniformBlockBinding(m_program, uboIndex, shaderResource.binding);
+        // define the range of the buffer that links to a uniform binding point
+        auto bufferInfos = descriptorSet->bufferInfos();
+        if (bufferInfos.find(shaderResource.binding) != descriptorSet->bufferInfos().end())
+        {
+            auto bufferType = bufferInfos[shaderResource.binding].bufferType;
+            auto buffer = bufferInfos[shaderResource.binding].buffer;
+            auto offset = bufferInfos[shaderResource.binding].offset;
+            auto range = bufferInfos[shaderResource.binding].range;
+            glBindBufferRange(bufferType, shaderResource.binding, buffer, offset, range);
+        }
+    }
+    m_imageInfos = descriptorSet->imageInfos();
+}
+
+const std::map<uint32_t, DescriptorImageInfo>& PipelineGL::imageInfos() const
+{
+    return m_imageInfos;
 }
 
 } // namespace backend

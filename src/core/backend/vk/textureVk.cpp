@@ -143,6 +143,7 @@ std::pair<vk::Image, vk::DeviceMemory> TextureVK::createImage(uint32_t width, ui
 
 void TextureVK::transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
 {
+    m_imageLayout = newLayout;
     auto commandBuffer = m_deviceVk->beginSingleTimeCommands();
     auto barrier = vk::ImageMemoryBarrier{
         .oldLayout = oldLayout,

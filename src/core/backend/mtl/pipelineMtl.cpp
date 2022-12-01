@@ -15,6 +15,15 @@ PipelineMtl::PipelineMtl(Device* handle) :
     m_gpu = m_deviceMtl->gpu();
 }
 
+PipelineMtl::~PipelineMtl()
+{
+    m_vertFunc->release();
+    m_fragFunc->release();
+    m_descriptor->release();
+    m_vertLibrary->release();
+    m_fragLibrary->release();
+}
+
 void PipelineMtl::setProgram(std::string_view vertShader, std::string_view fragSource)
 {
     using NS::StringEncoding::UTF8StringEncoding;
@@ -24,8 +33,8 @@ void PipelineMtl::setProgram(std::string_view vertShader, std::string_view fragS
     LOG_INFO("vertSrc:{}", vertSrc);
     LOG_INFO("fragSrc:{}", fragSrc);
     NS::Error* error = nullptr;
-    MTL::Library* vertLibrary = m_gpu->newLibrary(NS::String::string(vertSrc.c_str(), UTF8StringEncoding), nullptr, &error);
-    if (!vertLibrary)
+    m_vertLibrary = m_gpu->newLibrary(NS::String::string(vertSrc.c_str(), UTF8StringEncoding), nullptr, &error);
+    if (!m_vertLibrary)
     {
         LOG_ERROR("{}", error->localizedDescription()->utf8String());
         ASSERT(0);
@@ -36,42 +45,26 @@ void PipelineMtl::setProgram(std::string_view vertShader, std::string_view fragS
         LOG_ERROR("{}", error->localizedDescription()->utf8String());
         ASSERT(0);
     }
-    auto* vertFunc = vertLibrary->newFunction(NS::String::string("vertexMain", UTF8StringEncoding));
-    auto* fragFunc = fragLibrary->newFunction(NS::String::string("fragmentMain", UTF8StringEncoding));
-    auto* descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
-    auto* vertexDescriptor = MTL::VertexDescriptor::alloc()->init();
-    // pos
-    vertexDescriptor->attributes()->object(0)->setFormat(MTL::VertexFormatFloat4);
-    vertexDescriptor->attributes()->object(0)->setOffset(0);
-    vertexDescriptor->attributes()->object(0)->setBufferIndex(0);
-    // color
-    vertexDescriptor->attributes()->object(1)->setFormat(MTL::VertexFormatFloat4);
-    vertexDescriptor->attributes()->object(1)->setOffset(16);
-    vertexDescriptor->attributes()->object(1)->setBufferIndex(0);
-    // layout
-    vertexDescriptor->layouts()->object(0)->setStride(sizeof(glm::vec4) * 2);
-    descriptor->setVertexFunction(vertFunc);
-    descriptor->setFragmentFunction(fragFunc);
-    descriptor->colorAttachments()->object(0)->setPixelFormat(MTL::PixelFormatBGRA8Unorm_sRGB);
-    descriptor->setVertexDescriptor(vertexDescriptor);
+    m_vertFunc = m_vertLibrary->newFunction(NS::String::string("vertexMain", UTF8StringEncoding));
+    m_fragFunc = fragLibrary->newFunction(NS::String::string("fragmentMain", UTF8StringEncoding));
+}
+
+void PipelineMtl::build()
+{
+    m_descriptor = MTL::RenderPipelineDescriptor::alloc()->init();
+    NS::Error* error = nullptr;
+    m_descriptor->setVertexFunction(m_vertFunc);
+    m_descriptor->setFragmentFunction(m_fragFunc);
+    m_descriptor->colorAttachments()->object(0)->setPixelFormat(MTL::PixelFormatBGRA8Unorm_sRGB);
+    m_descriptor->setVertexDescriptor(m_vertexDescriptor);
     // depth
-    descriptor->setDepthAttachmentPixelFormat(MTL::PixelFormat::PixelFormatDepth32Float);
-    m_pipelineState = m_gpu->newRenderPipelineState(descriptor, &error);
+    m_descriptor->setDepthAttachmentPixelFormat(MTL::PixelFormat::PixelFormatDepth32Float);
+    m_pipelineState = m_gpu->newRenderPipelineState(m_descriptor, &error);
     if (!m_pipelineState)
     {
         LOG_ERROR("{}", error->localizedDescription()->utf8String());
         ASSERT(0);
     }
-    vertFunc->release();
-    fragFunc->release();
-    descriptor->release();
-    vertLibrary->release();
-    fragLibrary->release();
-}
-
-void PipelineMtl::build()
-{
-    Pipeline::build();
 }
 
 MTL::RenderPipelineState* PipelineMtl::pipelineState() const
@@ -79,4 +72,33 @@ MTL::RenderPipelineState* PipelineMtl::pipelineState() const
     return m_pipelineState;
 }
 
+MTL::VertexFormat getFormatMtl(const Format& format)
+{
+    MTL::VertexFormat result{};
+    switch (format)
+    {
+    case Format::Float16:
+        break;
+    case Format::Float32:
+        result = MTL::VertexFormatFloat4;
+        break;
+    case Format::Unknown:
+    default:
+        break;
+    }
+    return result;
+}
+
+void backend::PipelineMtl::setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions)
+{
+    m_vertexDescriptor = MTL::VertexDescriptor::alloc()->init();
+    // layout
+    m_vertexDescriptor->layouts()->object(0)->setStride(attributeDescriptions[0].stride);
+    for (size_t i = 0; i < attributeDescriptions.size(); ++i)
+    {
+        m_vertexDescriptor->attributes()->object(i)->setFormat(getFormatMtl(attributeDescriptions[i].format));
+        m_vertexDescriptor->attributes()->object(i)->setOffset(attributeDescriptions[i].offset);
+        m_vertexDescriptor->attributes()->object(i)->setBufferIndex(attributeDescriptions[i].binding);
+    }
+}
 } // namespace backend

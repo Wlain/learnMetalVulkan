@@ -52,10 +52,10 @@ void GLFWRenderer::init()
             auto* app = reinterpret_cast<GLFWRenderer*>(glfwGetWindowUserPointer(window));
             app->m_dropEvent(count, paths);
         });
-        if (m_window == nullptr)
-        {
-            glfwTerminate();
-        }
+    }
+    else
+    {
+        glfwTerminate();
     }
 }
 
