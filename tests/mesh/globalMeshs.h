@@ -112,6 +112,12 @@ struct alignas(16) Material
     float shininess{ 1.0f };
 };
 
+struct alignas(16) DiffuseMapMaterial
+{
+    glm::vec4 specular{ 1.0f };
+    float shininess{ 1.0f };
+};
+
 struct alignas(16) Light
 {
     glm::vec4 position{ 1.0f };
@@ -129,6 +135,13 @@ struct alignas(16) FragMaterialsColorUBO
 {
     glm::vec4 viewPos{ 1.0f };
     Material material;
+    Light light;
+};
+
+struct alignas(16) FragDiffuseMapUBO
+{
+    glm::vec4 viewPos{ 1.0f };
+    DiffuseMapMaterial material;
     Light light;
 };
 
@@ -159,6 +172,19 @@ static FragMaterialsColorUBO g_fragMaterialsColorUBO = {
     .material = { { 1.0f, 0.5f, 0.31f, 1.0f },
                   { 1.0f, 0.5f, 0.31f, 1.0f },
                   { 0.5f, 0.5f, 0.5f, 1.0f },
+                  32.0f },
+    .light = { { 1.0f, 1.0f, 1.0f, 1.0f },
+               { 1.0f, 1.0f, 1.0f, 1.0f },
+               { 1.0f, 1.0f, 1.0f, 1.0f },
+               { 1.0f, 1.0f, 1.0f, 1.0f } }
+};
+
+static constexpr uint32_t g_diffuseTextureBinding = 4;
+
+static constexpr uint32_t g_fragDiffuseMapUboBinding = 3;
+static FragDiffuseMapUBO g_fragDiffuseMapUBO = {
+    .viewPos = { 1.0f, 1.0f, 1.0f, 1.0f },
+    .material = { { 0.5f, 0.5f, 0.5f, 1.0f },
                   32.0f },
     .light = { { 1.0f, 1.0f, 1.0f, 1.0f },
                { 1.0f, 1.0f, 1.0f, 1.0f },
@@ -279,6 +305,13 @@ struct alignas(16) LightingVertex
     glm::vec4 normal;
 };
 
+struct alignas(16) LightingDiffuseMapVertex
+{
+    glm::vec4 position;
+    glm::vec4 normal;
+    glm::vec4 texCoord;
+};
+
 static const std::vector<LightingVertex> g_cubeVerticesWithNormal = {
     { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
     { { 0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f } },
@@ -322,6 +355,52 @@ static const std::vector<LightingVertex> g_cubeVerticesWithNormal = {
     { { -0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
     { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } }
 };
+
+
+static const std::vector<LightingDiffuseMapVertex> g_cubeVerticesWithNormalTexCoord = {
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { -1.0f, 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+};
+
 
 // world space positions of our cubes
 static const std::vector<glm::vec3> g_cubePositions = {
@@ -367,6 +446,34 @@ static std::vector<backend::Pipeline::AttributeDescription> getTwoElemsAttribute
           .location = 1,
           .format = backend::Format::Float32,
           .offset = 0 + sizeof(glm::vec4),
+          .components = 4 }
+    };
+    return result;
+}
+
+static std::vector<backend::Pipeline::AttributeDescription> getThreeElemsAttributesDescriptions()
+{
+    static std::vector<backend::Pipeline::AttributeDescription> result = {
+        { .binding = 0,
+          .stride = sizeof(glm::vec4) * 3,
+          .inputRate = backend::InputRate::Vertex,
+          .location = 0,
+          .format = backend::Format::Float32,
+          .offset = 0,
+          .components = 4 },
+        { .binding = 0,
+          .stride = sizeof(glm::vec4) * 3,
+          .inputRate = backend::InputRate::Vertex,
+          .location = 1,
+          .format = backend::Format::Float32,
+          .offset = 0 + sizeof(glm::vec4),
+          .components = 4 },
+        { .binding = 0,
+          .stride = sizeof(glm::vec4) * 3,
+          .inputRate = backend::InputRate::Vertex,
+          .location = 2,
+          .format = backend::Format::Float32,
+          .offset = 0 + sizeof(glm::vec4) * 2,
           .components = 4 }
     };
     return result;
@@ -432,7 +539,6 @@ static std::vector g_lightSphereShaderResource = {
         .arraySize = 1,
         .name = "FragUniformBufferObject" }
 };
-
 
 static std::vector g_materialsShaderResource = {
     backend::ShaderResource{

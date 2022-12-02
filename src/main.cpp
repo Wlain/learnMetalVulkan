@@ -44,8 +44,12 @@ extern void testMaterialsGl();
 extern void testMaterialsVk();
 extern void testMaterialsMtl();
 
+extern void testLightingDiffuseMapGl();
+extern void testLightingDiffuseMapVk();
+extern void testLightingDiffuseMapMtl();
+
 int main()
 {
-    testBasicLightingGl();
+    testLightingDiffuseMapGl();
     return 0;
 }
