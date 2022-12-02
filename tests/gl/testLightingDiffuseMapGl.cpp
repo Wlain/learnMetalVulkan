@@ -96,7 +96,7 @@ public:
                                 } }
         };
         m_materialsDescriptorSet = MAKE_SHARED(m_materialsDescriptorSet, m_render->device());
-        m_materialsDescriptorSet->createDescriptorSetLayout(g_materialsShaderResource);
+        m_materialsDescriptorSet->createDescriptorSetLayout(g_diffuseMapShaderResource);
         m_materialsDescriptorSet->createDescriptorSets(bufferInfos, imageInfos);
         m_lightingDiffuseMapCubePipeline->setDescriptorSet(m_materialsDescriptorSet);
     }

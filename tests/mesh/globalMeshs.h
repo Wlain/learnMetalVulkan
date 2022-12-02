@@ -557,4 +557,28 @@ static std::vector g_materialsShaderResource = {
         .name = "FragUniformBufferObject" }
 };
 
+static std::vector g_diffuseMapShaderResource = {
+    backend::ShaderResource{
+        .binding = g_mvpMatrixUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Vertex,
+        .arraySize = 1,
+        .name = "VertMVPMatrixUBO" },
+    backend::ShaderResource{
+        .binding = g_materialsUboBinding,
+        .type = backend::ShaderResourceType::BufferUniform,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Fragment,
+        .arraySize = 1,
+        .name = "FragUniformBufferObject" },
+    backend::ShaderResource{
+        .binding = g_diffuseTextureBinding,
+        .type = backend::ShaderResourceType::Sampler,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Fragment,
+        .arraySize = 1,
+        .name = "diffuse" }
+};
+
 #endif // LEARNMETALVULKAN_GLOBALMESHS_H
