@@ -12,9 +12,7 @@ DescriptorSetGl::DescriptorSetGl(Device* device)
     m_device = dynamic_cast<DeviceGl*>(device);
 }
 
-DescriptorSetGl::~DescriptorSetGl()
-{
-}
+DescriptorSetGl::~DescriptorSetGl() = default;
 
 const std::vector<ShaderResource>& DescriptorSetGl::shaderResources() const
 {
@@ -24,6 +22,7 @@ const std::vector<ShaderResource>& DescriptorSetGl::shaderResources() const
 bool DescriptorSetGl::createDescriptorSetLayout(const std::vector<ShaderResource>& shaderResources)
 {
     m_shaderResources = shaderResources;
+    return true;
 }
 
 void DescriptorSetGl::createDescriptorSets(const std::map<int32_t, DescriptorBufferInfo>& bufferInfos, const std::map<int32_t, DescriptorImageInfo>& imageInfos)

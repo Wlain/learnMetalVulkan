@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(learnMetalVulkan)
 set(CMAKE_CXX_STANDARD 17)
+set(SDL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/SDL)
 
 # submodule
 # Vulkan
@@ -9,7 +10,8 @@ find_package(Vulkan REQUIRED)
 add_subdirectory(3rdparty/metal-cpp)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 # SDL2
-find_package(SDL2 REQUIRED)
+file(GLOB SDL_LIBS "${SDL_DIR}/lib/*.dylib")
+file(GLOB SDL_INCLUDE "${SDL_DIR}/include")
 include_directories(${SDL2_INCLUDE_DIR})
 # glfw
 add_subdirectory(3rdparty/glfw)
@@ -25,6 +27,7 @@ find_library(SHADERC_LIB shaderc_combined $ENV{VULKAN_SDK}/Lib)
 add_subdirectory(3rdparty/spirv-cross)
 
 include_directories(
+        ${SDL_INCLUDE}
         ${Vulkan_INCLUDE_DIRS}
         ${PROJECT_SOURCE_DIR}/src
         ${PROJECT_SOURCE_DIR}/src/utils
@@ -42,4 +45,4 @@ add_executable(learnMetalVulkan ${SOURCES})
 file(COPY tests/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY tests/textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-target_link_libraries(learnMetalVulkan ${SDL2_LIBRARY} ${Vulkan_LIBRARIES} ${SHADERC_LIB} glfw glm glew spdlog metal-cpp spirv-cross-glsl spirv-cross-msl)
+target_link_libraries(learnMetalVulkan ${SDL_LIBS} ${Vulkan_LIBRARIES} ${SHADERC_LIB} glfw glm glew spdlog metal-cpp spirv-cross-glsl spirv-cross-msl)

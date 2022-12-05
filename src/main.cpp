@@ -50,6 +50,6 @@ extern void testLightingDiffuseMapMtl();
 
 int main()
 {
-    testLightingDiffuseMapVk();
+    testWindowSdlVk();
     return 0;
 }
