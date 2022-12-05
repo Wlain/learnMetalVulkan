@@ -180,6 +180,7 @@ static FragMaterialsColorUBO g_fragMaterialsColorUBO = {
 
 static constexpr uint32_t g_diffuseTextureBinding = 4;
 static constexpr uint32_t g_specularTextureBinding = 5;
+static constexpr uint32_t g_emissionTextureBinding = 6;
 
 static constexpr uint32_t g_fragDiffuseMapUboBinding = 3;
 static FragDiffuseMapUBO g_fragDiffuseMapUBO = {
@@ -582,7 +583,14 @@ static std::vector g_diffuseMapShaderResource = {
         .mode = backend::ShaderResourceMode::Static,
         .stages = backend::ShaderType::Fragment,
         .arraySize = 1,
-        .name = "specularTexture" }
+        .name = "specularTexture" },
+    backend::ShaderResource{
+        .binding = g_emissionTextureBinding,
+        .type = backend::ShaderResourceType::Sampler,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Fragment,
+        .arraySize = 1,
+        .name = "emissionTexture" }
 };
 
 #endif // LEARNMETALVULKAN_GLOBALMESHS_H

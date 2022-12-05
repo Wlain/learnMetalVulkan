@@ -62,9 +62,11 @@ public:
     void buildTexture()
     {
         m_diffuseMapTexture = MAKE_SHARED(m_diffuseMapTexture, m_device);
-        m_diffuseMapTexture->createWithFileName("textures/test.jpg", true);
+        m_diffuseMapTexture->createWithFileName("textures/container.jpg", true);
         m_specularMapTexture = MAKE_SHARED(m_specularMapTexture, m_device);
         m_specularMapTexture->createWithFileName("textures/container2_specular.png", true);
+        m_emissionMapTexture = MAKE_SHARED(m_emissionMapTexture, m_device);
+        m_emissionMapTexture->createWithFileName("textures/matrix.jpg", true);
     }
 
     void buildBuffers()
@@ -145,6 +147,7 @@ public:
             encoder->setFragmentBytes(&g_fragDiffuseMapUBO, sizeof(g_fragDiffuseMapUBO), g_fragDiffuseMapUboBinding);
             encoder->setFragmentTexture(m_diffuseMapTexture->handle(), g_diffuseTextureBinding);
             encoder->setFragmentTexture(m_specularMapTexture->handle(), g_specularTextureBinding);
+            encoder->setFragmentTexture(m_emissionMapTexture->handle(), g_emissionTextureBinding);
             encoder->drawPrimitives(MTL::PrimitiveType::PrimitiveTypeTriangle, NS::UInteger(0), NS::UInteger(static_cast<uint32_t>(g_cubeVerticesWithNormalTexCoord.size())));
         }
         encoder->endEncoding();
@@ -162,6 +165,7 @@ private:
     std::shared_ptr<PipelineMtl> m_diffuseMapCubePipeline;
     std::shared_ptr<TextureMTL> m_diffuseMapTexture;
     std::shared_ptr<TextureMTL> m_specularMapTexture;
+    std::shared_ptr<TextureMTL> m_emissionMapTexture;
     std::shared_ptr<TextureMTL> m_depthTexture;
     std::shared_ptr<BufferMTL> m_lightSphereVertexBuffer;
     std::shared_ptr<BufferMTL> m_diffuseMapCubeVertexBuffer;

@@ -10,8 +10,8 @@
 #include "glCommonDefine.h"
 #include "glfwRendererGL.h"
 #include "pipelineGl.h"
-#include "utils/utils.h"
 #include "textureGl.h"
+#include "utils/utils.h"
 
 using namespace backend;
 namespace
@@ -46,9 +46,11 @@ public:
     void buildTexture()
     {
         m_diffuseMapTexture = MAKE_SHARED(m_diffuseMapTexture, m_render->device());
-        m_diffuseMapTexture->createWithFileName("textures/test.jpg", true);
+        m_diffuseMapTexture->createWithFileName("textures/container.jpg", true);
         m_specularMapTexture = MAKE_SHARED(m_specularMapTexture, m_render->device());
         m_specularMapTexture->createWithFileName("textures/container2_specular.png", true);
+        m_emissionMapTexture = MAKE_SHARED(m_emissionMapTexture, m_render->device());
+        m_emissionMapTexture->createWithFileName("textures/matrix.jpg", true);
     }
 
     void buildBuffers()
@@ -93,15 +95,20 @@ public:
         };
         std::map<int32_t, DescriptorImageInfo> imageInfos{
             { g_diffuseTextureBinding, DescriptorImageInfo{
-                                    .target = m_diffuseMapTexture->target(),
-                                    .texture = m_diffuseMapTexture->handle(),
-                                    .name = "diffuseTexture"
-                                } },
-            { g_specularTextureBinding, DescriptorImageInfo{
-                                           .target = m_specularMapTexture->target(),
-                                           .texture = m_specularMapTexture->handle(),
-                                            .name = "specularTexture"
+                                           .name = "diffuseTexture",
+                                           .target = m_diffuseMapTexture->target(),
+                                           .texture = m_diffuseMapTexture->handle(),
                                        } },
+            { g_specularTextureBinding, DescriptorImageInfo{
+                                            .name = "specularTexture",
+                                            .target = m_specularMapTexture->target(),
+                                            .texture = m_specularMapTexture->handle(),
+                                        } },
+            { g_emissionTextureBinding, DescriptorImageInfo{
+                                            .name = "emissionTexture",
+                                            .target = m_emissionMapTexture->target(),
+                                            .texture = m_emissionMapTexture->handle(),
+                                        } },
         };
         m_materialsDescriptorSet = MAKE_SHARED(m_materialsDescriptorSet, m_render->device());
         m_materialsDescriptorSet->createDescriptorSetLayout(g_diffuseMapShaderResource);
@@ -144,7 +151,7 @@ public:
             g_mvpMatrixUbo.model = glm::mat4(1.0f);
             m_commonVertUbo->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
             g_fragDiffuseMapUBO.viewPos = glm::vec4(m_camera.position, 1.0f);
-            g_fragDiffuseMapUBO.light.diffuse = g_lightColorUbo.lightColor * glm::vec4(0.5f);            // decrease the influence;
+            g_fragDiffuseMapUBO.light.diffuse = g_lightColorUbo.lightColor * glm::vec4(0.5f);        // decrease the influence;
             g_fragDiffuseMapUBO.light.ambient = g_fragDiffuseMapUBO.light.diffuse * glm::vec4(0.2f); // decrease the influence
             g_fragDiffuseMapUBO.light.specular = { 1.0f, 1.0f, 1.0f, 1.0f };
             m_lightingDiffuseMapCubeFragUbo->update(&g_fragDiffuseMapUBO, sizeof(FragDiffuseMapUBO), 0);
@@ -160,6 +167,7 @@ private:
     std::shared_ptr<BufferGL> m_lightSphereVertexBuffer;
     std::shared_ptr<TextureGL> m_diffuseMapTexture;
     std::shared_ptr<TextureGL> m_specularMapTexture;
+    std::shared_ptr<TextureGL> m_emissionMapTexture;
     std::shared_ptr<BufferGL> m_commonVertUbo;
     std::shared_ptr<BufferGL> m_lightingDiffuseMapCubeFragUbo;
     std::shared_ptr<BufferGL> m_lightSphereFragUbo;

@@ -64,6 +64,7 @@ public:
         };
         std::map<int32_t, DescriptorImageInfo> imageInfos{
             { g_textureBinding, DescriptorImageInfo{
+                                    .name = "inputTexture",
                                     .target = m_texture->target(),
                                     .texture = m_texture->handle(),
                                 } }

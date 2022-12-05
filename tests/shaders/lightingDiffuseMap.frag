@@ -29,6 +29,8 @@ layout(binding = 4) uniform sampler2D diffuseTexture;
 
 layout(binding = 5) uniform sampler2D specularTexture;
 
+layout(binding = 6) uniform sampler2D emissionTexture;
+
 void main()
 {
     // ambient
@@ -45,7 +47,11 @@ void main()
     vec3 reflectDir = reflect(-lightDir, norm);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), fragUbo.material.shininess);
     vec3 specular = fragUbo.light.specular.rgb * texture(specularTexture, vTexCoords).rgb * spec;
-    vec3 result = ambient + diffuse + specular;
+
+    // emission
+    vec3 emission = texture(emissionTexture, vTexCoords).rgb;
+
+    vec3 result = ambient + diffuse + specular + emission;
 
     fragColor = vec4(result, 1.0);
 }
