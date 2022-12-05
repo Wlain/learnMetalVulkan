@@ -55,14 +55,14 @@ public:
 
     void buildDescriptorsSets()
     {
-        std::map<uint32_t, DescriptorBufferInfo> bufferInfos{
+        std::map<int32_t, DescriptorBufferInfo> bufferInfos{
             { g_mvpMatrixUboBinding, DescriptorBufferInfo{
                                          .bufferType = m_uniformBuffer->bufferType(),
                                          .buffer = m_uniformBuffer->buffer(),
                                          .offset = 0,
                                          .range = sizeof(VertMVPMatrixUBO) } }
         };
-        std::map<uint32_t, DescriptorImageInfo> imageInfos{
+        std::map<int32_t, DescriptorImageInfo> imageInfos{
             { g_textureBinding, DescriptorImageInfo{
                                     .target = m_texture->target(),
                                     .texture = m_texture->handle(),

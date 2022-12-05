@@ -20,7 +20,7 @@ public:
     void setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions) override;
     void setProgram(std::string_view vertShader, std::string_view fragSource) override;
     void setDescriptorSet(const std::shared_ptr<DescriptorSetGl>& descriptorSet);
-    const std::map<uint32_t, DescriptorImageInfo>& imageInfos() const;
+    const std::map<int32_t, DescriptorImageInfo>& imageInfos() const;
     GLuint program() const;
     GLuint vao() const;
 
@@ -30,7 +30,7 @@ private:
 private:
     GLuint m_program{ 0 };
     GLuint m_vao{ 0 };
-    std::map<uint32_t, DescriptorImageInfo> m_imageInfos;
+    std::map<int32_t, DescriptorImageInfo> m_imageInfos;
 };
 } // namespace backend
 

@@ -38,6 +38,8 @@ public:
     {
         m_diffuseMapTexture = MAKE_SHARED(m_diffuseMapTexture, m_render->device());
         m_diffuseMapTexture->createWithFileName("textures/test.jpg", true);
+        m_specularMapTexture = MAKE_SHARED(m_specularMapTexture, m_render->device());
+        m_specularMapTexture->createWithFileName("textures/container2_specular.png", true);
     }
 
     void buildBuffers()
@@ -96,6 +98,9 @@ public:
                 .descriptorCount = m_swapchainSize },
             vk::DescriptorPoolSize{
                 .type = vk::DescriptorType::eCombinedImageSampler,
+                .descriptorCount = m_swapchainSize },
+            vk::DescriptorPoolSize{
+                .type = vk::DescriptorType::eCombinedImageSampler,
                 .descriptorCount = m_swapchainSize }
         };
         bufferInfos = {
@@ -109,7 +114,11 @@ public:
             { g_diffuseTextureBinding, vk::DescriptorImageInfo{
                                            .sampler = m_diffuseMapTexture->sampler(),
                                            .imageView = m_diffuseMapTexture->imageView(),
-                                           .imageLayout = m_diffuseMapTexture->imageLayout() } }
+                                           .imageLayout = m_diffuseMapTexture->imageLayout() } },
+            { g_specularTextureBinding, vk::DescriptorImageInfo{
+                                           .sampler = m_specularMapTexture->sampler(),
+                                           .imageView = m_specularMapTexture->imageView(),
+                                           .imageLayout = m_specularMapTexture->imageLayout() } }
         };
         m_diffuseMapDescriptorSets->createDescriptorPool(descriptorPoolSizes, m_swapchainSize);
         m_diffuseMapDescriptorSets->createDescriptorSetLayout(g_diffuseMapShaderResource);
@@ -231,6 +240,7 @@ private:
     std::shared_ptr<BufferVK> m_diffuseMapVertUniformBuffer;
     std::shared_ptr<BufferVK> m_diffuseMapFragUniformBuffer;
     std::shared_ptr<TextureVK> m_diffuseMapTexture;
+    std::shared_ptr<TextureVK> m_specularMapTexture;
     vk::PipelineLayout m_diffuseMapPipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_diffuseMapDescriptorSets;
     uint32_t m_swapchainSize{};

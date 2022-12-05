@@ -32,16 +32,16 @@ public:
     explicit DescriptorSetGl(Device* device);
     ~DescriptorSetGl();
     bool createDescriptorSetLayout(const std::vector<ShaderResource>& shaderResources);
-    void createDescriptorSets(const std::map<uint32_t, DescriptorBufferInfo>& bufferInfos, const std::map<uint32_t, DescriptorImageInfo>& imageInfos);
-    std::map<uint32_t, DescriptorBufferInfo>& bufferInfos();
-    std::map<uint32_t, DescriptorImageInfo>& imageInfos();
+    void createDescriptorSets(const std::map<int32_t, DescriptorBufferInfo>& bufferInfos, const std::map<int32_t, DescriptorImageInfo>& imageInfos);
+    std::map<int32_t, DescriptorBufferInfo>& bufferInfos();
+    std::map<int32_t, DescriptorImageInfo>& imageInfos();
     const std::vector<ShaderResource>& shaderResources() const;
 
 private:
     DeviceGl* m_device{ nullptr };
     std::vector<ShaderResource> m_shaderResources;
-    std::map<uint32_t, DescriptorBufferInfo> m_bufferInfos;
-    std::map<uint32_t, DescriptorImageInfo> m_imageInfos;
+    std::map<int32_t, DescriptorBufferInfo> m_bufferInfos;
+    std::map<int32_t, DescriptorImageInfo> m_imageInfos;
 };
 } // namespace backend
 

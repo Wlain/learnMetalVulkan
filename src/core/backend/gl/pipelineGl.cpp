@@ -166,9 +166,18 @@ void PipelineGL::setDescriptorSet(const std::shared_ptr<DescriptorSetGl>& descri
         }
     }
     m_imageInfos = descriptorSet->imageInfos();
+    if (!m_imageInfos.empty())
+    {
+        glUseProgram(m_program);
+        for (const auto& image : m_imageInfos)
+        {
+            glUniform1i(glGetUniformLocation(m_program, image.second.name.c_str()), image.first);
+        }
+        glUseProgram(0);
+    }
 }
 
-const std::map<uint32_t, DescriptorImageInfo>& PipelineGL::imageInfos() const
+const std::map<int32_t, DescriptorImageInfo>& PipelineGL::imageInfos() const
 {
     return m_imageInfos;
 }

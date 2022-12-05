@@ -23,8 +23,7 @@ void GLFWRendererGL::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
     glBindVertexArray(pipelineGL->vao());
     for (const auto& image : pipelineGL->imageInfos())
     {
-        auto texture = image.second;
-        glUniform1i(image.first, texture.texture);
+        const auto& texture = image.second;
         // bind Texture
         glActiveTexture(GL_TEXTURE0 + image.first);
         glBindTexture(texture.target, texture.texture);

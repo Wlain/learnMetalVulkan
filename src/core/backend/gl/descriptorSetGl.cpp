@@ -26,18 +26,18 @@ bool DescriptorSetGl::createDescriptorSetLayout(const std::vector<ShaderResource
     m_shaderResources = shaderResources;
 }
 
-void DescriptorSetGl::createDescriptorSets(const std::map<uint32_t, DescriptorBufferInfo>& bufferInfos, const std::map<uint32_t, DescriptorImageInfo>& imageInfos)
+void DescriptorSetGl::createDescriptorSets(const std::map<int32_t, DescriptorBufferInfo>& bufferInfos, const std::map<int32_t, DescriptorImageInfo>& imageInfos)
 {
     m_bufferInfos = bufferInfos;
     m_imageInfos = imageInfos;
 }
 
-std::map<uint32_t, DescriptorBufferInfo>& DescriptorSetGl::bufferInfos()
+std::map<int32_t, DescriptorBufferInfo>& DescriptorSetGl::bufferInfos()
 {
     return m_bufferInfos;
 }
 
-std::map<uint32_t, DescriptorImageInfo>& DescriptorSetGl::imageInfos()
+std::map<int32_t, DescriptorImageInfo>& DescriptorSetGl::imageInfos()
 {
     return m_imageInfos;
 }

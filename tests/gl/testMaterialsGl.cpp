@@ -61,7 +61,7 @@ public:
 
     void buildDescriptorsSets()
     {
-        std::map<uint32_t, DescriptorBufferInfo> bufferInfos{
+        std::map<int32_t, DescriptorBufferInfo> bufferInfos{
             { g_mvpMatrixUboBinding, DescriptorBufferInfo{
                                          .bufferType = m_commonVertUbo->bufferType(),
                                          .buffer = m_commonVertUbo->buffer(),

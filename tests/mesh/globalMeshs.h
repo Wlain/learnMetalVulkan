@@ -114,7 +114,6 @@ struct alignas(16) Material
 
 struct alignas(16) DiffuseMapMaterial
 {
-    glm::vec4 specular{ 1.0f };
     float shininess{ 1.0f };
 };
 
@@ -180,12 +179,12 @@ static FragMaterialsColorUBO g_fragMaterialsColorUBO = {
 };
 
 static constexpr uint32_t g_diffuseTextureBinding = 4;
+static constexpr uint32_t g_specularTextureBinding = 5;
 
 static constexpr uint32_t g_fragDiffuseMapUboBinding = 3;
 static FragDiffuseMapUBO g_fragDiffuseMapUBO = {
     .viewPos = { 1.0f, 1.0f, 1.0f, 1.0f },
-    .material = { { 0.5f, 0.5f, 0.5f, 1.0f },
-                  32.0f },
+    .material = { 32.0f },
     .light = { { 1.0f, 1.0f, 1.0f, 1.0f },
                { 1.0f, 1.0f, 1.0f, 1.0f },
                { 1.0f, 1.0f, 1.0f, 1.0f },
@@ -356,7 +355,6 @@ static const std::vector<LightingVertex> g_cubeVerticesWithNormal = {
     { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } }
 };
 
-
 static const std::vector<LightingDiffuseMapVertex> g_cubeVerticesWithNormalTexCoord = {
     { { -0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
     { { 0.5f, -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, -1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
@@ -400,7 +398,6 @@ static const std::vector<LightingDiffuseMapVertex> g_cubeVerticesWithNormalTexCo
     { { -0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
     { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
 };
-
 
 // world space positions of our cubes
 static const std::vector<glm::vec3> g_cubePositions = {
@@ -578,7 +575,14 @@ static std::vector g_diffuseMapShaderResource = {
         .mode = backend::ShaderResourceMode::Static,
         .stages = backend::ShaderType::Fragment,
         .arraySize = 1,
-        .name = "diffuse" }
+        .name = "diffuseTexture" },
+    backend::ShaderResource{
+        .binding = g_specularTextureBinding,
+        .type = backend::ShaderResourceType::Sampler,
+        .mode = backend::ShaderResourceMode::Static,
+        .stages = backend::ShaderType::Fragment,
+        .arraySize = 1,
+        .name = "specularTexture" }
 };
 
 #endif // LEARNMETALVULKAN_GLOBALMESHS_H

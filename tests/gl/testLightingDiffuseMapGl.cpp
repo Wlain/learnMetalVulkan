@@ -47,6 +47,8 @@ public:
     {
         m_diffuseMapTexture = MAKE_SHARED(m_diffuseMapTexture, m_render->device());
         m_diffuseMapTexture->createWithFileName("textures/test.jpg", true);
+        m_specularMapTexture = MAKE_SHARED(m_specularMapTexture, m_render->device());
+        m_specularMapTexture->createWithFileName("textures/container2_specular.png", true);
     }
 
     void buildBuffers()
@@ -68,7 +70,7 @@ public:
 
     void buildDescriptorsSets()
     {
-        std::map<uint32_t, DescriptorBufferInfo> bufferInfos{
+        std::map<int32_t, DescriptorBufferInfo> bufferInfos{
             { g_mvpMatrixUboBinding, DescriptorBufferInfo{
                                          .bufferType = m_commonVertUbo->bufferType(),
                                          .buffer = m_commonVertUbo->buffer(),
@@ -89,11 +91,17 @@ public:
                                          .range = sizeof(VertMVPMatrixUBO) } },
             { g_fragDiffuseMapUboBinding, DescriptorBufferInfo{ .bufferType = m_lightingDiffuseMapCubeFragUbo->bufferType(), .buffer = m_lightingDiffuseMapCubeFragUbo->buffer(), .offset = 0, .range = sizeof(FragDiffuseMapUBO) } }
         };
-        std::map<uint32_t, DescriptorImageInfo> imageInfos{
+        std::map<int32_t, DescriptorImageInfo> imageInfos{
             { g_diffuseTextureBinding, DescriptorImageInfo{
                                     .target = m_diffuseMapTexture->target(),
                                     .texture = m_diffuseMapTexture->handle(),
-                                } }
+                                    .name = "diffuseTexture"
+                                } },
+            { g_specularTextureBinding, DescriptorImageInfo{
+                                           .target = m_specularMapTexture->target(),
+                                           .texture = m_specularMapTexture->handle(),
+                                            .name = "specularTexture"
+                                       } },
         };
         m_materialsDescriptorSet = MAKE_SHARED(m_materialsDescriptorSet, m_render->device());
         m_materialsDescriptorSet->createDescriptorSetLayout(g_diffuseMapShaderResource);
@@ -151,6 +159,7 @@ private:
     std::shared_ptr<BufferGL> m_lightingDiffuseMapCubeVertexBuffer;
     std::shared_ptr<BufferGL> m_lightSphereVertexBuffer;
     std::shared_ptr<TextureGL> m_diffuseMapTexture;
+    std::shared_ptr<TextureGL> m_specularMapTexture;
     std::shared_ptr<BufferGL> m_commonVertUbo;
     std::shared_ptr<BufferGL> m_lightingDiffuseMapCubeFragUbo;
     std::shared_ptr<BufferGL> m_lightSphereFragUbo;
