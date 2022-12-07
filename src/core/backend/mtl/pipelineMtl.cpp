@@ -89,7 +89,7 @@ static MTL::VertexFormat getFormatMtl(const Format& format)
     return result;
 }
 
-void backend::PipelineMtl::setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions)
+void PipelineMtl::setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions)
 {
     m_vertexDescriptor = MTL::VertexDescriptor::alloc()->init();
     // layout

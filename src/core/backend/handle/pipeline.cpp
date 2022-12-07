@@ -95,18 +95,6 @@ std::string Pipeline::getMslShaderFromSpv(std::vector<uint32_t> shader)
     option.ios_support_base_vertex_instance = true;
     msl.set_msl_options(option);
     ShaderResources resources = msl.get_shader_resources();
-    MSLConstexprSampler sampler;
-    sampler.s_address = MSL_SAMPLER_ADDRESS_CLAMP_TO_EDGE;
-    sampler.t_address = MSL_SAMPLER_ADDRESS_CLAMP_TO_EDGE;
-    sampler.r_address = MSL_SAMPLER_ADDRESS_CLAMP_TO_EDGE;
-    sampler.min_filter = MSL_SAMPLER_FILTER_LINEAR;
-    sampler.mag_filter = MSL_SAMPLER_FILTER_LINEAR;
-    for (auto& resource : resources.sampled_images)
-    {
-        uint32_t set = msl.get_decoration(resource.id, spv::DecorationDescriptorSet);
-        uint32_t binding = msl.get_decoration(resource.id, spv::DecorationBinding);
-        msl.remap_constexpr_sampler_by_binding(set, binding, sampler);
-    }
     auto entryPoint = msl.get_entry_points_and_stages();
     for (auto& e : entryPoint)
     {

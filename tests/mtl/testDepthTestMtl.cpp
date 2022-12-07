@@ -121,7 +121,6 @@ public:
         encoder->setDepthStencilState(m_depthStencilState->handle());
         encoder->setVertexBuffer(m_cubeVertexBuffer->buffer(), 0, 0);
         encoder->setFragmentTexture(m_cubeTexture->handle(), g_textureBinding);
-        encoder->setFragmentSamplerState(m_samplerState, g_textureBinding);
         g_mvpMatrixUbo.model = glm::mat4(1.0f);
         g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, glm::vec3(-1.0f, 0.0f, -1.0f));
         encoder->setVertexBytes(&g_mvpMatrixUbo, sizeof(g_mvpMatrixUbo), g_mvpMatrixUboBinding); // ubo：小内存，大内存用buffer
