@@ -34,8 +34,10 @@ public:
     {
         std::string vertSource = getFileContents("shaders/texture.vert");
         std::string fragShader = getFileContents("shaders/texture.frag");
-        m_pipeline = MAKE_SHARED(m_pipeline, m_render->device());
-        m_pipeline->setProgram(vertSource, fragShader);
+        m_planePipeline = MAKE_SHARED(m_planePipeline, m_render->device());
+        m_planePipeline->setProgram(vertSource, fragShader);
+        m_cubePipeline = MAKE_SHARED(m_cubePipeline, m_render->device());
+        m_cubePipeline->setProgram(vertSource, fragShader);
     }
 
     void buildTexture()
@@ -49,21 +51,24 @@ public:
     void buildBuffers()
     {
         m_uniformBuffer = MAKE_SHARED(m_uniformBuffer, m_render->device());
+        g_mvpMatrixUbo.view = glm::translate(g_mvpMatrixUbo.view, glm::vec3(0.0f, 0.0f, -3.0f));
         m_uniformBuffer->create(sizeof(VertMVPMatrixUBO), &g_mvpMatrixUbo, Buffer::BufferUsage::DynamicDraw, Buffer::BufferType::UniformBuffer);
-        m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
         m_cubeVertexBuffer = MAKE_SHARED(m_cubeVertexBuffer, m_render->device());
         m_cubeVertexBuffer->create(g_cubeVerticesPosTexCoord.size() * sizeof(g_cubeVerticesPosTexCoord[0]), (void*)g_cubeVerticesPosTexCoord.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_cubePipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
         m_planeVertexBuffer = MAKE_SHARED(m_planeVertexBuffer, m_render->device());
         m_planeVertexBuffer->create(g_planeVerticesPosTexCoord.size() * sizeof(g_planeVerticesPosTexCoord[0]), (void*)g_planeVerticesPosTexCoord.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
+        m_planePipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
     }
 
     void buildDepthStencilStates()
     {
         m_depthStencilState = MAKE_SHARED(m_depthStencilState, m_render->device());
-        m_depthStencilState->setDepthCompareOp(CompareOp::Less);
+        m_depthStencilState->setDepthCompareOp(CompareOp::Always);
         m_depthStencilState->setDepthTestEnable(true);
         m_depthStencilState->setDepthWriteEnable(true);
-        m_pipeline->setDepthStencilState(m_depthStencilState);
+        m_cubePipeline->setDepthStencilState(m_depthStencilState);
+        m_planePipeline->setDepthStencilState(m_depthStencilState);
     }
 
     void buildDescriptorsSets()
@@ -82,10 +87,22 @@ public:
                                     .texture = m_cubeTexture->handle(),
                                 } }
         };
-        m_descriptorSet = MAKE_SHARED(m_descriptorSet, m_render->device());
-        m_descriptorSet->createDescriptorSetLayout(g_textureShaderResource);
-        m_descriptorSet->createDescriptorSets(bufferInfos, imageInfos);
-        m_pipeline->setDescriptorSet(m_descriptorSet);
+        m_cubeDescriptorSet = MAKE_SHARED(m_cubeDescriptorSet, m_render->device());
+        m_cubeDescriptorSet->createDescriptorSetLayout(g_textureShaderResource);
+        m_cubeDescriptorSet->createDescriptorSets(bufferInfos, imageInfos);
+        m_cubePipeline->setDescriptorSet(m_cubeDescriptorSet);
+
+        imageInfos = {
+            { g_textureBinding, DescriptorImageInfo{
+                                    .name = "inputTexture",
+                                    .target = m_planeTexture->target(),
+                                    .texture = m_planeTexture->handle(),
+                                } }
+        };
+        m_planeDescriptorSet = MAKE_SHARED(m_planeDescriptorSet, m_render->device());
+        m_planeDescriptorSet->createDescriptorSetLayout(g_textureShaderResource);
+        m_planeDescriptorSet->createDescriptorSets(bufferInfos, imageInfos);
+        m_planePipeline->setDescriptorSet(m_planeDescriptorSet);
     }
 
     void update(float deltaTime) override
@@ -99,30 +116,37 @@ public:
     {
         glClearColor(1.0f, 0.0f, 0.0f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        m_render->setPipeline(m_pipeline);
-        for (unsigned int i = 0; i < g_cubePositions.size(); i++)
-        {
-            // calculate the model matrix for each object and pass it to shader before drawing
-            g_mvpMatrixUbo.model = glm::mat4(1.0f);
-            g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, g_cubePositions[i]);
-            g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, m_duringTime, glm::vec3(0.5f, 1.0f, 0.0f));
-            float angle = 20.0f * (float)i;
-            g_mvpMatrixUbo.model = glm::rotate(g_mvpMatrixUbo.model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            m_uniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
-            glDrawArrays(GL_TRIANGLES, 0, static_cast<int32_t>(g_cubeVertex.size()));
-        }
+        // cubes
+        m_render->setPipeline(m_cubePipeline);
+        g_mvpMatrixUbo.model = glm::mat4(1.0f);
+        g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, glm::vec3(-1.0f, 0.0f, -1.0f));
+        m_uniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<uint32_t>(g_cubeVerticesPosTexCoord.size()));
+        g_mvpMatrixUbo.model = glm::mat4(1.0f);
+        g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, glm::vec3(2.0f, 0.0f, 0.0f));
+        m_uniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<uint32_t>(g_cubeVerticesPosTexCoord.size()));
+        // floor
+        m_render->setPipeline(m_planePipeline);
+        g_mvpMatrixUbo.model = glm::mat4(1.0f);
+        m_uniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<uint32_t>(g_planeVerticesPosTexCoord.size()));
     }
 
 private:
-    std::shared_ptr<PipelineGL> m_pipeline;
     GLFWRendererGL* m_render{ nullptr };
-    std::shared_ptr<TextureGL> m_cubeTexture;
+    std::shared_ptr<BufferGL> m_uniformBuffer;
+    std::shared_ptr<DepthStencilStateGL> m_depthStencilState;
+
+    std::shared_ptr<PipelineGL> m_planePipeline;
+    std::shared_ptr<DescriptorSetGl> m_planeDescriptorSet;
     std::shared_ptr<TextureGL> m_planeTexture;
     std::shared_ptr<BufferGL> m_planeVertexBuffer;
+
+    std::shared_ptr<PipelineGL> m_cubePipeline;
+    std::shared_ptr<DescriptorSetGl> m_cubeDescriptorSet;
+    std::shared_ptr<TextureGL> m_cubeTexture;
     std::shared_ptr<BufferGL> m_cubeVertexBuffer;
-    std::shared_ptr<BufferGL> m_uniformBuffer;
-    std::shared_ptr<DescriptorSetGl> m_descriptorSet;
-    std::shared_ptr<DepthStencilStateGL> m_depthStencilState;
 };
 
 void testDepthTestGl()

@@ -54,6 +54,6 @@ extern void testDepthTestMtl();
 
 int main()
 {
-    testMaterialsGl();
+    testDepthTestGl();
     return 0;
 }

@@ -10,11 +10,11 @@ Pipeline::Pipeline() = default;
 
 PipelineGL::PipelineGL(Device* handle)
 {
-    glDeleteVertexArrays(1, &m_vao);
 }
 
 PipelineGL::~PipelineGL()
 {
+    glDeleteVertexArrays(1, &m_vao);
     glDeleteProgram(m_program);
 }
 
