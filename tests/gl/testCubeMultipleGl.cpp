@@ -4,6 +4,7 @@
 
 #include "../mesh/globalMeshs.h"
 #include "bufferGl.h"
+#include "depthStencilStateGl.h"
 #include "descriptorSetGl.h"
 #include "deviceGl.h"
 #include "effectBase.h"
@@ -28,6 +29,7 @@ public:
         buildPipeline();
         buildBuffers();
         buildTexture();
+        buildDepthStencilStates();
         buildDescriptorsSets();
     }
 
@@ -76,6 +78,15 @@ public:
         m_pipeline->setDescriptorSet(m_descriptorSet);
     }
 
+    void buildDepthStencilStates()
+    {
+        m_depthStencilState = MAKE_SHARED(m_depthStencilState, m_render->device());
+        m_depthStencilState->setDepthCompareOp(CompareOp::Less);
+        m_depthStencilState->setDepthTestEnable(true);
+        m_depthStencilState->setDepthWriteEnable(true);
+        m_pipeline->setDepthStencilState(m_depthStencilState);
+    }
+
     void resize(int width, int height) override
     {
         g_mvpMatrixUbo.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
@@ -83,7 +94,6 @@ public:
 
     void render() override
     {
-        glEnable(GL_DEPTH_TEST);
         glClearColor(1.0f, 0.0f, 0.0f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         m_render->setPipeline(m_pipeline);
@@ -107,6 +117,7 @@ private:
     std::shared_ptr<BufferGL> m_vertexBuffer;
     std::shared_ptr<BufferGL> m_uniformBuffer;
     std::shared_ptr<DescriptorSetGl> m_descriptorSet;
+    std::shared_ptr<DepthStencilStateGL> m_depthStencilState;
 };
 } // namespace
 

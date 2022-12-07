@@ -13,9 +13,7 @@ class DepthStencilStateGL : public DepthStencilState
 public:
     explicit DepthStencilStateGL(Device* device);
     ~DepthStencilStateGL() override;
-
-private:
-
+    static GLenum getCompareOpGl(CompareOp op);
 };
 } // namespace backend
 

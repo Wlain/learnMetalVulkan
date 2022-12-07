@@ -182,4 +182,14 @@ const std::map<int32_t, DescriptorImageInfo>& PipelineGL::imageInfos() const
     return m_imageInfos;
 }
 
+void PipelineGL::setDepthStencilState(const std::shared_ptr<DepthStencilStateGL>& depthStencilState)
+{
+    m_depthStencilState = depthStencilState;
+}
+
+const std::shared_ptr<DepthStencilStateGL>& PipelineGL::depthStencilState() const
+{
+    return m_depthStencilState;
+}
+
 } // namespace backend

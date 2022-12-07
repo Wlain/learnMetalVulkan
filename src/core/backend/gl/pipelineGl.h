@@ -5,6 +5,7 @@
 #ifndef LEARNMETALVULKAN_SHADERGL_H
 #define LEARNMETALVULKAN_SHADERGL_H
 #include "descriptorSetGl.h"
+#include "depthStencilStateGl.h"
 #include "glCommonDefine.h"
 #include "pipeline.h"
 
@@ -20,7 +21,9 @@ public:
     void setAttributeDescription(const std::vector<AttributeDescription>& attributeDescriptions) override;
     void setProgram(std::string_view vertShader, std::string_view fragSource) override;
     void setDescriptorSet(const std::shared_ptr<DescriptorSetGl>& descriptorSet);
+    void setDepthStencilState(const std::shared_ptr<DepthStencilStateGL>& depthStencilState);
     const std::map<int32_t, DescriptorImageInfo>& imageInfos() const;
+    const std::shared_ptr<DepthStencilStateGL>& depthStencilState() const;
     GLuint program() const;
     GLuint vao() const;
 
@@ -31,6 +34,7 @@ private:
     GLuint m_program{ 0 };
     GLuint m_vao{ 0 };
     std::map<int32_t, DescriptorImageInfo> m_imageInfos;
+    std::shared_ptr<DepthStencilStateGL> m_depthStencilState;
 };
 } // namespace backend
 

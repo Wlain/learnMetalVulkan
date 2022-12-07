@@ -4,6 +4,7 @@
 
 #include "../mesh/globalMeshs.h"
 #include "bufferGl.h"
+#include "depthStencilStateGl.h"
 #include "descriptorSetGl.h"
 #include "deviceGl.h"
 #include "effectBase.h"
@@ -26,6 +27,7 @@ public:
         m_render = dynamic_cast<GLFWRendererGL*>(m_renderer);
         buildPipeline();
         buildBuffers();
+        buildDepthStencilStates();
         buildDescriptorsSets();
     }
     void buildPipeline()
@@ -57,6 +59,16 @@ public:
         m_materialCubeVertexBuffer = MAKE_SHARED(m_materialCubeVertexBuffer, m_render->device());
         m_materialCubeVertexBuffer->create(g_cubeVerticesWithNormal.size() * sizeof(g_cubeVerticesWithNormal[0]), (void*)g_cubeVerticesWithNormal.data(), Buffer::BufferUsage::StaticDraw, Buffer::BufferType::VertexBuffer);
         m_materialCubePipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
+    }
+
+    void buildDepthStencilStates()
+    {
+        m_depthStencilState = MAKE_SHARED(m_depthStencilState, m_render->device());
+        m_depthStencilState->setDepthCompareOp(CompareOp::Less);
+        m_depthStencilState->setDepthTestEnable(true);
+        m_depthStencilState->setDepthWriteEnable(true);
+        m_lightSpherePipeline->setDepthStencilState(m_depthStencilState);
+        m_materialCubePipeline->setDepthStencilState(m_depthStencilState);
     }
 
     void buildDescriptorsSets()
@@ -97,7 +109,6 @@ public:
 
     void render() override
     {
-        glEnable(GL_DEPTH_TEST);
         glClearColor(1.0f, 0.0f, 0.0f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // draw lighting sphere
@@ -142,6 +153,7 @@ private:
     std::shared_ptr<BufferGL> m_lightSphereFragUbo;
     std::shared_ptr<DescriptorSetGl> m_lightSphereDescriptorSet;
     std::shared_ptr<DescriptorSetGl> m_materialsDescriptorSet;
+    std::shared_ptr<DepthStencilStateGL> m_depthStencilState;
 };
 } // namespace
 

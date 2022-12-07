@@ -28,6 +28,20 @@ void GLFWRendererGL::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
         glActiveTexture(GL_TEXTURE0 + image.first);
         glBindTexture(texture.target, texture.texture);
     }
+    auto depthStencilState = pipelineGL->depthStencilState();
+    if (depthStencilState)
+    {
+        if (depthStencilState->depthTestEnable())
+        {
+            glEnable(GL_DEPTH_TEST);
+        }
+        else
+        {
+            glDisable(GL_DEPTH_TEST);
+        }
+        glDepthMask(depthStencilState->depthWriteEnable() ? GL_TRUE : GL_FALSE);
+        glDepthFunc(DepthStencilStateGL::getCompareOpGl(depthStencilState->depthCompareOp()));
+    }
 }
 
 } // namespace backend

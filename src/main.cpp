@@ -54,6 +54,6 @@ extern void testDepthTestMtl();
 
 int main()
 {
-    testCameraVk();
+    testMaterialsGl();
     return 0;
 }

@@ -27,7 +27,7 @@ private:
     MTL::StencilDescriptor* newStencilOpStateMtl(StencilOpState stencilOpState);
 
 public:
-    MTL::DepthStencilState* m_depthStencilState;
+    MTL::DepthStencilState* m_depthStencilState{ nullptr};
     DeviceMtl* m_deviceMtl{ nullptr };
     MTL::Device* m_gpu{ nullptr };
     MTL::DepthStencilDescriptor* m_descriptor{ nullptr };
