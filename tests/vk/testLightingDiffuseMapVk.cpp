@@ -4,6 +4,7 @@
 #include "../mesh/globalMeshs.h"
 #include "bufferVk.h"
 #include "commonHandle.h"
+#include "depthStencilStateVk.h"
 #include "descriptorSetVk.h"
 #include "deviceVk.h"
 #include "engine.h"
@@ -30,6 +31,7 @@ public:
         m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
         buildTexture();
         buildBuffers();
+        buildDepthStencilStates();
         buildDescriptorsSets();
         buildPipeline();
     }
@@ -66,6 +68,14 @@ public:
         EffectBase::update(deltaTime);
         g_mvpMatrixUbo.view = m_camera.viewMatrix();
         g_mvpMatrixUbo.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
+    }
+
+    void buildDepthStencilStates()
+    {
+        m_depthStencilState = MAKE_SHARED(m_depthStencilState, m_deviceVk);
+        m_depthStencilState->setDepthCompareOp(CompareOp::Less);
+        m_depthStencilState->setDepthTestEnable(true);
+        m_depthStencilState->setDepthWriteEnable(true);
     }
 
     void buildDescriptorsSets()
@@ -120,14 +130,8 @@ public:
                                            .sampler = m_diffuseMapTexture->sampler(),
                                            .imageView = m_diffuseMapTexture->imageView(),
                                            .imageLayout = m_diffuseMapTexture->imageLayout() } },
-            { g_specularTextureBinding, vk::DescriptorImageInfo{
-                                           .sampler = m_specularMapTexture->sampler(),
-                                           .imageView = m_specularMapTexture->imageView(),
-                                           .imageLayout = m_specularMapTexture->imageLayout() } },
-            { g_emissionTextureBinding, vk::DescriptorImageInfo{
-                                            .sampler = m_emissionMapTexture->sampler(),
-                                            .imageView = m_emissionMapTexture->imageView(),
-                                            .imageLayout = m_emissionMapTexture->imageLayout() } }
+            { g_specularTextureBinding, vk::DescriptorImageInfo{ .sampler = m_specularMapTexture->sampler(), .imageView = m_specularMapTexture->imageView(), .imageLayout = m_specularMapTexture->imageLayout() } },
+            { g_emissionTextureBinding, vk::DescriptorImageInfo{ .sampler = m_emissionMapTexture->sampler(), .imageView = m_emissionMapTexture->imageView(), .imageLayout = m_emissionMapTexture->imageLayout() } }
         };
         m_diffuseMapDescriptorSets->createDescriptorPool(descriptorPoolSizes, m_swapchainSize);
         m_diffuseMapDescriptorSets->createDescriptorSetLayout(g_diffuseMapShaderResource);
@@ -147,7 +151,6 @@ public:
             .pushConstantRangeCount = 0,   // optional
             .pPushConstantRanges = nullptr // optional
         };
-        m_depthStencilState = m_deviceVk->getSingleDepthStencilStateCreateInfo();
         m_lightCubePipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
         m_lightCubePipeline->setAttributeDescription(getOneElemAttributesDescriptions());
         m_lightCubePipeline->setTopology(backend::Topology::Triangles);
@@ -155,7 +158,7 @@ public:
         m_lightCubePipeline->setViewport();
         m_lightCubePipeline->setRasterization();
         m_lightCubePipeline->setMultisample();
-        m_lightCubePipeline->setDepthStencil(m_depthStencilState);
+        m_lightCubePipeline->setDepthStencil(m_depthStencilState->handle());
         m_lightCubePipeline->setColorBlendAttachment();
         m_lightCubePipeline->setRenderPass();
         m_lightCubePipeline->build();
@@ -178,7 +181,7 @@ public:
         m_diffuseMapPipeline->setViewport();
         m_diffuseMapPipeline->setRasterization();
         m_diffuseMapPipeline->setMultisample();
-        m_diffuseMapPipeline->setDepthStencil(m_depthStencilState);
+        m_diffuseMapPipeline->setDepthStencil(m_depthStencilState->handle());
         m_diffuseMapPipeline->setColorBlendAttachment();
         m_diffuseMapPipeline->setRenderPass();
         m_diffuseMapPipeline->build();
@@ -204,7 +207,7 @@ public:
                 // calculate the model matrix for each object and pass it to shader before drawing
                 g_mvpMatrixUbo.model = glm::mat4(1.0f);
                 g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, glm::vec3(g_fragDiffuseMapUBO.light.position));
-                g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.05f));               // a smaller cube
+                g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.05f)); // a smaller cube
                 m_lightCubeVertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(g_mvpMatrixUbo), 0);
                 g_lightColorUbo.lightColor.x = static_cast<float>(std::abs(sin(m_duringTime * 2.0)));
                 g_lightColorUbo.lightColor.y = static_cast<float>(std::abs(sin(m_duringTime * 0.7)));
@@ -219,7 +222,7 @@ public:
                 g_mvpMatrixUbo.model = glm::mat4(1.0f);
                 m_diffuseMapVertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(g_mvpMatrixUbo), 0);
                 g_fragDiffuseMapUBO.viewPos = glm::vec4(m_camera.position, 1.0f);
-                g_fragDiffuseMapUBO.light.diffuse = g_lightColorUbo.lightColor * glm::vec4(0.5f);            // decrease the influence;
+                g_fragDiffuseMapUBO.light.diffuse = g_lightColorUbo.lightColor * glm::vec4(0.5f);        // decrease the influence;
                 g_fragDiffuseMapUBO.light.ambient = g_fragDiffuseMapUBO.light.diffuse * glm::vec4(0.2f); // decrease the influence
                 g_fragDiffuseMapUBO.light.specular = { 1.0f, 1.0f, 1.0f, 1.0f };
                 m_diffuseMapFragUniformBuffer->update(&g_fragDiffuseMapUBO, sizeof(g_fragDiffuseMapUBO), 0);
@@ -235,7 +238,7 @@ private:
     GLFWRendererVK* m_render{ nullptr };
     DeviceVK* m_deviceVk{ nullptr };
 
-    vk::PipelineDepthStencilStateCreateInfo m_depthStencilState;
+    std::shared_ptr<DepthStencilStateVk> m_depthStencilState;
 
     std::shared_ptr<PipelineVk> m_lightCubePipeline;
     std::shared_ptr<BufferVK> m_lightCubeVertexBuffer;

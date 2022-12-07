@@ -6,6 +6,7 @@
 #include "bufferMtl.h"
 #include "commonHandle.h"
 #include "commonMacro.h"
+#include "depthStencilStateMtl.h"
 #include "deviceMtl.h"
 #include "engine.h"
 #include "glfwRendererMtl.h"
@@ -23,10 +24,7 @@ class TestMaterialsCubeMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestMaterialsCubeMtl() override
-    {
-        m_depthStencilState->release();
-    }
+    ~TestMaterialsCubeMtl() override = default;
     void initialize() override
     {
         m_device = dynamic_cast<DeviceMtl*>(m_renderer->device());
@@ -82,11 +80,10 @@ public:
 
     void buildDepthStencilStates()
     {
-        MTL::DepthStencilDescriptor* pDsDesc = MTL::DepthStencilDescriptor::alloc()->init();
-        pDsDesc->setDepthCompareFunction(MTL::CompareFunction::CompareFunctionLess);
-        pDsDesc->setDepthWriteEnabled(true);
-        m_depthStencilState = m_gpu->newDepthStencilState(pDsDesc);
-        pDsDesc->release();
+        m_depthStencilState = MAKE_SHARED(m_depthStencilState, m_device);
+        m_depthStencilState->setDepthCompareOp(CompareOp::Less);
+        m_depthStencilState->setDepthTestEnable(true);
+        m_depthStencilState->setDepthWriteEnable(true);
     }
 
     void render() override
@@ -106,7 +103,7 @@ public:
         // draw lighting sphere
         {
             encoder->setRenderPipelineState(m_lightSpherePipeline->pipelineState());
-            encoder->setDepthStencilState(m_depthStencilState);
+            encoder->setDepthStencilState(m_depthStencilState->handle());
             encoder->setVertexBuffer(m_lightSphereVertexBuffer->buffer(), 0, 0);
             g_fragMaterialsColorUBO.light.position.x = 1.0f + sin(m_duringTime) * 2.0f;
             g_fragMaterialsColorUBO.light.position.y = sin(m_duringTime / 2.0f) * 1.0f;
@@ -124,7 +121,7 @@ public:
         // draw materials cube
         {
             encoder->setRenderPipelineState(m_materialsCubePipeline->pipelineState());
-            encoder->setDepthStencilState(m_depthStencilState);
+            encoder->setDepthStencilState(m_depthStencilState->handle());
             encoder->setVertexBuffer(m_materialsCubeVertexBuffer->buffer(), 0, 0);
             // calculate the model matrix for each object and pass it to shader before drawing
             g_mvpMatrixUbo.model = glm::mat4(1.0f);
@@ -152,7 +149,7 @@ private:
     std::shared_ptr<TextureMTL> m_depthTexture;
     std::shared_ptr<BufferMTL> m_lightSphereVertexBuffer;
     std::shared_ptr<BufferMTL> m_materialsCubeVertexBuffer;
-    MTL::DepthStencilState* m_depthStencilState{};
+    std::shared_ptr<DepthStencilStateMTL> m_depthStencilState;
 };
 } // namespace
 

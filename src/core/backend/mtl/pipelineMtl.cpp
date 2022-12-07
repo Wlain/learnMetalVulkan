@@ -72,7 +72,7 @@ MTL::RenderPipelineState* PipelineMtl::pipelineState() const
     return m_pipelineState;
 }
 
-MTL::VertexFormat getFormatMtl(const Format& format)
+static MTL::VertexFormat getFormatMtl(const Format& format)
 {
     MTL::VertexFormat result{};
     switch (format)

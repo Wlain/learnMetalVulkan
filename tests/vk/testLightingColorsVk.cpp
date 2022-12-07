@@ -5,6 +5,7 @@
 #include "../mesh/globalMeshs.h"
 #include "bufferVk.h"
 #include "commonHandle.h"
+#include "depthStencilStateVk.h"
 #include "descriptorSetVk.h"
 #include "deviceVk.h"
 #include "engine.h"
@@ -30,6 +31,7 @@ public:
         m_swapchainSize = (uint32_t)m_deviceVk->swapchainImageViews().size();
         m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
         buildBuffers();
+        buildDepthStencilStates();
         buildDescriptorsSets();
         buildPipeline();
     }
@@ -51,6 +53,14 @@ public:
         EffectBase::update(deltaTime);
         g_mvpMatrixUbo.view = m_camera.viewMatrix();
         g_mvpMatrixUbo.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
+    }
+
+    void buildDepthStencilStates()
+    {
+        m_depthStencilState = MAKE_SHARED(m_depthStencilState, m_deviceVk);
+        m_depthStencilState->setDepthCompareOp(CompareOp::Less);
+        m_depthStencilState->setDepthTestEnable(true);
+        m_depthStencilState->setDepthWriteEnable(true);
     }
 
     void buildDescriptorsSets()
@@ -104,7 +114,6 @@ public:
             .pushConstantRangeCount = 0,   // optional
             .pPushConstantRanges = nullptr // optional
         };
-        m_depthStencilState = m_deviceVk->getSingleDepthStencilStateCreateInfo();
         m_lightCubePipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
         m_lightCubePipeline->setAttributeDescription(getOneElemAttributesDescriptions());
         m_lightCubePipeline->setTopology(backend::Topology::Triangles);
@@ -112,7 +121,7 @@ public:
         m_lightCubePipeline->setViewport();
         m_lightCubePipeline->setRasterization();
         m_lightCubePipeline->setMultisample();
-        m_lightCubePipeline->setDepthStencil(m_depthStencilState);
+        m_lightCubePipeline->setDepthStencil(m_depthStencilState->handle());
         m_lightCubePipeline->setColorBlendAttachment();
         m_lightCubePipeline->setRenderPass();
         m_lightCubePipeline->build();
@@ -135,7 +144,7 @@ public:
         m_colorsPipeline->setViewport();
         m_colorsPipeline->setRasterization();
         m_colorsPipeline->setMultisample();
-        m_colorsPipeline->setDepthStencil(m_depthStencilState);
+        m_colorsPipeline->setDepthStencil(m_depthStencilState->handle());
         m_colorsPipeline->setColorBlendAttachment();
         m_colorsPipeline->setRenderPass();
         m_colorsPipeline->build();
@@ -179,7 +188,7 @@ private:
     DeviceVK* m_deviceVk{ nullptr };
     std::shared_ptr<BufferVK> m_vertexBuffer;
     std::shared_ptr<BufferVK> m_fragUniformBuffer;
-    vk::PipelineDepthStencilStateCreateInfo m_depthStencilState;
+    std::shared_ptr<DepthStencilStateVk> m_depthStencilState;
 
     std::shared_ptr<PipelineVk> m_lightCubePipeline;
     std::shared_ptr<BufferVK> m_lightCubeVertUniformBuffer;

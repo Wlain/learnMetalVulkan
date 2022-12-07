@@ -7,7 +7,10 @@
 #include <set>
 #include <shaderc/shaderc.hpp>
 #include <vector>
-#include "vkCommonDefine.h"
+#ifndef VULKAN_HPP_TYPESAFE_CONVERSION
+    #define VULKAN_HPP_TYPESAFE_CONVERSION 1
+#endif
+#include <vulkan/vulkan.hpp>
 
 struct SharingModeUtil
 {

@@ -5,14 +5,14 @@
 #ifndef LEARNMETALVULKAN_GLOBALMESHS_H
 #define LEARNMETALVULKAN_GLOBALMESHS_H
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtx/euler_angles.hpp>
-#include <vector>
-#define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
 #include "globalCommonDefine.h"
 #include "mtlCommonDefine.h"
 #include "pipeline.h"
 #include "vkCommonDefine.h"
+
+#include <glm/glm.hpp>
+#include <glm/gtx/euler_angles.hpp>
+#include <vector>
 
 static std::vector<glm::vec4> getSphereMesh(int stacks = 16, int slices = 32, float radius = 1)
 {
@@ -398,6 +398,55 @@ static const std::vector<LightingDiffuseMapVertex> g_cubeVerticesWithNormalTexCo
     { { 0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
     { { -0.5f, 0.5f, 0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
     { { -0.5f, 0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+};
+
+static const std::vector<TextureVertex> g_cubeVerticesPosTexCoord = {
+    // positions          // texture Coords
+    { { -0.5f, -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, -0.5f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, -0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, -0.5f, 0.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { 0.5f, 0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, 0.5f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { -0.5f, 0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } },
+};
+
+static const std::vector<TextureVertex> g_planeVerticesPosTexCoord = {
+    { { 5.0f, -0.5f, 5.0f, 0.0f }, { 2.0f, 0.0f, 0.0f, 0.0f } },
+    { { -5.0f, -0.5f, 5.0f, 0.0f }, { 0.0f, 0.0f, 0.0f, 0.0f } },
+    { { -5.0f, -0.5f, -5.0f, 0.0f }, { 0.0f, 2.0f, 0.0f, 0.0f } },
+    { { 5.0f, -0.5f, 5.0f, 0.0f }, { 2.0f, 0.0f, 0.0f, 0.0f } },
+    { { -5.0f, -0.5f, -5.0f, 0.0f }, { 0.0f, 2.0f, 0.0f, 0.0f } },
+    { { 5.0f, -0.5f, -5.0f, 0.0f }, { 2.0f, 2.0f, 0.0f, 0.0f } },
 };
 
 // world space positions of our cubes

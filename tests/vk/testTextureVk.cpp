@@ -95,7 +95,6 @@ public:
         m_pipeline->setViewport();
         m_pipeline->setRasterization();
         m_pipeline->setMultisample();
-        //        m_pipeline->setDepthStencil();
         m_pipeline->setColorBlendAttachment();
         m_pipeline->setRenderPass();
         m_pipeline->build();

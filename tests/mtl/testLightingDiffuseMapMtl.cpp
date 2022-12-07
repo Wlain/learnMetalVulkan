@@ -6,6 +6,7 @@
 #include "bufferMtl.h"
 #include "commonHandle.h"
 #include "commonMacro.h"
+#include "depthStencilStateMtl.h"
 #include "deviceMtl.h"
 #include "engine.h"
 #include "glfwRendererMtl.h"
@@ -23,10 +24,7 @@ class TestDiffuseMapCubeMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestDiffuseMapCubeMtl() override
-    {
-        m_depthStencilState->release();
-    }
+    ~TestDiffuseMapCubeMtl() override = default;
     void initialize() override
     {
         m_device = dynamic_cast<DeviceMtl*>(m_renderer->device());
@@ -93,11 +91,10 @@ public:
 
     void buildDepthStencilStates()
     {
-        MTL::DepthStencilDescriptor* pDsDesc = MTL::DepthStencilDescriptor::alloc()->init();
-        pDsDesc->setDepthCompareFunction(MTL::CompareFunction::CompareFunctionLess);
-        pDsDesc->setDepthWriteEnabled(true);
-        m_depthStencilState = m_gpu->newDepthStencilState(pDsDesc);
-        pDsDesc->release();
+        m_depthStencilState = MAKE_SHARED(m_depthStencilState, m_device);
+        m_depthStencilState->setDepthCompareOp(CompareOp::Less);
+        m_depthStencilState->setDepthTestEnable(true);
+        m_depthStencilState->setDepthWriteEnable(true);
     }
 
     void render() override
@@ -117,7 +114,7 @@ public:
         // draw lighting sphere
         {
             encoder->setRenderPipelineState(m_lightSpherePipeline->pipelineState());
-            encoder->setDepthStencilState(m_depthStencilState);
+            encoder->setDepthStencilState(m_depthStencilState->handle());
             encoder->setVertexBuffer(m_lightSphereVertexBuffer->buffer(), 0, 0);
             g_fragDiffuseMapUBO.light.position.x = 1.0f + sin(m_duringTime) * 2.0f;
             g_fragDiffuseMapUBO.light.position.y = sin(m_duringTime / 2.0f) * 1.0f;
@@ -135,13 +132,13 @@ public:
         // draw diffuseMap cube
         {
             encoder->setRenderPipelineState(m_diffuseMapCubePipeline->pipelineState());
-            encoder->setDepthStencilState(m_depthStencilState);
+            encoder->setDepthStencilState(m_depthStencilState->handle());
             encoder->setVertexBuffer(m_diffuseMapCubeVertexBuffer->buffer(), 0, 0);
             // calculate the model matrix for each object and pass it to shader before drawing
             g_mvpMatrixUbo.model = glm::mat4(1.0f);
             encoder->setVertexBytes(&g_mvpMatrixUbo, sizeof(g_mvpMatrixUbo), g_mvpMatrixUboBinding); // ubo：小内存，大内存用buffer
             g_fragDiffuseMapUBO.viewPos = glm::vec4(m_camera.position, 1.0f);
-            g_fragDiffuseMapUBO.light.diffuse = g_lightColorUbo.lightColor * glm::vec4(0.5f);            // decrease the influence;
+            g_fragDiffuseMapUBO.light.diffuse = g_lightColorUbo.lightColor * glm::vec4(0.5f);        // decrease the influence;
             g_fragDiffuseMapUBO.light.ambient = g_fragDiffuseMapUBO.light.diffuse * glm::vec4(0.2f); // decrease the influence
             g_fragDiffuseMapUBO.light.specular = { 1.0f, 1.0f, 1.0f, 1.0f };
             encoder->setFragmentBytes(&g_fragDiffuseMapUBO, sizeof(g_fragDiffuseMapUBO), g_fragDiffuseMapUboBinding);
@@ -169,7 +166,7 @@ private:
     std::shared_ptr<TextureMTL> m_depthTexture;
     std::shared_ptr<BufferMTL> m_lightSphereVertexBuffer;
     std::shared_ptr<BufferMTL> m_diffuseMapCubeVertexBuffer;
-    MTL::DepthStencilState* m_depthStencilState{};
+    std::shared_ptr<DepthStencilStateMTL> m_depthStencilState;
 };
 } // namespace
 

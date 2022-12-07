@@ -698,24 +698,6 @@ vk::RenderPassBeginInfo DeviceVK::getSingleRenderPassBeginInfo()
     return renderPassInfo;
 }
 
-vk::PipelineDepthStencilStateCreateInfo DeviceVK::getSingleDepthStencilStateCreateInfo()
-{
-    static vk::PipelineDepthStencilStateCreateInfo info = {
-        .depthTestEnable = true,
-        .depthWriteEnable = true,
-        .depthCompareOp = vk::CompareOp::eLess,
-        .depthBoundsTestEnable = false,
-        .stencilTestEnable = false,
-        .front.failOp = vk::StencilOp::eKeep,
-        .front.passOp = vk::StencilOp::eKeep,
-        .front.compareOp = vk::CompareOp::eAlways,
-        .back.failOp = vk::StencilOp::eKeep,
-        .back.passOp = vk::StencilOp::eKeep,
-        .back.compareOp = vk::CompareOp::eAlways
-    };
-    return info;
-}
-
 std::function<void(const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, const vk::DescriptorSet& descriptorSet)> DeviceVK::bindPipeline()
 {
     static auto bindPipeline = [](const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, const vk::DescriptorSet& descriptorSet) {

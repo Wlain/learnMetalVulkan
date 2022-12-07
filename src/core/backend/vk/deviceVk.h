@@ -6,9 +6,8 @@
 #define LEARNMETALVULKAN_HANDLEVK_H
 #include "device.h"
 #include "glfwRenderer.h"
-#define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
 #include <optional>
-#include <vulkan/vulkan.hpp>
+#include "vkCommonDefine.h"
 namespace backend
 {
 class TextureVK;
@@ -59,7 +58,6 @@ public:
     vk::CommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(vk::CommandBuffer commandBuffer);
     vk::RenderPassBeginInfo getSingleRenderPassBeginInfo();
-    vk::PipelineDepthStencilStateCreateInfo getSingleDepthStencilStateCreateInfo();
     static std::function<void(const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, const vk::DescriptorSet& descriptorSet)> bindPipeline();
 
 private:

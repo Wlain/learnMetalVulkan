@@ -5,10 +5,7 @@
 #ifndef LEARNMETALVULKAN_SHADERVK_H
 #define LEARNMETALVULKAN_SHADERVK_H
 #include "pipeline.h"
-#ifndef VULKAN_HPP_NO_CONSTRUCTORS
-    #define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
-#endif
-#include <vulkan/vulkan.hpp>
+#include "vkCommonDefine.h"
 namespace backend
 {
 class DeviceVK;

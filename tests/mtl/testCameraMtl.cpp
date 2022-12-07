@@ -6,6 +6,7 @@
 #include "bufferMtl.h"
 #include "commonHandle.h"
 #include "commonMacro.h"
+#include "depthStencilStateMtl.h"
 #include "deviceMtl.h"
 #include "engine.h"
 #include "glfwRendererMtl.h"
@@ -23,10 +24,7 @@ class TestCameraMtl : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestCameraMtl() override
-    {
-        m_depthStencilState->release();
-    }
+    ~TestCameraMtl() override = default;
     void initialize() override
     {
         m_device = dynamic_cast<DeviceMtl*>(m_renderer->device());
@@ -77,11 +75,10 @@ public:
 
     void buildDepthStencilStates()
     {
-        MTL::DepthStencilDescriptor* pDsDesc = MTL::DepthStencilDescriptor::alloc()->init();
-        pDsDesc->setDepthCompareFunction(MTL::CompareFunction::CompareFunctionLess);
-        pDsDesc->setDepthWriteEnabled(true);
-        m_depthStencilState = m_gpu->newDepthStencilState(pDsDesc);
-        pDsDesc->release();
+        m_depthStencilState = MAKE_SHARED(m_depthStencilState, m_device);
+        m_depthStencilState->setDepthCompareOp(CompareOp::Less);
+        m_depthStencilState->setDepthTestEnable(true);
+        m_depthStencilState->setDepthWriteEnable(true);
     }
 
     void render() override
@@ -99,7 +96,7 @@ public:
         auto* buffer = m_queue->commandBuffer();
         auto* encoder = buffer->renderCommandEncoder(pass);
         encoder->setRenderPipelineState(m_pipeline->pipelineState());
-        encoder->setDepthStencilState(m_depthStencilState);
+        encoder->setDepthStencilState(m_depthStencilState->handle());
         encoder->setVertexBuffer(m_vertexBuffer->buffer(), 0, 0);
         encoder->setFragmentTexture(m_texture->handle(), g_textureBinding);
         for (unsigned int i = 0; i < g_cubePositions.size(); i++)
@@ -128,7 +125,7 @@ private:
     std::shared_ptr<TextureMTL> m_texture;
     std::shared_ptr<TextureMTL> m_depthTexture;
     std::shared_ptr<BufferMTL> m_vertexBuffer;
-    MTL::DepthStencilState* m_depthStencilState;
+    std::shared_ptr<DepthStencilStateMTL> m_depthStencilState;
 };
 } // namespace
 

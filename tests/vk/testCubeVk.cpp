@@ -5,6 +5,7 @@
 #include "../mesh/globalMeshs.h"
 #include "bufferVk.h"
 #include "commonHandle.h"
+#include "depthStencilStateVk.h"
 #include "descriptorSetVk.h"
 #include "deviceVk.h"
 #include "engine.h"
@@ -30,6 +31,7 @@ public:
         m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
         buildTextures();
         buildBuffers();
+        buildDepthStencilStates();
         buildDescriptorsSets();
         buildPipeline();
     }
@@ -52,6 +54,14 @@ public:
     void resize(int width, int height) override
     {
         g_mvpMatrixUbo.proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+    }
+
+    void buildDepthStencilStates()
+    {
+        m_depthStencilState = MAKE_SHARED(m_depthStencilState, m_deviceVk);
+        m_depthStencilState->setDepthCompareOp(CompareOp::Less);
+        m_depthStencilState->setDepthTestEnable(true);
+        m_depthStencilState->setDepthWriteEnable(true);
     }
 
     void buildDescriptorsSets()
@@ -94,7 +104,6 @@ public:
             .pushConstantRangeCount = 0,   // optional
             .pPushConstantRanges = nullptr // optional
         };
-        m_depthStencilState = m_deviceVk->getSingleDepthStencilStateCreateInfo();
         m_pipelineLayout = m_deviceVk->handle().createPipelineLayout(pipelineLayoutInfo);
         m_pipeline->setAttributeDescription(getTwoElemsAttributesDescriptions());
         m_pipeline->setTopology(backend::Topology::Triangles);
@@ -102,7 +111,7 @@ public:
         m_pipeline->setViewport();
         m_pipeline->setRasterization();
         m_pipeline->setMultisample();
-        m_pipeline->setDepthStencil(m_depthStencilState);
+        m_pipeline->setDepthStencil(m_depthStencilState->handle());
         m_pipeline->setColorBlendAttachment();
         m_pipeline->setRenderPass();
         m_pipeline->build();
@@ -138,7 +147,7 @@ private:
     std::shared_ptr<BufferVK> m_vertexBuffer;
     std::shared_ptr<BufferVK> m_uniformBuffer;
     std::shared_ptr<TextureVK> m_texture;
-    vk::PipelineDepthStencilStateCreateInfo m_depthStencilState;
+    std::shared_ptr<DepthStencilStateVk> m_depthStencilState;
     vk::PipelineLayout m_pipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_descriptorSet;
     uint32_t m_swapchainSize{};

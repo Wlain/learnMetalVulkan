@@ -7,8 +7,7 @@
 #include "buffer.h"
 #include "deviceVk.h"
 
-#define VULKAN_HPP_NO_CONSTRUCTORS // 从 vulkan.hpp 中删除所有结构和联合构造函数
-#include <vulkan/vulkan.hpp>
+#include "vkCommonDefine.h"
 namespace backend
 {
 class BufferVK : public Buffer

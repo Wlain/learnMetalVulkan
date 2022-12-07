@@ -48,8 +48,12 @@ extern void testLightingDiffuseMapGl();
 extern void testLightingDiffuseMapVk();
 extern void testLightingDiffuseMapMtl();
 
+extern void testDepthTestGl();
+extern void testDepthTestVk();
+extern void testDepthTestMtl();
+
 int main()
 {
-    testWindowSdlVk();
+    testCameraVk();
     return 0;
 }
