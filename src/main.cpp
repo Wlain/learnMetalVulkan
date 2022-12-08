@@ -52,8 +52,12 @@ extern void testDepthTestGl();
 extern void testDepthTestVk();
 extern void testDepthTestMtl();
 
+extern void testDepthViewGl();
+extern void testDepthViewVk();
+extern void testDepthViewMtl();
+
 int main()
 {
-    testDepthTestVk();
+    testDepthViewVk();
     return 0;
 }

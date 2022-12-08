@@ -1,6 +1,7 @@
 //
-// Created by william on 2022/12/7.
+// Created by william on 2022/12/8.
 //
+
 #include "../mesh/globalMeshs.h"
 #include "bufferVk.h"
 #include "commonHandle.h"
@@ -16,11 +17,11 @@
 #include <array>
 
 using namespace backend;
-class TestDepthTestVk : public EffectBase
+class TestDepthViewVk : public EffectBase
 {
 public:
     using EffectBase::EffectBase;
-    ~TestDepthTestVk() override = default;
+    ~TestDepthViewVk() override = default;
     void initialize() override
     {
         m_deviceVk = dynamic_cast<DeviceVk*>(m_renderer->device());
@@ -65,7 +66,7 @@ public:
     void buildDepthStencilStates()
     {
         m_depthStencilState = MAKE_SHARED(m_depthStencilState, m_render->device());
-        m_depthStencilState->setDepthCompareOp(CompareOp::Always);
+        m_depthStencilState->setDepthCompareOp(CompareOp::Less);
         m_depthStencilState->setDepthTestEnable(true);
         m_depthStencilState->setDepthWriteEnable(true);
     }
@@ -127,8 +128,8 @@ public:
 
     void buildPipeline()
     {
-        std::string vertSource = getFileContents("shaders/texture.vert");
-        std::string fragShader = getFileContents("shaders/texture.frag");
+        std::string vertSource = getFileContents("shaders/depth.vert");
+        std::string fragShader = getFileContents("shaders/depth.frag");
         m_cubePipeline = MAKE_SHARED(m_cubePipeline, m_deviceVk);
         m_cubePipeline->setProgram(vertSource, fragShader);
         auto pipelineLayoutInfo = vk::PipelineLayoutCreateInfo{
@@ -182,7 +183,18 @@ public:
         auto& commandBuffers = m_deviceVk->commandBuffers();
         auto& framebuffer = m_deviceVk->swapchainFramebuffers();
         auto beginInfo = vk::CommandBufferBeginInfo{};
-        auto renderPassInfo = m_deviceVk->getSingleRenderPassBeginInfo();
+        static std::array clearValues = {
+            vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ 0.1f, 0.1f, 0.1f, 1.0f } } },
+            vk::ClearValue{ .depthStencil = { 1.0f, 0 } }
+        };
+        static auto renderPassInfo = vk::RenderPassBeginInfo{
+            .renderPass = m_deviceVk->renderPass(),
+            .renderArea = {
+                .offset = { 0, 0 },
+                .extent = m_deviceVk->swapchainExtent() },
+            .clearValueCount = 2,
+            .pClearValues = clearValues.data(),
+        };
         for (std::size_t i = 0; i < commandBuffers.size(); ++i)
         {
             renderPassInfo.setFramebuffer(framebuffer[i]);
@@ -242,14 +254,14 @@ private:
     uint32_t m_dynamicAlignment{};
 };
 
-void testDepthTestVk()
+void testDepthViewVk()
 {
-    Device::Info info{ Device::RenderType::Vulkan, 800, 640, "Vulkan Example DepthTest" };
+    Device::Info info{ Device::RenderType::Vulkan, 800, 640, "Vulkan Example Depth View" };
     DeviceVk handle(info);
     handle.init();
     GLFWRendererVk renderer(&handle);
     Engine engine(renderer);
-    auto effect = std::make_shared<TestDepthTestVk>(&renderer);
+    auto effect = std::make_shared<TestDepthViewVk>(&renderer);
     engine.setEffect(effect);
     engine.run();
 }
