@@ -9,20 +9,20 @@
 
 namespace backend
 {
-BufferVK::BufferVK(Device* device) :
+BufferVk::BufferVk(Device* device) :
     Buffer(device)
 {
-    m_deviceVk = static_cast<DeviceVK*>(device);
+    m_deviceVk = static_cast<DeviceVk*>(device);
 }
 
-BufferVK::~BufferVK()
+BufferVk::~BufferVk()
 {
     auto device = m_deviceVk->handle();
     device.destroyBuffer(m_buffer);
     device.freeMemory(m_deviceMemory);
 }
 
-std::pair<vk::Buffer, vk::DeviceMemory> BufferVK::createBuffer(vk::DeviceSize bufferSize, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties)
+std::pair<vk::Buffer, vk::DeviceMemory> BufferVk::createBuffer(vk::DeviceSize bufferSize, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties)
 {
     auto device = m_deviceVk->handle();
     auto bufferInfo = vk::BufferCreateInfo{
@@ -41,7 +41,7 @@ std::pair<vk::Buffer, vk::DeviceMemory> BufferVK::createBuffer(vk::DeviceSize bu
     return { buffer, bufferMemory };
 }
 
-vk::BufferUsageFlags BufferVK::getUsageFlag(BufferUsage usage)
+vk::BufferUsageFlags BufferVk::getUsageFlag(BufferUsage usage)
 {
     vk::BufferUsageFlags usageFlags;
     switch (usage)
@@ -59,7 +59,7 @@ vk::BufferUsageFlags BufferVK::getUsageFlag(BufferUsage usage)
     return usageFlags;
 }
 
-vk::BufferUsageFlags BufferVK::getBufferType(Buffer::BufferType type)
+vk::BufferUsageFlags BufferVk::getBufferType(Buffer::BufferType type)
 {
     vk::BufferUsageFlags usageFlags;
     switch (type)
@@ -77,7 +77,7 @@ vk::BufferUsageFlags BufferVK::getBufferType(Buffer::BufferType type)
     return usageFlags;
 }
 
-void BufferVK::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
+void BufferVk::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size)
 {
     auto commandBuffer = m_deviceVk->beginSingleTimeCommands();
     auto copyRegion = vk::BufferCopy{ .size = size };
@@ -85,7 +85,7 @@ void BufferVK::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::Device
     m_deviceVk->endSingleTimeCommands(commandBuffer);
 }
 
-void BufferVK::create(size_t bufferSize, void* data, BufferUsage usage, BufferType type)
+void BufferVk::create(size_t bufferSize, void* data, BufferUsage usage, BufferType type)
 {
     auto device = m_deviceVk->handle();
     m_bufferSize = bufferSize;
@@ -102,7 +102,7 @@ void BufferVK::create(size_t bufferSize, void* data, BufferUsage usage, BufferTy
     device.freeMemory(stagingBufferMemory);
 }
 
-void BufferVK::update(void* data, size_t size, size_t offset)
+void BufferVk::update(void* data, size_t size, size_t offset)
 {
     auto device = m_deviceVk->handle();
     void* target{};
@@ -112,17 +112,17 @@ void BufferVK::update(void* data, size_t size, size_t offset)
     device.unmapMemory(m_deviceMemory);
 }
 
-const vk::Buffer& BufferVK::buffer() const
+const vk::Buffer& BufferVk::buffer() const
 {
     return m_buffer;
 }
 
-const vk::DeviceMemory& BufferVK::deviceMemory() const
+const vk::DeviceMemory& BufferVk::deviceMemory() const
 {
     return m_deviceMemory;
 }
 
-size_t BufferVK::bufferSize() const
+size_t BufferVk::bufferSize() const
 {
     return m_bufferSize;
 }

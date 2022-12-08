@@ -21,8 +21,8 @@ public:
     ~TestQuadVK() override = default;
     void initialize() override
     {
-        m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
-        m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
+        m_deviceVk = dynamic_cast<DeviceVk*>(m_renderer->device());
+        m_render = dynamic_cast<GLFWRendererVk*>(m_renderer);
         buildPipeline();
         buildBuffers();
     }
@@ -80,11 +80,11 @@ public:
     }
 
 private:
-    GLFWRendererVK* m_render{ nullptr };
-    DeviceVK* m_deviceVk{ nullptr };
+    GLFWRendererVk* m_render{ nullptr };
+    DeviceVk* m_deviceVk{ nullptr };
     std::shared_ptr<PipelineVk> m_pipeline;
-    std::shared_ptr<BufferVK> m_vertexBuffer;
-    std::shared_ptr<BufferVK> m_indexBuffer;
+    std::shared_ptr<BufferVk> m_vertexBuffer;
+    std::shared_ptr<BufferVk> m_indexBuffer;
     vk::PipelineLayout m_pipelineLayout;
 };
 } // namespace
@@ -92,9 +92,9 @@ private:
 void testQuadEboVk()
 {
     Device::Info info{ Device::RenderType::Vulkan, 640, 480, "Vulkan Quad Use EBO" };
-    DeviceVK handle(info);
+    DeviceVk handle(info);
     handle.init();
-    GLFWRendererVK renderer(&handle);
+    GLFWRendererVk renderer(&handle);
     Engine engine(renderer);
     auto effect = std::make_shared<TestQuadVK>(&renderer);
     engine.setEffect(effect);

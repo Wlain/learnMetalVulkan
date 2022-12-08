@@ -19,7 +19,7 @@ public:
     ~TestWindowVk() override = default;
     void initialize() override
     {
-        m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
+        m_deviceVk = dynamic_cast<DeviceVk*>(m_renderer->device());
     }
 
     void render() override
@@ -52,16 +52,16 @@ public:
     }
 
 private:
-    DeviceVK* m_deviceVk{ nullptr };
+    DeviceVk* m_deviceVk{ nullptr };
 };
 } // namespace
 
 void testWindowVk()
 {
     Device::Info info{ Device::RenderType::Vulkan, 640, 480, "Vulkan Example Window" };
-    DeviceVK handle(info);
+    DeviceVk handle(info);
     handle.init();
-    GLFWRendererVK renderer(&handle);
+    GLFWRendererVk renderer(&handle);
     Engine engine(renderer);
     auto effect = std::make_shared<TestWindowVk>(&renderer);
     engine.setEffect(effect);

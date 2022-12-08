@@ -26,9 +26,9 @@ public:
 
     void initialize() override
     {
-        m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
+        m_deviceVk = dynamic_cast<DeviceVk*>(m_renderer->device());
         m_swapchainSize = (uint32_t)m_deviceVk->swapchainImageViews().size();
-        m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
+        m_render = dynamic_cast<GLFWRendererVk*>(m_renderer);
         buildTexture();
         buildBuffers();
         buildDepthStencilStates();
@@ -213,7 +213,7 @@ public:
                 g_lightColorUbo.lightColor.y = static_cast<float>(std::abs(sin(m_duringTime * 0.7)));
                 g_lightColorUbo.lightColor.z = static_cast<float>(std::abs(sin(m_duringTime * 1.3)));
                 m_lightCubeFragUniformBuffer->update(&g_lightColorUbo, sizeof(g_lightColorUbo), 0);
-                DeviceVK::bindPipeline()(commandBuffers[i], m_lightCubePipeline->handle(), m_lightCubePipelineLayout, m_lightCubeDescriptorSets->handle());
+                DeviceVk::bindPipeline()(commandBuffers[i], m_lightCubePipeline->handle(), m_lightCubePipelineLayout, m_lightCubeDescriptorSets->handle());
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_sphereMesh.size()), 1, 0, 0);
             }
             // draw diffuseMap cube
@@ -226,7 +226,7 @@ public:
                 g_fragDiffuseMapUBO.light.ambient = g_fragDiffuseMapUBO.light.diffuse * glm::vec4(0.2f); // decrease the influence
                 g_fragDiffuseMapUBO.light.specular = { 1.0f, 1.0f, 1.0f, 1.0f };
                 m_diffuseMapFragUniformBuffer->update(&g_fragDiffuseMapUBO, sizeof(g_fragDiffuseMapUBO), 0);
-                DeviceVK::bindPipeline()(commandBuffers[i], m_diffuseMapPipeline->handle(), m_diffuseMapPipelineLayout, m_diffuseMapDescriptorSets->handle());
+                DeviceVk::bindPipeline()(commandBuffers[i], m_diffuseMapPipeline->handle(), m_diffuseMapPipelineLayout, m_diffuseMapDescriptorSets->handle());
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVerticesWithNormalTexCoord.size()), 1, 0, 0);
             }
             commandBuffers[i].endRenderPass();
@@ -235,25 +235,25 @@ public:
     }
 
 private:
-    GLFWRendererVK* m_render{ nullptr };
-    DeviceVK* m_deviceVk{ nullptr };
+    GLFWRendererVk* m_render{ nullptr };
+    DeviceVk* m_deviceVk{ nullptr };
 
     std::shared_ptr<DepthStencilStateVk> m_depthStencilState;
 
     std::shared_ptr<PipelineVk> m_lightCubePipeline;
-    std::shared_ptr<BufferVK> m_lightCubeVertexBuffer;
-    std::shared_ptr<BufferVK> m_lightCubeVertUniformBuffer;
-    std::shared_ptr<BufferVK> m_lightCubeFragUniformBuffer;
+    std::shared_ptr<BufferVk> m_lightCubeVertexBuffer;
+    std::shared_ptr<BufferVk> m_lightCubeVertUniformBuffer;
+    std::shared_ptr<BufferVk> m_lightCubeFragUniformBuffer;
     vk::PipelineLayout m_lightCubePipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_lightCubeDescriptorSets;
 
     std::shared_ptr<PipelineVk> m_diffuseMapPipeline;
-    std::shared_ptr<BufferVK> m_diffuseMapVertexBuffer;
-    std::shared_ptr<BufferVK> m_diffuseMapVertUniformBuffer;
-    std::shared_ptr<BufferVK> m_diffuseMapFragUniformBuffer;
-    std::shared_ptr<TextureVK> m_diffuseMapTexture;
-    std::shared_ptr<TextureVK> m_specularMapTexture;
-    std::shared_ptr<TextureVK> m_emissionMapTexture;
+    std::shared_ptr<BufferVk> m_diffuseMapVertexBuffer;
+    std::shared_ptr<BufferVk> m_diffuseMapVertUniformBuffer;
+    std::shared_ptr<BufferVk> m_diffuseMapFragUniformBuffer;
+    std::shared_ptr<TextureVk> m_diffuseMapTexture;
+    std::shared_ptr<TextureVk> m_specularMapTexture;
+    std::shared_ptr<TextureVk> m_emissionMapTexture;
     vk::PipelineLayout m_diffuseMapPipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_diffuseMapDescriptorSets;
     uint32_t m_swapchainSize{};
@@ -263,9 +263,9 @@ private:
 void testLightingDiffuseMapVk()
 {
     Device::Info info{ Device::RenderType::Vulkan, 800, 640, "Vulkan Example diffuseMap" };
-    DeviceVK handle(info);
+    DeviceVk handle(info);
     handle.init();
-    GLFWRendererVK renderer(&handle);
+    GLFWRendererVk renderer(&handle);
     Engine engine(renderer);
     auto effect = std::make_shared<TestDiffuseMapVk>(&renderer);
     engine.setEffect(effect);

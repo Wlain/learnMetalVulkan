@@ -10,14 +10,14 @@
 #include <stb/stb_image.h>
 namespace backend
 {
-TextureVK::TextureVK(Device* device) :
+TextureVk::TextureVk(Device* device) :
     Texture(device)
 {
-    m_deviceVk = dynamic_cast<DeviceVK*>(device);
+    m_deviceVk = dynamic_cast<DeviceVk*>(device);
     m_device = m_deviceVk->handle();
 }
 
-TextureVK::~TextureVK()
+TextureVk::~TextureVk()
 {
     auto device = m_deviceVk->handle();
     if (m_imageView)
@@ -30,12 +30,12 @@ TextureVK::~TextureVK()
         device.free(m_deviceMemory);
 }
 
-bool TextureVK::createWithRGBAData(const char* data, int width, int height)
+bool TextureVk::createWithRGBAData(const char* data, int width, int height)
 {
     return Texture::createWithRGBAData(data, width, height);
 }
 
-bool TextureVK::createWithFileName(std::string_view filename, bool premultiplyAlpha)
+bool TextureVk::createWithFileName(std::string_view filename, bool premultiplyAlpha)
 {
     auto device = m_deviceVk->handle();
     int desireComp = STBI_rgb_alpha;
@@ -85,14 +85,14 @@ bool TextureVK::createWithFileName(std::string_view filename, bool premultiplyAl
     return true;
 }
 
-void TextureVK::updateDescriptor()
+void TextureVk::updateDescriptor()
 {
     m_descriptor.sampler = m_sampler;
     m_descriptor.imageLayout = m_imageLayout;
     m_descriptor.imageView = m_imageView;
 }
 
-std::pair<vk::Buffer, vk::DeviceMemory> TextureVK::createBuffer(vk::DeviceSize bufferSize, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties)
+std::pair<vk::Buffer, vk::DeviceMemory> TextureVk::createBuffer(vk::DeviceSize bufferSize, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties)
 {
     auto device = m_deviceVk->handle();
     auto bufferInfo = vk::BufferCreateInfo{
@@ -113,7 +113,7 @@ std::pair<vk::Buffer, vk::DeviceMemory> TextureVK::createBuffer(vk::DeviceSize b
     return { buffer, bufferMemory };
 }
 
-std::pair<vk::Image, vk::DeviceMemory> TextureVK::createImage(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties)
+std::pair<vk::Image, vk::DeviceMemory> TextureVk::createImage(uint32_t width, uint32_t height, vk::Format format, vk::ImageTiling tiling, vk::ImageUsageFlags usage, vk::MemoryPropertyFlags properties)
 {
     vk::Image mappableImage;
     vk::DeviceMemory mappableMemory;
@@ -141,7 +141,7 @@ std::pair<vk::Image, vk::DeviceMemory> TextureVK::createImage(uint32_t width, ui
     return { mappableImage, mappableMemory };
 }
 
-void TextureVK::transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
+void TextureVk::transitionImageLayout(vk::Image image, vk::Format format, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
 {
     m_imageLayout = newLayout;
     auto commandBuffer = m_deviceVk->beginSingleTimeCommands();
@@ -183,7 +183,7 @@ void TextureVK::transitionImageLayout(vk::Image image, vk::Format format, vk::Im
     m_deviceVk->endSingleTimeCommands(commandBuffer);
 }
 
-void TextureVK::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height)
+void TextureVk::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t width, uint32_t height)
 {
     auto commandBuffer = m_deviceVk->beginSingleTimeCommands();
     auto region = vk::BufferImageCopy{
@@ -204,7 +204,7 @@ void TextureVK::copyBufferToImage(vk::Buffer buffer, vk::Image image, uint32_t w
     m_deviceVk->endSingleTimeCommands(commandBuffer);
 }
 
-bool TextureVK::createImageView(vk::Format format, vk::ImageAspectFlagBits aspectMask)
+bool TextureVk::createImageView(vk::Format format, vk::ImageAspectFlagBits aspectMask)
 {
     auto viewInfo = vk::ImageViewCreateInfo{
         .image = m_image,
@@ -225,7 +225,7 @@ bool TextureVK::createImageView(vk::Format format, vk::ImageAspectFlagBits aspec
     return true;
 }
 
-vk::Sampler TextureVK::createSampler()
+vk::Sampler TextureVk::createSampler()
 {
     auto samplerInfo = vk::SamplerCreateInfo{
         .magFilter = vk::Filter::eLinear,
@@ -248,37 +248,37 @@ vk::Sampler TextureVK::createSampler()
     return sampler;
 }
 
-const vk::Image& TextureVK::image() const
+const vk::Image& TextureVk::image() const
 {
     return m_image;
 }
 
-vk::Image& TextureVK::image()
+vk::Image& TextureVk::image()
 {
     return m_image;
 }
 
-const vk::DeviceMemory& TextureVK::deviceMemory() const
+const vk::DeviceMemory& TextureVk::deviceMemory() const
 {
     return m_deviceMemory;
 }
 
-const vk::ImageView& TextureVK::imageView() const
+const vk::ImageView& TextureVk::imageView() const
 {
     return m_imageView;
 }
 
-vk::ImageLayout TextureVK::imageLayout() const
+vk::ImageLayout TextureVk::imageLayout() const
 {
     return m_imageLayout;
 }
 
-const vk::Sampler& TextureVK::sampler() const
+const vk::Sampler& TextureVk::sampler() const
 {
     return m_sampler;
 }
 
-bool TextureVK::createDepthTexture(int width, int height, Texture::DepthPrecision precision)
+bool TextureVk::createDepthTexture(int width, int height, Texture::DepthPrecision precision)
 {
     ASSERT(width >= 0 && width >= 0);
     m_info.width = width;

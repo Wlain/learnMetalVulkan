@@ -54,6 +54,6 @@ extern void testDepthTestMtl();
 
 int main()
 {
-    testDepthTestMtl();
+    testDepthTestVk();
     return 0;
 }

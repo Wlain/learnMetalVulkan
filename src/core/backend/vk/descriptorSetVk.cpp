@@ -10,7 +10,7 @@ namespace backend
 DescriptorSetVk::DescriptorSetVk(Device* device)
 {
     ASSERT(device);
-    m_device = dynamic_cast<DeviceVK*>(device);
+    m_device = dynamic_cast<DeviceVk*>(device);
 }
 
 DescriptorSetVk::~DescriptorSetVk()

@@ -27,9 +27,9 @@ public:
 
     void initialize() override
     {
-        m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
+        m_deviceVk = dynamic_cast<DeviceVk*>(m_renderer->device());
         m_swapchainSize = (uint32_t)m_deviceVk->swapchainImageViews().size();
-        m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
+        m_render = dynamic_cast<GLFWRendererVk*>(m_renderer);
         buildBuffers();
         buildDepthStencilStates();
         buildDescriptorsSets();
@@ -175,7 +175,7 @@ public:
                 commandBuffers[i].bindVertexBuffers(0, { m_vertexBuffer->buffer() }, { 0 });
                 g_mvpMatrixUbo.model = glm::mat4(1.0f);
                 m_colorsVertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
-                DeviceVK::bindPipeline()(commandBuffers[i], m_colorsPipeline->handle(), m_colorsPipelineLayout, m_colorsDescriptorSets->handle());
+                DeviceVk::bindPipeline()(commandBuffers[i], m_colorsPipeline->handle(), m_colorsPipelineLayout, m_colorsDescriptorSets->handle());
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
             }
             commandBuffers[i].endRenderPass();
@@ -184,19 +184,19 @@ public:
     }
 
 private:
-    GLFWRendererVK* m_render{ nullptr };
-    DeviceVK* m_deviceVk{ nullptr };
-    std::shared_ptr<BufferVK> m_vertexBuffer;
-    std::shared_ptr<BufferVK> m_fragUniformBuffer;
+    GLFWRendererVk* m_render{ nullptr };
+    DeviceVk* m_deviceVk{ nullptr };
+    std::shared_ptr<BufferVk> m_vertexBuffer;
+    std::shared_ptr<BufferVk> m_fragUniformBuffer;
     std::shared_ptr<DepthStencilStateVk> m_depthStencilState;
 
     std::shared_ptr<PipelineVk> m_lightCubePipeline;
-    std::shared_ptr<BufferVK> m_lightCubeVertUniformBuffer;
+    std::shared_ptr<BufferVk> m_lightCubeVertUniformBuffer;
     vk::PipelineLayout m_lightCubePipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_lightCubeDescriptorSets;
 
     std::shared_ptr<PipelineVk> m_colorsPipeline;
-    std::shared_ptr<BufferVK> m_colorsVertUniformBuffer;
+    std::shared_ptr<BufferVk> m_colorsVertUniformBuffer;
     vk::PipelineLayout m_colorsPipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_colorsDescriptorSets;
     uint32_t m_swapchainSize{};
@@ -206,9 +206,9 @@ private:
 void testLightingColorsVk()
 {
     Device::Info info{ Device::RenderType::Vulkan, 800, 640, "Vulkan Example Lighting Colors" };
-    DeviceVK handle(info);
+    DeviceVk handle(info);
     handle.init();
-    GLFWRendererVK renderer(&handle);
+    GLFWRendererVk renderer(&handle);
     Engine engine(renderer);
     auto effect = std::make_shared<TestLightingColorsVk>(&renderer);
     engine.setEffect(effect);

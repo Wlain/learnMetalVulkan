@@ -10,7 +10,7 @@
 #include "vkCommonDefine.h"
 namespace backend
 {
-class TextureVK;
+class TextureVk;
 struct QueueFamilyIndices
 {
     std::optional<uint32_t> graphicsFamily;
@@ -20,7 +20,7 @@ struct QueueFamilyIndices
         return graphicsFamily.has_value() && presentFamily.has_value();
     }
 };
-class DeviceVK : public Device
+class DeviceVk : public Device
 {
 public:
     struct SwapchainSupportDetails
@@ -31,8 +31,8 @@ public:
     };
 
 public:
-    explicit DeviceVK(const Info& info);
-    ~DeviceVK() override;
+    explicit DeviceVk(const Info& info);
+    ~DeviceVk() override;
     void init() override;
     const vk::Instance& instance() const;
     const vk::PhysicalDevice& gpu() const;
@@ -98,7 +98,7 @@ private:
     vk::SwapchainKHR m_swapChain;
     std::vector<vk::Image> m_swapchainImages;
     std::vector<vk::ImageView> m_swapchainImagesViews;
-    std::shared_ptr<TextureVK> m_depthTexture;
+    std::shared_ptr<TextureVk> m_depthTexture;
     vk::Format m_swapchainImageFormat = vk::Format::eUndefined;
     vk::Extent2D m_swapchainExtent;
 

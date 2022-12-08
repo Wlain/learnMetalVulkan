@@ -26,7 +26,7 @@ private:
     static vk::ShaderStageFlags findShaderType(ShaderType type);
 
 private:
-    DeviceVK* m_device{ nullptr };
+    DeviceVk* m_device{ nullptr };
     std::vector<vk::DescriptorSetLayoutBinding> m_bindings;
     std::map<uint32_t, vk::DescriptorSetLayoutBinding> m_bindingsLookup;
     // Total descriptor pools created

@@ -111,7 +111,7 @@ vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR>& 
 
 namespace backend
 {
-vk::Extent2D DeviceVK::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities)
+vk::Extent2D DeviceVk::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities)
 {
     return vk::Extent2D{ static_cast<uint32_t>(m_info.width), static_cast<uint32_t>(m_info.height) };
     //    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
@@ -133,7 +133,7 @@ vk::Extent2D DeviceVK::chooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabi
     //    }
 }
 
-DeviceVK::~DeviceVK()
+DeviceVk::~DeviceVk()
 {
     m_device.destroy(m_renderPass);
     for (auto& view : m_swapchainImagesViews)
@@ -169,13 +169,13 @@ DeviceVK::~DeviceVK()
     m_instance.destroy();
 }
 
-DeviceVK::DeviceVK(const Info& info) :
+DeviceVk::DeviceVk(const Info& info) :
     Device(info)
 {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 }
 
-void DeviceVK::init()
+void DeviceVk::init()
 {
     Device::init();
     initInstance();
@@ -194,22 +194,22 @@ void DeviceVK::init()
     createSyncObjects();
 }
 
-const vk::Instance& DeviceVK::instance() const
+const vk::Instance& DeviceVk::instance() const
 {
     return m_instance;
 }
 
-const vk::PhysicalDevice& DeviceVK::gpu() const
+const vk::PhysicalDevice& DeviceVk::gpu() const
 {
     return m_gpu;
 }
 
-const vk::Device& DeviceVK::handle() const
+const vk::Device& DeviceVk::handle() const
 {
     return m_device;
 }
 
-void DeviceVK::initDevice()
+void DeviceVk::initDevice()
 {
     // 创建 Device 和 命令队列
     // 两个命令队列
@@ -249,7 +249,7 @@ void DeviceVK::initDevice()
     m_presentQueue = m_device.getQueue(indices.presentFamily.value(), 0);
 }
 
-void DeviceVK::initInstance()
+void DeviceVk::initInstance()
 {
 #ifndef NDEBUG
     if (!checkValidationLayerSupport())
@@ -279,7 +279,7 @@ void DeviceVK::initInstance()
     m_instance = vk::createInstance(instanceCreateInfo);
 }
 #ifndef NDEBUG
-void DeviceVK::initDebugger()
+void DeviceVk::initDebugger()
 {
     auto messageSeverity = vk::DebugUtilsMessageSeverityFlagsEXT{
         vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
@@ -302,7 +302,7 @@ void DeviceVK::initDebugger()
 }
 #endif
 
-void DeviceVK::initSurface()
+void DeviceVk::initSurface()
 {
     VkSurfaceKHR surface;
     if (glfwCreateWindowSurface(m_instance, m_window, nullptr, &surface))
@@ -312,7 +312,7 @@ void DeviceVK::initSurface()
     m_surface = surface;
 }
 
-void DeviceVK::pickPhysicalDevice()
+void DeviceVk::pickPhysicalDevice()
 {
     /// 挑选一块显卡
     // 创建 gpu
@@ -337,7 +337,7 @@ void DeviceVK::pickPhysicalDevice()
     }
 }
 
-void DeviceVK::creatSwapChain()
+void DeviceVk::creatSwapChain()
 {
     auto details = querySwapchainSupport(m_gpu);
     auto surfaceFormat = chooseSwapSurfaceFormat(details.formats);
@@ -381,17 +381,17 @@ void DeviceVK::creatSwapChain()
     m_swapchainImagesViews.reserve(m_swapchainImages.size());
 }
 
-const vk::SwapchainKHR& DeviceVK::swapChain() const
+const vk::SwapchainKHR& DeviceVk::swapChain() const
 {
     return m_swapChain;
 }
 
-const vk::SurfaceKHR& DeviceVK::surface() const
+const vk::SurfaceKHR& DeviceVk::surface() const
 {
     return m_surface;
 }
 
-uint32_t DeviceVK::findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) const
+uint32_t DeviceVk::findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) const
 {
     auto memProperties = m_gpu.getMemoryProperties();
 
@@ -407,7 +407,7 @@ uint32_t DeviceVK::findMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags p
     return 0;
 }
 
-bool DeviceVK::isDeviceSuitable(vk::PhysicalDevice gpu)
+bool DeviceVk::isDeviceSuitable(vk::PhysicalDevice gpu)
 {
     auto indices = findQueueFamilyIndices(gpu);
     bool extensionsSupported = checkDeviceExtensionSupport(gpu);
@@ -420,7 +420,7 @@ bool DeviceVK::isDeviceSuitable(vk::PhysicalDevice gpu)
     return indices.isComplete() && extensionsSupported && swapchainAdequate;
 }
 
-QueueFamilyIndices DeviceVK::findQueueFamilyIndices(vk::PhysicalDevice gpu)
+QueueFamilyIndices DeviceVk::findQueueFamilyIndices(vk::PhysicalDevice gpu)
 {
     auto queueFamilyProperties = gpu.getQueueFamilyProperties();
     QueueFamilyIndices indices;
@@ -441,7 +441,7 @@ QueueFamilyIndices DeviceVK::findQueueFamilyIndices(vk::PhysicalDevice gpu)
     return indices;
 }
 
-DeviceVK::SwapchainSupportDetails DeviceVK::querySwapchainSupport(vk::PhysicalDevice gpu) const
+DeviceVk::SwapchainSupportDetails DeviceVk::querySwapchainSupport(vk::PhysicalDevice gpu) const
 {
     SwapchainSupportDetails details;
     details.capabilities = gpu.getSurfaceCapabilitiesKHR(m_surface);
@@ -450,37 +450,37 @@ DeviceVK::SwapchainSupportDetails DeviceVK::querySwapchainSupport(vk::PhysicalDe
     return details;
 }
 
-const vk::Queue& DeviceVK::graphicsQueue() const
+const vk::Queue& DeviceVk::graphicsQueue() const
 {
     return m_graphicsQueue;
 }
 
-const vk::Queue& DeviceVK::presentQueue() const
+const vk::Queue& DeviceVk::presentQueue() const
 {
     return m_presentQueue;
 }
 
-const std::vector<vk::Image>& DeviceVK::swapchainImages() const
+const std::vector<vk::Image>& DeviceVk::swapchainImages() const
 {
     return m_swapchainImages;
 }
 
-const std::vector<vk::ImageView>& DeviceVK::swapchainImageViews() const
+const std::vector<vk::ImageView>& DeviceVk::swapchainImageViews() const
 {
     return m_swapchainImagesViews;
 }
 
-vk::Format DeviceVK::swapchainImageFormat() const
+vk::Format DeviceVk::swapchainImageFormat() const
 {
     return m_swapchainImageFormat;
 }
 
-const vk::Extent2D& DeviceVK::swapchainExtent() const
+const vk::Extent2D& DeviceVk::swapchainExtent() const
 {
     return m_swapchainExtent;
 }
 
-void DeviceVK::createImageViews()
+void DeviceVk::createImageViews()
 {
     for (auto image : m_swapchainImages)
     {
@@ -499,7 +499,7 @@ void DeviceVK::createImageViews()
     }
 }
 
-void DeviceVK::createFrameBuffers()
+void DeviceVk::createFrameBuffers()
 {
     std::array<vk::ImageView, 2> attachments;
     m_depthTexture = MAKE_SHARED(m_depthTexture, this);
@@ -520,7 +520,7 @@ void DeviceVK::createFrameBuffers()
     }
 }
 
-void DeviceVK::createCommandBuffers()
+void DeviceVk::createCommandBuffers()
 {
     auto allocInfo = vk::CommandBufferAllocateInfo{
         .commandPool = m_commandPool,
@@ -530,7 +530,7 @@ void DeviceVK::createCommandBuffers()
     m_commandBuffers = m_device.allocateCommandBuffers(allocInfo);
 }
 
-void DeviceVK::createSyncObjects()
+void DeviceVk::createSyncObjects()
 {
     auto semaphoreInfo = vk::SemaphoreCreateInfo{};
     auto fenceInfo = vk::FenceCreateInfo{ .flags = vk::FenceCreateFlagBits::eSignaled };
@@ -543,7 +543,7 @@ void DeviceVK::createSyncObjects()
     m_imagesInflight.resize(swapchainImageViews().size(), vk::Fence{ nullptr });
 }
 
-void DeviceVK::createCommandPool()
+void DeviceVk::createCommandPool()
 {
     auto queueFamilyIndices = findQueueFamilyIndices(m_gpu);
     auto poolInfo = vk::CommandPoolCreateInfo{
@@ -553,11 +553,11 @@ void DeviceVK::createCommandPool()
     m_commandPool = m_device.createCommandPool(poolInfo);
 }
 
-void DeviceVK::cleanupSwapchain()
+void DeviceVk::cleanupSwapchain()
 {
 }
 
-void DeviceVK::creatRenderPass()
+void DeviceVk::creatRenderPass()
 {
     std::array<vk::AttachmentDescription, 2> attachments;
     attachments[0] = vk::AttachmentDescription{
@@ -612,47 +612,47 @@ void DeviceVK::creatRenderPass()
     m_renderPass = m_device.createRenderPass(renderPassInfo);
 }
 
-const vk::RenderPass& DeviceVK::renderPass() const
+const vk::RenderPass& DeviceVk::renderPass() const
 {
     return m_renderPass;
 }
 
-const vk::CommandPool& DeviceVK::commandPool() const
+const vk::CommandPool& DeviceVk::commandPool() const
 {
     return m_commandPool;
 }
 
-const std::vector<vk::CommandBuffer>& DeviceVK::commandBuffers() const
+const std::vector<vk::CommandBuffer>& DeviceVk::commandBuffers() const
 {
     return m_commandBuffers;
 }
 
-const std::vector<vk::Framebuffer>& DeviceVK::swapchainFramebuffers() const
+const std::vector<vk::Framebuffer>& DeviceVk::swapchainFramebuffers() const
 {
     return m_swapchainFramebuffers;
 }
 
-const std::vector<vk::Fence>& DeviceVK::inflightFences() const
+const std::vector<vk::Fence>& DeviceVk::inflightFences() const
 {
     return m_inflightFences;
 }
 
-const std::vector<vk::Fence>& DeviceVK::imagesInflight() const
+const std::vector<vk::Fence>& DeviceVk::imagesInflight() const
 {
     return m_imagesInflight;
 }
 
-const std::vector<vk::Semaphore>& DeviceVK::imageAvailableSemaphores() const
+const std::vector<vk::Semaphore>& DeviceVk::imageAvailableSemaphores() const
 {
     return m_imageAvailableSemaphores;
 }
 
-const std::vector<vk::Semaphore>& DeviceVK::renderFinishedSemaphores() const
+const std::vector<vk::Semaphore>& DeviceVk::renderFinishedSemaphores() const
 {
     return m_renderFinishedSemaphores;
 }
 
-vk::CommandBuffer DeviceVK::beginSingleTimeCommands()
+vk::CommandBuffer DeviceVk::beginSingleTimeCommands()
 {
     auto allocInfo = vk::CommandBufferAllocateInfo{
         .commandPool = m_commandPool,
@@ -668,7 +668,7 @@ vk::CommandBuffer DeviceVK::beginSingleTimeCommands()
     return commandBuffers;
 }
 
-void DeviceVK::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
+void DeviceVk::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
 {
     commandBuffer.end();
     auto submitInfo = vk::SubmitInfo{
@@ -681,7 +681,7 @@ void DeviceVK::endSingleTimeCommands(vk::CommandBuffer commandBuffer)
     m_device.freeCommandBuffers(m_commandPool, 1, &commandBuffer);
 }
 
-vk::RenderPassBeginInfo DeviceVK::getSingleRenderPassBeginInfo()
+vk::RenderPassBeginInfo DeviceVk::getSingleRenderPassBeginInfo()
 {
     static std::array clearValues = {
         vk::ClearValue{ .color = { .float32 = std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f } } },
@@ -698,7 +698,7 @@ vk::RenderPassBeginInfo DeviceVK::getSingleRenderPassBeginInfo()
     return renderPassInfo;
 }
 
-std::function<void(const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, const vk::DescriptorSet& descriptorSet)> DeviceVK::bindPipeline()
+std::function<void(const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, const vk::DescriptorSet& descriptorSet)> DeviceVk::bindPipeline()
 {
     static auto bindPipeline = [](const vk::CommandBuffer& cb, vk::Pipeline pipeline, vk::PipelineLayout& layout, const vk::DescriptorSet& descriptorSet) {
         cb.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, descriptorSet, nullptr);

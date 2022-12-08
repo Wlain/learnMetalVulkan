@@ -9,18 +9,18 @@
 
 namespace backend
 {
-class GLFWRendererVK : public GLFWRenderer
+class GLFWRendererVk : public GLFWRenderer
 {
 public:
-    explicit GLFWRendererVK(Device* handle);
-    ~GLFWRendererVK() override;
+    explicit GLFWRendererVk(Device* handle);
+    ~GLFWRendererVk() override;
 
 public:
     void setPipeline(const std::shared_ptr<Pipeline>& pipeline) override;
     void swapBuffers() override;
 
 private:
-    DeviceVK* m_deviceVk;
+    DeviceVk* m_deviceVk;
     vk::Device m_device;
     vk::Instance m_instance;
     vk::SurfaceKHR m_surface;

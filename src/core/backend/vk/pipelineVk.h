@@ -8,7 +8,7 @@
 #include "vkCommonDefine.h"
 namespace backend
 {
-class DeviceVK;
+class DeviceVk;
 
 class PipelineVk : public Pipeline
 {
@@ -34,7 +34,7 @@ private:
     vk::PipelineShaderStageCreateInfo getShaderCreateInfo(vk::ShaderModule shaderModule, vk::ShaderStageFlagBits stage);
 
 private:
-    DeviceVK* m_deviceVk{ nullptr };
+    DeviceVk* m_deviceVk{ nullptr };
     vk::RenderPass m_renderPass;
     vk::ShaderModule m_vertexShaderModule;
     vk::ShaderModule m_fragmentShaderModule;

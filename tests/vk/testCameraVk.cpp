@@ -26,9 +26,9 @@ public:
     ~TestCameraVk() override = default;
     void initialize() override
     {
-        m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
+        m_deviceVk = dynamic_cast<DeviceVk*>(m_renderer->device());
         m_swapchainSize = (uint32_t)m_deviceVk->swapchainImageViews().size();
-        m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
+        m_render = dynamic_cast<GLFWRendererVk*>(m_renderer);
         buildTextures();
         buildBuffers();
         buildDepthStencilStates();
@@ -60,7 +60,6 @@ public:
 
     void update(float deltaTime) override
     {
-        EffectBase::update(deltaTime);
         EffectBase::update(deltaTime);
         g_mvpMatrixUbo.view = m_camera.viewMatrix();
         g_mvpMatrixUbo.proj = glm::perspective(glm::radians(m_camera.zoom), (float)m_width / (float)m_height, 0.1f, 100.0f);
@@ -161,12 +160,12 @@ public:
     }
 
 private:
-    GLFWRendererVK* m_render{ nullptr };
-    DeviceVK* m_deviceVk{ nullptr };
+    GLFWRendererVk* m_render{ nullptr };
+    DeviceVk* m_deviceVk{ nullptr };
     std::shared_ptr<PipelineVk> m_pipeline;
-    std::shared_ptr<BufferVK> m_vertexBuffer;
-    std::shared_ptr<BufferVK> m_uniformBuffer;
-    std::shared_ptr<TextureVK> m_texture;
+    std::shared_ptr<BufferVk> m_vertexBuffer;
+    std::shared_ptr<BufferVk> m_uniformBuffer;
+    std::shared_ptr<TextureVk> m_texture;
     std::shared_ptr<DepthStencilStateVk> m_depthStencilState;
     vk::PipelineLayout m_pipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_descriptorSets;
@@ -178,9 +177,9 @@ private:
 void testCameraVk()
 {
     Device::Info info{ Device::RenderType::Vulkan, 800, 640, "Vulkan Example Camera" };
-    DeviceVK handle(info);
+    DeviceVk handle(info);
     handle.init();
-    GLFWRendererVK renderer(&handle);
+    GLFWRendererVk renderer(&handle);
     Engine engine(renderer);
     auto effect = std::make_shared<TestCameraVk>(&renderer);
     engine.setEffect(effect);

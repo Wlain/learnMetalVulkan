@@ -12,10 +12,10 @@
 
 namespace backend
 {
-GLFWRendererVK::GLFWRendererVK(Device* handle) :
+GLFWRendererVk::GLFWRendererVk(Device* handle) :
     GLFWRenderer(handle)
 {
-    m_deviceVk = dynamic_cast<DeviceVK*>(handle);
+    m_deviceVk = dynamic_cast<DeviceVk*>(handle);
     m_device = m_deviceVk->handle();
     m_swapChain = m_deviceVk->swapChain();
     m_commandPool = m_deviceVk->commandPool();
@@ -27,9 +27,9 @@ GLFWRendererVK::GLFWRendererVK(Device* handle) :
     m_renderFinishedSemaphores = m_deviceVk->renderFinishedSemaphores();
 }
 
-GLFWRendererVK::~GLFWRendererVK() = default;
+GLFWRendererVk::~GLFWRendererVk() = default;
 
-void GLFWRendererVK::swapBuffers()
+void GLFWRendererVk::swapBuffers()
 {
     auto result = m_device.waitForFences(1, &m_inflightFences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     if (result != vk::Result::eSuccess)
@@ -100,12 +100,12 @@ void GLFWRendererVK::swapBuffers()
         throw std::runtime_error("failed to present swap chain image!");
     }
 
-    m_currentFrame = (m_currentFrame + 1) % DeviceVK::MAX_FRAMES_IN_FLIGHT;
+    m_currentFrame = (m_currentFrame + 1) % DeviceVk::MAX_FRAMES_IN_FLIGHT;
     /// 等待逻辑设备的操作结束执行才能销毁窗口
     m_device.waitIdle();
 }
 
-void GLFWRendererVK::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
+void GLFWRendererVk::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
 {
     m_pipeline = std::dynamic_pointer_cast<PipelineVk>(pipeline);
 }

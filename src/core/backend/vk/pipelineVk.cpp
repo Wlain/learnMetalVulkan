@@ -13,7 +13,7 @@ namespace backend
 PipelineVk::PipelineVk(Device* device) :
     Pipeline(device)
 {
-    m_deviceVk = dynamic_cast<DeviceVK*>(device);
+    m_deviceVk = dynamic_cast<DeviceVk*>(device);
 }
 
 PipelineVk::~PipelineVk()

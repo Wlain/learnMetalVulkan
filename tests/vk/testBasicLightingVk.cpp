@@ -26,9 +26,9 @@ public:
 
     void initialize() override
     {
-        m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
+        m_deviceVk = dynamic_cast<DeviceVk*>(m_renderer->device());
         m_swapchainSize = (uint32_t)m_deviceVk->swapchainImageViews().size();
-        m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
+        m_render = dynamic_cast<GLFWRendererVk*>(m_renderer);
         buildBuffers();
         buildDepthStencilStates();
         buildDescriptorsSets();
@@ -173,7 +173,7 @@ public:
                 g_mvpMatrixUbo.model = glm::translate(g_mvpMatrixUbo.model, glm::vec3(g_basicLightingColorUbo.lightPos));
                 g_mvpMatrixUbo.model = glm::scale(g_mvpMatrixUbo.model, glm::vec3(0.2f)); // a smaller cube
                 m_lightCubeVertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
-                DeviceVK::bindPipeline()(commandBuffers[i], m_lightCubePipeline->handle(), m_lightCubePipelineLayout, m_lightCubeDescriptorSets->handle());
+                DeviceVk::bindPipeline()(commandBuffers[i], m_lightCubePipeline->handle(), m_lightCubePipelineLayout, m_lightCubeDescriptorSets->handle());
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVertices.size()), 1, 0, 0);
             }
             // draw basic lighting cube
@@ -183,7 +183,7 @@ public:
                 m_basicLightingVertUniformBuffer->update(&g_mvpMatrixUbo, sizeof(VertMVPMatrixUBO), 0);
                 g_basicLightingColorUbo.viewPos = glm::vec4(m_camera.position, 1.0f);
                 m_basicLightingFragUniformBuffer->update(&g_basicLightingColorUbo, sizeof(FragBasicLightingColorUBO), 0);
-                DeviceVK::bindPipeline()(commandBuffers[i], m_basicLightingPipeline->handle(), m_basicLightingPipelineLayout, m_basicLightingDescriptorSets->handle());
+                DeviceVk::bindPipeline()(commandBuffers[i], m_basicLightingPipeline->handle(), m_basicLightingPipelineLayout, m_basicLightingDescriptorSets->handle());
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVerticesWithNormal.size()), 1, 0, 0);
             }
             commandBuffers[i].endRenderPass();
@@ -192,20 +192,20 @@ public:
     }
 
 private:
-    GLFWRendererVK* m_render{ nullptr };
-    DeviceVK* m_deviceVk{ nullptr };
+    GLFWRendererVk* m_render{ nullptr };
+    DeviceVk* m_deviceVk{ nullptr };
 
     std::shared_ptr<DepthStencilStateVk> m_depthStencilState;
     std::shared_ptr<PipelineVk> m_lightCubePipeline;
-    std::shared_ptr<BufferVK> m_lightCubeVertexBuffer;
-    std::shared_ptr<BufferVK> m_lightCubeVertUniformBuffer;
+    std::shared_ptr<BufferVk> m_lightCubeVertexBuffer;
+    std::shared_ptr<BufferVk> m_lightCubeVertUniformBuffer;
     vk::PipelineLayout m_lightCubePipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_lightCubeDescriptorSets;
 
     std::shared_ptr<PipelineVk> m_basicLightingPipeline;
-    std::shared_ptr<BufferVK> m_basicLightingVertexBuffer;
-    std::shared_ptr<BufferVK> m_basicLightingVertUniformBuffer;
-    std::shared_ptr<BufferVK> m_basicLightingFragUniformBuffer;
+    std::shared_ptr<BufferVk> m_basicLightingVertexBuffer;
+    std::shared_ptr<BufferVk> m_basicLightingVertUniformBuffer;
+    std::shared_ptr<BufferVk> m_basicLightingFragUniformBuffer;
     vk::PipelineLayout m_basicLightingPipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_basicLightingDescriptorSets;
     uint32_t m_swapchainSize{};
@@ -215,9 +215,9 @@ private:
 void testBasicLightingVk()
 {
     Device::Info info{ Device::RenderType::Vulkan, 800, 640, "Vulkan Example Basic Lighting" };
-    DeviceVK handle(info);
+    DeviceVk handle(info);
     handle.init();
-    GLFWRendererVK renderer(&handle);
+    GLFWRendererVk renderer(&handle);
     Engine engine(renderer);
     auto effect = std::make_shared<TestBasicLightingVk>(&renderer);
     engine.setEffect(effect);

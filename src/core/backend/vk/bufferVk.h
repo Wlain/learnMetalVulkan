@@ -10,11 +10,11 @@
 #include "vkCommonDefine.h"
 namespace backend
 {
-class BufferVK : public Buffer
+class BufferVk : public Buffer
 {
 public:
-    explicit BufferVK(Device* device);
-    ~BufferVK() override;
+    explicit BufferVk(Device* device);
+    ~BufferVk() override;
     void create(size_t size, void* data, BufferUsage usage, BufferType type) override;
     void update(void* data, size_t size, size_t offset) override;
     const vk::Buffer& buffer() const;
@@ -30,7 +30,7 @@ private:
     vk::BufferUsageFlags getUsageFlag(BufferUsage usage);
 
 protected:
-    DeviceVK* m_deviceVk{ nullptr };
+    DeviceVk* m_deviceVk{ nullptr };
     vk::Buffer m_buffer;
     vk::DeviceMemory m_deviceMemory;
     size_t m_bufferSize;

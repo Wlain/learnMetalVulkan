@@ -26,9 +26,9 @@ public:
 
     void initialize() override
     {
-        m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
+        m_deviceVk = dynamic_cast<DeviceVk*>(m_renderer->device());
         m_swapchainSize = (uint32_t)m_deviceVk->swapchainImageViews().size();
-        m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
+        m_render = dynamic_cast<GLFWRendererVk*>(m_renderer);
         buildBuffers();
         buildDepthStencilStates();
         buildDescriptorsSets();
@@ -185,7 +185,7 @@ public:
                 g_lightColorUbo.lightColor.y = static_cast<float>(std::abs(sin(m_duringTime * 0.7)));
                 g_lightColorUbo.lightColor.z = static_cast<float>(std::abs(sin(m_duringTime * 1.3)));
                 m_lightCubeFragUniformBuffer->update(&g_lightColorUbo, sizeof(g_lightColorUbo), 0);
-                DeviceVK::bindPipeline()(commandBuffers[i], m_lightCubePipeline->handle(), m_lightCubePipelineLayout, m_lightCubeDescriptorSets->handle());
+                DeviceVk::bindPipeline()(commandBuffers[i], m_lightCubePipeline->handle(), m_lightCubePipelineLayout, m_lightCubeDescriptorSets->handle());
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_sphereMesh.size()), 1, 0, 0);
             }
             // draw materials cube
@@ -198,7 +198,7 @@ public:
                 g_fragMaterialsColorUBO.light.ambient = g_fragMaterialsColorUBO.light.diffuse * glm::vec4(0.2f); // decrease the influence
                 g_fragMaterialsColorUBO.light.specular = { 1.0f, 1.0f, 1.0f, 1.0f };
                 m_materialsFragUniformBuffer->update(&g_fragMaterialsColorUBO, sizeof(g_fragMaterialsColorUBO), 0);
-                DeviceVK::bindPipeline()(commandBuffers[i], m_materialsPipeline->handle(), m_materialsPipelineLayout, m_materialsDescriptorSets->handle());
+                DeviceVk::bindPipeline()(commandBuffers[i], m_materialsPipeline->handle(), m_materialsPipelineLayout, m_materialsDescriptorSets->handle());
                 commandBuffers[i].draw(static_cast<std::uint32_t>(g_cubeVerticesWithNormal.size()), 1, 0, 0);
             }
             commandBuffers[i].endRenderPass();
@@ -207,22 +207,22 @@ public:
     }
 
 private:
-    GLFWRendererVK* m_render{ nullptr };
-    DeviceVK* m_deviceVk{ nullptr };
+    GLFWRendererVk* m_render{ nullptr };
+    DeviceVk* m_deviceVk{ nullptr };
 
     std::shared_ptr<DepthStencilStateVk> m_depthStencilState;
 
     std::shared_ptr<PipelineVk> m_lightCubePipeline;
-    std::shared_ptr<BufferVK> m_lightCubeVertexBuffer;
-    std::shared_ptr<BufferVK> m_lightCubeVertUniformBuffer;
-    std::shared_ptr<BufferVK> m_lightCubeFragUniformBuffer;
+    std::shared_ptr<BufferVk> m_lightCubeVertexBuffer;
+    std::shared_ptr<BufferVk> m_lightCubeVertUniformBuffer;
+    std::shared_ptr<BufferVk> m_lightCubeFragUniformBuffer;
     vk::PipelineLayout m_lightCubePipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_lightCubeDescriptorSets;
 
     std::shared_ptr<PipelineVk> m_materialsPipeline;
-    std::shared_ptr<BufferVK> m_materialsVertexBuffer;
-    std::shared_ptr<BufferVK> m_materialsVertUniformBuffer;
-    std::shared_ptr<BufferVK> m_materialsFragUniformBuffer;
+    std::shared_ptr<BufferVk> m_materialsVertexBuffer;
+    std::shared_ptr<BufferVk> m_materialsVertUniformBuffer;
+    std::shared_ptr<BufferVk> m_materialsFragUniformBuffer;
     vk::PipelineLayout m_materialsPipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_materialsDescriptorSets;
     uint32_t m_swapchainSize{};
@@ -232,9 +232,9 @@ private:
 void testMaterialsVk()
 {
     Device::Info info{ Device::RenderType::Vulkan, 800, 640, "Vulkan Example materials" };
-    DeviceVK handle(info);
+    DeviceVk handle(info);
     handle.init();
-    GLFWRendererVK renderer(&handle);
+    GLFWRendererVk renderer(&handle);
     Engine engine(renderer);
     auto effect = std::make_shared<TestMaterialsVk>(&renderer);
     engine.setEffect(effect);

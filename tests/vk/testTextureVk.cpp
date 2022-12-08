@@ -23,9 +23,9 @@ public:
     ~TestTextureVk() override = default;
     void initialize() override
     {
-        m_deviceVk = dynamic_cast<DeviceVK*>(m_renderer->device());
+        m_deviceVk = dynamic_cast<DeviceVk*>(m_renderer->device());
         m_swapchainSize = (uint32_t)m_deviceVk->swapchainImageViews().size();
-        m_render = dynamic_cast<GLFWRendererVK*>(m_renderer);
+        m_render = dynamic_cast<GLFWRendererVk*>(m_renderer);
         buildTextures();
         buildBuffers();
         buildDescriptorsSet();
@@ -122,13 +122,13 @@ public:
     }
 
 private:
-    GLFWRendererVK* m_render{ nullptr };
-    DeviceVK* m_deviceVk{ nullptr };
+    GLFWRendererVk* m_render{ nullptr };
+    DeviceVk* m_deviceVk{ nullptr };
     std::shared_ptr<PipelineVk> m_pipeline;
-    std::shared_ptr<BufferVK> m_vertexBuffer;
-    std::shared_ptr<BufferVK> m_indexBuffer;
-    std::shared_ptr<BufferVK> m_uniformBuffer;
-    std::shared_ptr<TextureVK> m_texture;
+    std::shared_ptr<BufferVk> m_vertexBuffer;
+    std::shared_ptr<BufferVk> m_indexBuffer;
+    std::shared_ptr<BufferVk> m_uniformBuffer;
+    std::shared_ptr<TextureVk> m_texture;
     vk::PipelineLayout m_pipelineLayout;
     std::shared_ptr<DescriptorSetVk> m_descriptorSet;
     uint32_t m_swapchainSize{};
@@ -138,9 +138,9 @@ private:
 void testTextureVk()
 {
     Device::Info info{ Device::RenderType::Vulkan, 640, 640, "Vulkan Texture Use EBO" };
-    DeviceVK handle(info);
+    DeviceVk handle(info);
     handle.init();
-    GLFWRendererVK renderer(&handle);
+    GLFWRendererVk renderer(&handle);
     Engine engine(renderer);
     auto effect = std::make_shared<TestTextureVk>(&renderer);
     engine.setEffect(effect);

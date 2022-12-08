@@ -8,11 +8,11 @@
 #include "texture.h"
 namespace backend
 {
-class TextureVK : public Texture
+class TextureVk : public Texture
 {
 public:
-    explicit TextureVK(Device* device);
-    ~TextureVK() override;
+    explicit TextureVk(Device* device);
+    ~TextureVk() override;
     bool createWithRGBAData(const char* data, int width, int height) override;
     bool createWithFileName(std::string_view filename, bool premultiplyAlpha) override;
     bool createDepthTexture(int width, int height, DepthPrecision precision) override;
@@ -42,7 +42,7 @@ private:
     vk::ImageLayout m_imageLayout;
     vk::DescriptorImageInfo m_descriptor;
     vk::Sampler m_sampler;
-    DeviceVK* m_deviceVk{ nullptr };
+    DeviceVk* m_deviceVk{ nullptr };
     vk::Device m_device;
 };
 } // namespace backend
