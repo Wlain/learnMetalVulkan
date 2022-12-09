@@ -8,12 +8,13 @@
 #include "glCommonDefine.h"
 namespace backend
 {
-class DepthStencilStateGL : public DepthStencilState
+class DepthStencilStateGl : public DepthStencilState
 {
 public:
-    explicit DepthStencilStateGL(Device* device);
-    ~DepthStencilStateGL() override;
+    explicit DepthStencilStateGl(Device* device);
+    ~DepthStencilStateGl() override;
     static GLenum getCompareOpGl(CompareOp op);
+    static GLenum getStencilOperationGl(StencilOp stencilOp);
 };
 } // namespace backend
 

@@ -39,9 +39,9 @@ struct StencilOpState
     StencilOp depthStencilPassOp{ StencilOp::Keep }; // 模板测试和深度测试都通过时采取的行为
     StencilOp depthFailOp{ StencilOp::Keep };        // 模板测试通过，但深度测试失败时采取的行为
     CompareOp stencilCompareOp{ CompareOp::Always }; // 模板测试比较函数
-    uint32_t compareMask{ UINT32_MAX };              // 对比的掩码值
-    uint32_t writeMask{ UINT32_MAX };                // 写入值
-    uint32_t reference{ UINT32_MAX };                // 参考值
+    uint32_t compareMask{ UINT32_MAX };              // 对比的掩码，它将会与参考值和储存的模板值在测试比较它们之前进行与(AND)运算。初始情况下所有位都为1。
+    uint32_t writeMask{ UINT32_MAX };                // 写入的掩码值
+    uint32_t reference{ UINT32_MAX };                // 模板测试的参考值(Reference Value)。模板缓冲的内容将会与这个值进行比较
 };
 
 class DepthStencilState
@@ -68,7 +68,7 @@ public:
 
 protected:
     CompareOp m_depthCompareOp = CompareOp::Always; // 深度比较函数
-    StencilOpState m_front{};                       // 正面状态
+    StencilOpState m_front;                       // 正面状态
     StencilOpState m_back{};                        // 背面状态
     bool m_depthTestEnable = false;                 // 是否打开深度测试
     bool m_depthWriteEnable = false;                // 是否写入深度

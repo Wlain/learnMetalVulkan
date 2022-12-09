@@ -56,8 +56,12 @@ extern void testDepthViewGl();
 extern void testDepthViewVk();
 extern void testDepthViewMtl();
 
+extern void testStencilTestGl();
+extern void testStencilTestVk();
+extern void testStencilTestMtl();
+
 int main()
 {
-    testDepthViewVk();
+    testStencilTestGl();
     return 0;
 }

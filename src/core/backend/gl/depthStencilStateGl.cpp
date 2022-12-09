@@ -5,12 +5,12 @@
 #include "depthStencilStateGl.h"
 namespace backend
 {
-DepthStencilStateGL::DepthStencilStateGL(Device* device) :
+DepthStencilStateGl::DepthStencilStateGl(Device* device) :
     DepthStencilState(device)
 {
 }
 
-GLenum DepthStencilStateGL::getCompareOpGl(CompareOp op)
+GLenum DepthStencilStateGl::getCompareOpGl(CompareOp op)
 {
     GLenum compareFunc{};
     switch (op)
@@ -43,5 +43,38 @@ GLenum DepthStencilStateGL::getCompareOpGl(CompareOp op)
     return compareFunc;
 }
 
-DepthStencilStateGL::~DepthStencilStateGL() = default;
+GLenum DepthStencilStateGl::getStencilOperationGl(StencilOp stencilOp)
+{
+    GLenum stencilOperation{};
+    switch (stencilOp)
+    {
+    case StencilOp::Keep:
+        stencilOperation = GL_KEEP;
+        break;
+    case StencilOp::Zero:
+        stencilOperation = GL_ZERO;
+        break;
+    case StencilOp::Replace:
+        stencilOperation = GL_REPLACE;
+        break;
+    case StencilOp::IncrementAndClamp:
+        stencilOperation = GL_INCR;
+        break;
+    case StencilOp::DecrementAndClamp:
+        stencilOperation = GL_DECR;
+        break;
+    case StencilOp::Invert:
+        stencilOperation = GL_INVERT;
+        break;
+    case StencilOp::IncrementAndWrap:
+        stencilOperation = GL_INCR_WRAP;
+        break;
+    case StencilOp::DecrementAndWrap:
+        stencilOperation = GL_DECR_WRAP;
+        break;
+    }
+    return stencilOperation;
+}
+
+DepthStencilStateGl::~DepthStencilStateGl() = default;
 } // namespace backend

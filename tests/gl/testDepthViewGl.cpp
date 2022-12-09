@@ -137,7 +137,7 @@ public:
 private:
     GLFWRendererGL* m_render{ nullptr };
     std::shared_ptr<BufferGL> m_uniformBuffer;
-    std::shared_ptr<DepthStencilStateGL> m_depthStencilState;
+    std::shared_ptr<DepthStencilStateGl> m_depthStencilState;
 
     std::shared_ptr<PipelineGL> m_planePipeline;
     std::shared_ptr<DescriptorSetGl> m_planeDescriptorSet;

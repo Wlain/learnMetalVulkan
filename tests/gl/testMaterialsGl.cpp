@@ -153,7 +153,7 @@ private:
     std::shared_ptr<BufferGL> m_lightSphereFragUbo;
     std::shared_ptr<DescriptorSetGl> m_lightSphereDescriptorSet;
     std::shared_ptr<DescriptorSetGl> m_materialsDescriptorSet;
-    std::shared_ptr<DepthStencilStateGL> m_depthStencilState;
+    std::shared_ptr<DepthStencilStateGl> m_depthStencilState;
 };
 } // namespace
 

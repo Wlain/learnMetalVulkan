@@ -40,7 +40,18 @@ void GLFWRendererGL::setPipeline(const std::shared_ptr<Pipeline>& pipeline)
             glDisable(GL_DEPTH_TEST);
         }
         glDepthMask(depthStencilState->depthWriteEnable() ? GL_TRUE : GL_FALSE);
-        glDepthFunc(DepthStencilStateGL::getCompareOpGl(depthStencilState->depthCompareOp()));
+        glDepthFunc(DepthStencilStateGl::getCompareOpGl(depthStencilState->depthCompareOp()));
+        if (depthStencilState->stencilTestEnable())
+        {
+            glEnable(GL_STENCIL_TEST);
+        }
+        else
+        {
+            glDisable(GL_STENCIL_TEST);
+        }
+        glStencilOp(DepthStencilStateGl::getStencilOperationGl(depthStencilState->front().stencilFailOp), DepthStencilStateGl::getStencilOperationGl(depthStencilState->front().depthFailOp), DepthStencilStateGl::getStencilOperationGl(depthStencilState->front().depthStencilPassOp));
+        glStencilFunc(DepthStencilStateGl::getCompareOpGl(depthStencilState->front().stencilCompareOp), depthStencilState->front().reference, depthStencilState->front().compareMask);
+        glStencilMask(depthStencilState->front().writeMask);
     }
 }
 

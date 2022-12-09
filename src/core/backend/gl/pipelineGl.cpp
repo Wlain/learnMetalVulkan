@@ -182,12 +182,12 @@ const std::map<int32_t, DescriptorImageInfo>& PipelineGL::imageInfos() const
     return m_imageInfos;
 }
 
-void PipelineGL::setDepthStencilState(const std::shared_ptr<DepthStencilStateGL>& depthStencilState)
+void PipelineGL::setDepthStencilState(const std::shared_ptr<DepthStencilStateGl>& depthStencilState)
 {
     m_depthStencilState = depthStencilState;
 }
 
-const std::shared_ptr<DepthStencilStateGL>& PipelineGL::depthStencilState() const
+const std::shared_ptr<DepthStencilStateGl>& PipelineGL::depthStencilState() const
 {
     return m_depthStencilState;
 }

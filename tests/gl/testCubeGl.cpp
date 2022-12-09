@@ -109,7 +109,7 @@ private:
     std::shared_ptr<BufferGL> m_vertexBuffer;
     std::shared_ptr<BufferGL> m_uniformBuffer;
     std::shared_ptr<DescriptorSetGl> m_descriptorSet;
-    std::shared_ptr<DepthStencilStateGL> m_depthStencilState;
+    std::shared_ptr<DepthStencilStateGl> m_depthStencilState;
 };
 } // namespace
 
